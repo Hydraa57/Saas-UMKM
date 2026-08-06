@@ -10,6 +10,8 @@ Blueprint awal menaruh `transactions` di tengah. Di sini pusatnya `cash_entries`
 **2. Uang disimpan sebagai `bigint` rupiah penuh.**
 Bukan `numeric`, bukan `float`, dan tanpa sen. Rupiah praktis tidak memakai pecahan di level UMKM. `bigint` menghilangkan seluruh kelas bug pembulatan floating point, dan `9.223.372.036.854.775.807` rupiah cukup untuk siapa pun.
 
+Di sisi TypeScript, nilainya **tidak** dipetakan ke `bigint` JavaScript melainkan ke `number` yang diberi merek (lihat `src/lib/money.ts`). `bigint` tidak bisa di-`JSON.stringify`, tidak bisa dicampur dengan `number` tanpa konversi eksplisit, dan PostgREST mengirim kolom `int8` sebagai angka JSON biasa — memakainya berarti mengonversi bolak-balik di setiap batas sistem, dan setiap konversi adalah tempat bug bersembunyi. Yang membuat `number` aman bukan tipenya melainkan invarian yang dipaksakan di setiap titik masuk: selalu bilangan bulat, selalu di bawah `Number.MAX_SAFE_INTEGER`. Pada syarat itu aritmetika double IEEE-754 bersifat eksak.
+
 **3. Primary key UUID dibuat di perangkat, bukan di server.**
 Ini konsekuensi langsung dari offline-first. Kalau ibu mencatat penjualan tanpa sinyal, baris itu butuh ID sekarang juga — tidak bisa menunggu `serial` dari server. Semua PK `uuid` yang di-generate klien.
 

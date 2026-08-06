@@ -14,7 +14,42 @@ Kalau itu tercapai, produknya benar. Kalau tidak, tidak ada jumlah fitur yang bi
 
 ## Status
 
-Tahap perencanaan. Belum ada kode.
+**Fase 0 (riset lapangan) sedang berjalan.** Wawancara dengan ibu belum selesai, jadi yang sudah dikerjakan sengaja dibatasi pada bagian yang tidak akan berubah apa pun hasilnya: fondasi proyek, perhitungan uang, skema database, jalur tulis, dan mesin luring.
+
+Yang sengaja **belum** dikerjakan, karena hasil wawancara yang menentukan bentuknya:
+
+- Layar jual, layar order jahit, layar pengeluaran
+- Daftar field ukuran per jenis jahitan
+- Label tombol dan istilah di seluruh aplikasi — harus memakai kata yang ibu pakai sendiri
+- Nominal pintasan di papan angka
+
+## Menjalankan
+
+```bash
+npm install
+cp .env.example .env.local     # isi dari dasbor Supabase
+npm run dev
+```
+
+### Pengujian
+
+```bash
+npm test          # tes unit: perhitungan uang, logika domain, antrean sinkron
+npm run typecheck
+npm run db:test   # migrasi + RLS + jalur tulis, di PostgreSQL lokal
+```
+
+`db:test` butuh cluster PostgreSQL lokal sekali siapkan:
+
+```bash
+export PATH=/usr/lib/postgresql/16/bin:$PATH
+initdb -D ~/pgdata -U postgres --auth=trust
+pg_ctl -D ~/pgdata -l ~/pg.log -o '-p 55432 -k /tmp' start
+```
+
+Supabase CLI butuh Docker; harness di `supabase/tests/` meniru bagian Supabase yang dipakai (skema `auth`, `auth.uid()`, peran `authenticated`) supaya migrasi bisa diuji tanpa itu. Menunda pengujian skema sampai Docker tersedia berarti migrasi pertama yang benar-benar dijalankan adalah yang berjalan di produksi.
+
+Pengujian isolasi tenant dijalankan sebagai peran `authenticated`, bukan superuser — superuser melewati RLS tanpa peduli policy apa pun.
 
 ## Dokumen
 

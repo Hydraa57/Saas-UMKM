@@ -1,0 +1,54 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  html {
+    /* Angka rupiah harus sejajar rapi di daftar transaksi. */
+    font-variant-numeric: tabular-nums;
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  body {
+    @apply bg-slate-50 text-slate-900 antialiased;
+    /* Aplikasi dipakai satu tangan sambil berdiri; tarik-untuk-muat-ulang
+       yang tidak sengaja aktif saat menggulir daftar sangat mengganggu. */
+    overscroll-behavior-y: contain;
+  }
+
+  /* Fokus harus selalu terlihat. Ibu mungkin memakai keyboard layar
+     atau, nanti, pemindai barcode yang berperilaku seperti keyboard. */
+  :focus-visible {
+    @apply outline outline-2 outline-offset-2 outline-slate-900;
+  }
+}
+
+@layer components {
+  /* Tombol aksi utama di beranda. Besar dengan sengaja: tiga tombol ini
+     adalah seluruh alur harian, dan salah tekan lebih mahal daripada
+     ruang layar yang terpakai. */
+  .btn-aksi {
+    @apply flex min-h-touch-lg w-full items-center gap-4 rounded-2xl px-6 py-5
+           text-left text-xl font-semibold shadow-sm transition
+           active:scale-[0.98];
+  }
+
+  .btn-angka {
+    @apply flex min-h-touch items-center justify-center rounded-xl bg-white
+           text-2xl font-semibold text-slate-900 shadow-sm transition
+           active:bg-slate-200;
+  }
+
+  .kartu {
+    @apply rounded-2xl bg-white p-5 shadow-sm;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
+  }
+}
