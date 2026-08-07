@@ -1,28 +1,42 @@
 # NexaUsaha
 
-Aplikasi pencatatan untuk usaha rumahan yang punya **dua buku**: uang hasil kerja sendiri, dan uang belanja rumah tangga.
+Aplikasi pencatatan yang **melakukan** pemisahan uang usaha dan uang rumah tangga — bukan yang menuntut penggunanya memisahkan lebih dulu.
 
-Dimulai dari satu pengguna nyata: ibu saya, yang sampai hari ini mencatat semuanya di buku tulis.
+Untuk usaha mikro apa pun: warung, katering, laundry, jahit, servis, toko online. Dibuktikan pada satu pengguna nyata lebih dulu — ibu saya, yang sampai hari ini mencatat semuanya di buku tulis.
+
+## Masalah yang dikejar
+
+[73% UMKM Indonesia tidak memisahkan keuangan usaha dan pribadi](https://journal.unespadang.ac.id/jaaip/article/view/596), dan mayoritas usaha mikro cuma punya satu rekening untuk keduanya. Akibatnya mereka tidak tahu usahanya untung atau tidak — uang belanja rumah ikut terhitung sebagai biaya usaha.
+
+Semua aplikasi pembukuan UMKM yang ada **mengasumsikan pemisahan itu sudah terjadi.** Untuk tiga perempat pasarnya, asumsi itu salah.
+
+Kuncinya satu keputusan: **buku melekat pada tiap catatan, bukan pada dompet.** Belanja dapur yang dibayar pakai uang dagangan cukup dicatat berbuku rumah, dari dompet yang sama. Pemisahannya terjadi tepat saat uangnya keluar, dengan satu ketukan — bukan menuntut rekening kedua yang tidak akan pernah dibuka.
+
+Uraian lengkapnya di [`docs/08-posisi-produk.md`](docs/08-posisi-produk.md).
 
 ## Kenapa repo ini ada
 
-Ini bukan proyek yang lahir dari riset pasar. Ini lahir dari melihat ibu saya membuka buku tulis dan menjumlah rekap bulanan dengan pulpen — delapan belas bulan berturut-turut, lengkap dengan total tahunan.
+Bukan lahir dari riset pasar, tapi dari melihat ibu saya menjumlah rekap bulanan dengan pulpen — delapan belas bulan berturut-turut, lengkap dengan total tahunan.
 
-Target keberhasilannya satu kalimat:
+Kosakata aplikasinya umum; pembuktiannya spesifik. Target keberhasilan tahap pertama satu kalimat:
 
 > **Setelah 30 hari, buku tulis itu tidak dipakai lagi.**
 
-## Apa yang ada di buku ibu
+Satu pengguna yang bertahan sebulan lebih membuktikan daripada seratus pendaftar yang berhenti di minggu pertama.
 
-Lima halaman catatan aslinya membentuk ulang seluruh rancangan produk ini. Ringkasnya:
+## Apa yang dipelajari dari catatan nyata
 
-- **Dua buku terpisah.** Penghasilan ibu (jahit, snack) dan belanja rumah tangga (dananya dari bapak). Ibu sendiri menegaskan rekap bulanannya *di luar* uang dari bapak.
-- **Rekap bulanan dijumlah tangan.** Januari 2025 – Juni 2026, total 2025 `9.195.500`. Ini yang paling dia inginkan.
-- **Snack tidak pernah dicatat** — uangnya dipisahkan ke dompet lain, tapi tidak masuk hitungan mana pun. Artinya rekap ibu selama ini di bawah yang sebenarnya.
-- **Jasa jahit sangat sederhana.** Tanggal + jenis + harga. Tidak ada ukuran, DP, atau deadline.
-- **Dompet fisik adalah sistem akuntansinya.** Snack, jahit, belanja, rekening — sudah dipisah sendiri, jauh sebelum ada aplikasi.
+Lima halaman buku tulis membentuk ulang seluruh rancangan produk ini:
+
+- **Dua buku terpisah, memang sudah ada di kepala penggunanya.** Rekap bulanannya tegas *di luar* uang pemberian suami.
+- **Rekap bulanan dijumlah tangan.** Januari 2025 – Juni 2026, total 2025 `9.195.500`. Ini yang paling diinginkan.
+- **Sebagian pemasukan tidak pernah dicatat** — uangnya dipisahkan ke dompet lain tapi tidak masuk hitungan mana pun, jadi rekapnya di bawah yang sebenarnya.
+- **Jasa dicatat sangat sederhana.** Tanggal + jenis + harga. Tidak ada ukuran, DP, atau tenggat.
+- **Tidak ada katalog, stok, atau harga modal.** Tidak satu pun dilacak.
 
 Bukti lengkapnya, termasuk aritmetika yang membuktikan tiap kesimpulan: [`docs/07-temuan-catatan-ibu.md`](docs/07-temuan-catatan-ibu.md).
+
+Satu catatan penting: pengguna pertama ini justru ada di **27% yang sudah memisahkan** uangnya, pakai dompet fisik. Kebiasaannya sempat diambil sebagai kebiasaan umum — dan itu membuat rancangan mengikat buku ke dompet, yang membuat mayoritas pasar tidak terlayani. Sudah diperbaiki.
 
 ## Pelajaran dari percobaan sebelumnya
 
@@ -30,7 +44,7 @@ Pernah dibangun pencatat keuangan lewat WhatsApp dengan AI dan spreadsheet. Ibu 
 
 Diagnosisnya bukan soal AI. Yang dibangun cuma separuh: pencatatannya jalan, pembacaan-kembalinya tidak ada. Aturan yang lahir dari situ, dan berlaku di seluruh aplikasi:
 
-> **Setiap kali ibu memasukkan sesuatu, dia harus langsung menerima sesuatu.**
+> **Setiap kali pengguna memasukkan sesuatu, dia harus langsung menerima sesuatu.**
 
 Percobaan itu juga meninggalkan bukti berharga: ibu bersedia mencatat lewat aplikasi. Yang gagal bukan kesediaannya.
 
@@ -42,11 +56,11 @@ Fondasi selesai dan teruji. Yang tersisa: layar-layar catat.
 |---|---|
 | Perhitungan uang (rupiah `bigint`, pembulatan eksplisit) | 43 |
 | Tanggal & zona waktu (WIB, bukan UTC) | 18 |
-| Buku kas, dua buku, saldo dompet, cocokkan | 20 |
+| Buku kas, dua buku, saldo dompet, cocokkan | 23 |
 | Rekap bulanan & total tahunan | 14 |
 | Utang & piutang | 17 |
 | Antrean kirim luring + penggolongan kegagalan | 30 |
-| Skema, RLS, jalur tulis (PostgreSQL sungguhan) | 48 |
+| Skema, RLS, jalur tulis (PostgreSQL sungguhan) | 51 |
 
 Belum ada: layar catat pemasukan/pengeluaran, layar rekap, autentikasi.
 
@@ -54,7 +68,8 @@ Belum ada: layar catat pemasukan/pengeluaran, layar rekap, autentikasi.
 
 | Dokumen | Isi |
 |---|---|
-| [`docs/07-temuan-catatan-ibu.md`](docs/07-temuan-catatan-ibu.md) | **Mulai di sini.** Bukti dari catatan asli, dan asumsi mana yang gugur |
+| [`docs/08-posisi-produk.md`](docs/08-posisi-produk.md) | **Mulai di sini.** Untuk siapa, kenapa dipilih, dan riset yang mendasarinya |
+| [`docs/07-temuan-catatan-ibu.md`](docs/07-temuan-catatan-ibu.md) | Bukti dari catatan asli, dan asumsi mana yang gugur |
 | [`docs/02-prd.md`](docs/02-prd.md) | Scope, alur, keputusan UX |
 | [`docs/03-data-model.md`](docs/03-data-model.md) | Skema, RLS, jalur tulis |
 | [`docs/04-arsitektur.md`](docs/04-arsitektur.md) | Stack, luring, notifikasi, biaya |
@@ -73,9 +88,9 @@ npm run dev
 ### Pengujian
 
 ```bash
-npm test          # 142 tes unit
+npm test          # 145 tes unit
 npm run typecheck
-npm run db:test   # 48 penegasan: migrasi, RLS, jalur tulis
+npm run db:test   # 51 penegasan: migrasi, RLS, jalur tulis
 ```
 
 `db:test` butuh cluster PostgreSQL lokal, sekali siapkan:

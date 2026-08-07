@@ -8,8 +8,8 @@ import {
   yearTotal,
 } from './recap'
 import {
-  DOMPET_BELANJA,
-  DOMPET_JAHIT,
+  REKENING,
+  DOMPET_UTAMA,
   expense,
   income,
   transfer,
@@ -31,9 +31,9 @@ describe('rekap bulanan', () => {
   it('mengelompokkan per bulan dan mengurutkan dari yang terbaru', () => {
     const recap = monthlyRecap(
       [
-        income(300_000, 'jahit', at('2026-06-10T03:00:00Z')),
-        income(400_000, 'jahit', at('2026-07-10T03:00:00Z')),
-        income(100_000, 'snack', at('2026-07-20T03:00:00Z')),
+        income(300_000, 'jasa', at('2026-06-10T03:00:00Z')),
+        income(400_000, 'jasa', at('2026-07-10T03:00:00Z')),
+        income(100_000, 'penjualan', at('2026-07-20T03:00:00Z')),
       ],
       'usaha',
     )
@@ -46,11 +46,11 @@ describe('rekap bulanan', () => {
 
   it('hanya menghitung buku yang diminta', () => {
     const entries = [
-      income(700_000, 'jahit', at('2026-06-10T03:00:00Z')),
-      income(1_400_000, 'dari_bapak', {
+      income(700_000, 'jasa', at('2026-06-10T03:00:00Z')),
+      income(1_400_000, 'gaji', {
         ...at('2026-06-01T03:00:00Z'),
         book: 'rumah',
-        walletId: DOMPET_BELANJA,
+        walletId: REKENING,
       }),
     ]
 
@@ -59,16 +59,11 @@ describe('rekap bulanan', () => {
   })
 
   it('pemindahan antar dompet tidak masuk rekap mana pun', () => {
-    // Uang jahit yang dipakai belanja bukan pemasukan rumah tangga.
+    // Uang yang dipindahkan ke rekening bukan pemasukan baru.
     // Menghitungnya berarti rekap bulanan menghitung uang yang sama dua
-    // kali, dan angkanya akan berbeda dari yang biasa ibu dapat sendiri.
-    const [out, into] = transfer(
-      50_000,
-      { walletId: DOMPET_JAHIT, book: 'usaha' },
-      { walletId: DOMPET_BELANJA, book: 'rumah' },
-      '2026-06-15T03:00:00Z',
-    )
-    const entries = [income(700_000, 'jahit', at('2026-06-10T03:00:00Z')), out, into]
+    // kali, dan angkanya akan berbeda dari yang biasa dihitung sendiri.
+    const [out, into] = transfer(50_000, DOMPET_UTAMA, REKENING, '2026-06-15T03:00:00Z')
+    const entries = [income(700_000, 'jasa', at('2026-06-10T03:00:00Z')), out, into]
 
     expect(monthlyRecap(entries, 'usaha').totalIncome).toBe(700_000)
     expect(monthlyRecap(entries, 'usaha').totalExpense).toBe(0)
@@ -78,12 +73,12 @@ describe('rekap bulanan', () => {
   it('menghitung pengeluaran dan sisa', () => {
     const recap = monthlyRecap(
       [
-        income(1_400_000, 'dari_bapak', {
+        income(1_400_000, 'gaji', {
           ...at('2026-01-09T03:00:00Z'),
           book: 'rumah',
         }),
         expense(42_000, 'belanja', { ...at('2026-01-19T03:00:00Z'), book: 'rumah' }),
-        expense(107_000, 'gas', { ...at('2026-01-16T03:00:00Z'), book: 'rumah' }),
+        expense(107_000, 'utilitas', { ...at('2026-01-16T03:00:00Z'), book: 'rumah' }),
       ],
       'rumah',
     )
@@ -97,8 +92,8 @@ describe('rekap bulanan', () => {
   it('bulan tanpa transaksi tidak muncul sebagai baris nol', () => {
     const recap = monthlyRecap(
       [
-        income(100_000, 'jahit', at('2026-01-10T03:00:00Z')),
-        income(200_000, 'jahit', at('2026-06-10T03:00:00Z')),
+        income(100_000, 'jasa', at('2026-01-10T03:00:00Z')),
+        income(200_000, 'jasa', at('2026-06-10T03:00:00Z')),
       ],
       'usaha',
     )
@@ -108,8 +103,8 @@ describe('rekap bulanan', () => {
   it('melewati entri yang dibatalkan', () => {
     const recap = monthlyRecap(
       [
-        income(300_000, 'jahit', at('2026-06-10T03:00:00Z')),
-        income(999_000, 'jahit', {
+        income(300_000, 'jasa', at('2026-06-10T03:00:00Z')),
+        income(999_000, 'jasa', {
           ...at('2026-06-11T03:00:00Z'),
           deletedAt: '2026-06-12T03:00:00Z',
         }),
@@ -133,10 +128,10 @@ describe('total tahunan', () => {
     // yang dia garisbawahi adalah total per tahun.
     const recap = monthlyRecap(
       [
-        income(865_000, 'jahit', at('2025-01-15T03:00:00Z')),
-        income(866_000, 'jahit', at('2025-02-15T03:00:00Z')),
-        income(1_706_000, 'jahit', at('2025-03-15T03:00:00Z')),
-        income(761_000, 'jahit', at('2026-01-15T03:00:00Z')),
+        income(865_000, 'jasa', at('2025-01-15T03:00:00Z')),
+        income(866_000, 'jasa', at('2025-02-15T03:00:00Z')),
+        income(1_706_000, 'jasa', at('2025-03-15T03:00:00Z')),
+        income(761_000, 'jasa', at('2026-01-15T03:00:00Z')),
       ],
       'usaha',
     )
@@ -151,8 +146,8 @@ describe('perbandingan bulan', () => {
   it('membandingkan dengan bulan sebelumnya', () => {
     const recap = monthlyRecap(
       [
-        income(700_000, 'jahit', at('2026-06-10T03:00:00Z')),
-        income(900_000, 'jahit', at('2026-07-10T03:00:00Z')),
+        income(700_000, 'jasa', at('2026-06-10T03:00:00Z')),
+        income(900_000, 'jasa', at('2026-07-10T03:00:00Z')),
       ],
       'usaha',
     )
@@ -163,7 +158,7 @@ describe('perbandingan bulan', () => {
 
   it('bulan pertama tidak punya pembanding, bukan turun 100%', () => {
     const recap = monthlyRecap(
-      [income(700_000, 'jahit', at('2026-06-10T03:00:00Z'))],
+      [income(700_000, 'jasa', at('2026-06-10T03:00:00Z'))],
       'usaha',
     )
     expect(compareToPreviousMonth(recap, '2026-06')).toBeNull()
@@ -171,7 +166,7 @@ describe('perbandingan bulan', () => {
 
   it('bulan yang tidak ada mengembalikan null', () => {
     const recap = monthlyRecap(
-      [income(700_000, 'jahit', at('2026-06-10T03:00:00Z'))],
+      [income(700_000, 'jasa', at('2026-06-10T03:00:00Z'))],
       'usaha',
     )
     expect(compareToPreviousMonth(recap, '2026-12')).toBeNull()

@@ -1,15 +1,15 @@
 -- Isolasi antar tenant.
 --
--- Pengujian keamanan, bukan pengujian fitur. Semua dijalankan sebagai
--- peran `authenticated`, bukan superuser — superuser melewati RLS tanpa
--- peduli policy apa pun, jadi pengujian yang dijalankan sebagai superuser
--- selalu lulus dan tidak membuktikan apa-apa.
+-- Pengujian keamanan, bukan pengujian fitur. Dijalankan sebagai peran
+-- `authenticated`, bukan superuser — superuser melewati RLS tanpa peduli
+-- policy apa pun, jadi pengujian yang dijalankan sebagai superuser selalu
+-- lulus dan tidak membuktikan apa-apa.
 
 \set ON_ERROR_STOP on
 
 insert into auth.users (id, email) values
-  ('11111111-1111-1111-1111-111111111111', 'ibu@example.com'),
-  ('22222222-2222-2222-2222-222222222222', 'orang.lain@example.com')
+  ('11111111-1111-1111-1111-111111111111', 'satu@example.com'),
+  ('22222222-2222-2222-2222-222222222222', 'dua@example.com')
 on conflict (id) do nothing;
 
 -- ── Tenant A ─────────────────────────────────────────────────────────────
@@ -17,63 +17,80 @@ on conflict (id) do nothing;
 select login_as('11111111-1111-1111-1111-111111111111');
 set role authenticated;
 
-select create_tenant('aaaaaaaa-0000-0000-0000-000000000001', 'Catatan Ibu');
+select create_tenant(
+  'aaaaaaaa-0000-0000-0000-000000000001', 'Usaha Satu', 'campuran'
+);
 
 select assert_eq(
   (select count(*)::int from tenants), 1,
   'pemilik A melihat tenantnya sendiri'
 );
 
--- Dompet bawaan mencontoh dompet fisik yang sudah ibu pisahkan sendiri.
+-- Satu dompet saja secara bawaan. Mayoritas usaha mikro memang cuma
+-- punya satu tempat uang, dan membuatkan beberapa dompet di awal memaksa
+-- pengguna memilih sesuatu yang belum dia butuhkan.
 select assert_eq(
-  (select count(*)::int from wallets
-   where tenant_id = 'aaaaaaaa-0000-0000-0000-000000000001'),
-  3,
-  'tiga dompet bawaan dibuat bersama tenant'
+  (select count(*)::int from wallets), 1,
+  'satu dompet bawaan, bukan beberapa'
 );
 
 select assert_eq(
-  (select count(*)::int from wallets where book = 'usaha'), 2,
-  'dua dompet usaha: jahit dan snack'
-);
-
-select assert_eq(
-  (select count(*)::int from wallets where book = 'rumah'), 1,
-  'satu dompet rumah'
-);
-
--- Tepat satu dompet bawaan per buku, kalau tidak layar catat harus
--- menebak dompet mana yang dimaksud.
-select assert_eq(
-  (select count(*)::int from wallets where is_default), 2,
-  'satu dompet bawaan per buku'
+  (select default_book is null from wallets),
+  true,
+  'dompet bawaan tidak terikat buku mana pun'
 );
 
 select assert_denied($$
-  insert into wallets (id, tenant_id, name, book, is_default)
+  insert into wallets (id, tenant_id, name, is_default)
   values (gen_random_uuid(), 'aaaaaaaa-0000-0000-0000-000000000001',
-          'Dompet Kedua', 'usaha', true)
-$$, 'tidak boleh ada dua dompet bawaan dalam satu buku');
+          'Dompet Kedua', true)
+$$, 'tidak boleh ada dua dompet bawaan');
+
+-- Pintasan awal disemai sesuai jenis usaha supaya hari pertama tidak
+-- kosong sama sekali.
+select assert_eq(
+  (select count(*)::int from quick_entries where book = 'usaha'), 3,
+  'jenis usaha campuran disemai pintasan barang sekaligus jasa'
+);
+
+select assert_eq(
+  (select count(*)::int from quick_entries where book = 'rumah'), 2,
+  'buku rumah disemai pintasan belanja dan transportasi'
+);
 
 reset role;
 
--- ── Tenant B ─────────────────────────────────────────────────────────────
+-- ── Tenant B: buku rumah dimatikan ───────────────────────────────────────
 
 select login_as('22222222-2222-2222-2222-222222222222');
 set role authenticated;
 
-select create_tenant('bbbbbbbb-0000-0000-0000-000000000001', 'Warung Sebelah');
-
-select assert_eq(
-  (select count(*)::int from tenants), 1,
-  'B tidak melihat tenant A'
+select create_tenant(
+  'bbbbbbbb-0000-0000-0000-000000000001', 'Usaha Dua', 'dagang', false
 );
 
 select assert_eq(
-  (select count(*)::int from wallets), 3,
-  'B hanya melihat dompetnya sendiri'
+  (select count(*)::int from quick_entries where book = 'rumah'), 0,
+  'buku rumah yang dimatikan tidak disemai pintasan'
 );
 
+select assert_eq(
+  (select household_book from tenants), false,
+  'usaha yang keuangannya sudah terpisah bisa mematikan buku rumah'
+);
+
+-- ── Yang harus tidak terlihat ────────────────────────────────────────────
+
+select assert_eq(
+  (select count(*)::int from tenants), 1, 'B tidak melihat tenant A'
+);
+select assert_eq(
+  (select count(*)::int from wallets), 1, 'B hanya melihat dompetnya sendiri'
+);
+select assert_eq(
+  (select count(*)::int from quick_entries), 2,
+  'B hanya melihat pintasannya sendiri'
+);
 select assert_eq(
   (select count(*)::int from memberships), 1,
   'B tidak melihat keanggotaan orang lain'
@@ -85,19 +102,10 @@ select assert_denied($$
   insert into cash_entries (id, tenant_id, wallet_id, book, direction,
                             amount, kind, category)
   select gen_random_uuid(), 'aaaaaaaa-0000-0000-0000-000000000001',
-         w.id, 'usaha', 'in', 50000, 'income', 'jahit'
+         w.id, 'usaha', 'in', 50000, 'income', 'penjualan'
   from wallets w limit 1
 $$, 'B tidak bisa menyisipkan entri ke tenant A');
 
-select assert_denied($$
-  insert into debts (id, tenant_id, book, side, person, amount)
-  values (gen_random_uuid(), 'aaaaaaaa-0000-0000-0000-000000000001',
-          'usaha', 'receivable', 'Sisipan', 1000)
-$$, 'B tidak bisa menyisipkan utang ke tenant A');
-
--- Memindahkan baris sendiri ke tenant lain — cara paling halus
--- menyelundupkan data, karena barisnya memang milik sendiri saat
--- diperiksa. Yang menahannya adalah pemeriksaan atas baris hasil.
 select assert_denied($$
   update wallets set tenant_id = 'aaaaaaaa-0000-0000-0000-000000000001'
   where tenant_id = 'bbbbbbbb-0000-0000-0000-000000000001'

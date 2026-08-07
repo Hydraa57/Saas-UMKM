@@ -7,7 +7,9 @@
 
 ## 1. Posisi produk
 
-> Aplikasi pencatatan untuk usaha rumahan yang punya **dua buku**: uang hasil kerja sendiri, dan uang belanja rumah tangga.
+> Aplikasi pencatatan yang **melakukan** pemisahan uang usaha dan uang rumah tangga — bukan yang menuntut penggunanya memisahkan lebih dulu.
+
+Untuk usaha mikro apa pun: warung, katering, laundry, jahit, servis, toko online. Uraian lengkap beserta risetnya di [`08-posisi-produk.md`](08-posisi-produk.md).
 
 Pembandingnya buku tulis, bukan Majoo. Ini strategi, bukan kerendahan hati: melawan buku tulis kita menang di penjumlahan, rekap, dan ingatan. Melawan POS bermodal kita kalah di setiap kolom fitur.
 
@@ -17,14 +19,17 @@ Dan pembanding yang lebih dekat lagi: **bot WhatsApp yang sudah pernah dicoba da
 
 ## 2. Pengguna
 
-**Pengguna tunggal MVP: Ibu.** Satu orang nyata, HP Android, yang sudah mencatat rapi di buku tulis selama bertahun-tahun.
+**Sasarannya usaha mikro yang keuangannya masih menyatu dengan rumah tangga** — [73% UMKM Indonesia](https://journal.unespadang.ac.id/jaaip/article/view/596).
+
+**Pengguna nomor satu, yang membuktikan: Ibu.** Satu orang nyata, HP Android, yang sudah mencatat rapi di buku tulis selama bertahun-tahun. Kosakata aplikasinya umum; pembuktiannya lewat dia.
+
+Menariknya ibu justru ada di 27% yang **sudah** memisahkan uangnya — pakai dompet fisik. Itu sebabnya rancangan sempat salah arah: kebiasaannya diambil sebagai kebiasaan umum, padahal dia pengecualian. Buku kini melekat pada tiap catatan, bukan pada dompet, supaya mayoritas yang berdompet tunggal juga terlayani.
 
 Yang penting dari profilnya, dan semuanya terbaca dari bukunya:
 
 - **Sudah disiplin mencatat.** Delapan belas bulan rekap bulanan berturut-turut. Masalahnya media, bukan kebiasaan.
-- **Sudah memisahkan uang.** Dompet fisik terpisah untuk snack, jahit, dan belanja. Aplikasi mengikuti sistem yang sudah ada.
 - **Sudah pernah mencoba aplikasi dan berhenti.** Itu bukti kesediaannya, sekaligus daftar hal yang tidak boleh diulang.
-- **Mencatat ringkas.** Satu baris memuat beberapa barang: "syr, tahu, cabe, bensin — 42.000". Memaksanya memecah per barang membuat aplikasi lebih lambat daripada bukunya.
+- **Mencatat ringkas.** Satu baris memuat beberapa barang: "sayur, tahu, cabai, bensin — 42.000". Memaksanya memecah per barang membuat aplikasi lebih lambat daripada bukunya.
 
 ---
 
@@ -33,29 +38,28 @@ Yang penting dari profilnya, dan semuanya terbaca dari bukunya:
 Kerangka yang menggantikan model POS.
 
 ```
-┌───────────────────────┐     ┌───────────────────────┐
-│    BUKU USAHA         │     │    BUKU RUMAH         │
-│  penghasilan ibu      │     │  belanja rumah tangga │
-│                       │     │                       │
-│  masuk : jahit, snack │     │  masuk : dari bapak   │
-│  keluar: modal,ongkos │     │  keluar: belanja,gas, │
-│                       │     │          listrik,dll  │
-│  Dompet Jahit         │     │  Dompet Belanja       │
-│  Dompet Snack         │     │                       │
-└───────────┬───────────┘     └───────────┬───────────┘
-            │                             │
-            └────── pindah dompet ────────┘
-                  (bukan pemasukan,
-                   bukan pengeluaran)
+        DOMPET  (uangnya ada di mana)          BUKU  (kegiatan apa)
+        ────────────────────────────           ──────────────────────
+                                        ┌───▶  USAHA
+        Dompet Utama  ──── tiap ────────┤        masuk : penjualan, jasa
+        (Rekening)         catatan      │        keluar: modal, operasional,
+                           diberi       │                upah, sewa
+                           label        │
+                                        └───▶  RUMAH TANGGA
+        pindah dompet                            masuk : gaji, pemberian
+        (tanpa buku,                             keluar: belanja, transportasi,
+         tidak masuk laporan)                            utilitas, komunikasi,
+                                                         pendidikan, kesehatan,
+                                                         sosial, angsuran
 ```
 
 Tiga hal yang mengalir dari sini:
 
-**Rekap bulanan buku usaha adalah angka utama aplikasi.** Itu angka yang ibu hitung tangan tiap bulan, dan dia sendiri menegaskan tidak termasuk uang dari bapak.
+**Buku dipilih per catatan, bukan ditebak dari dompet.** Mayoritas usaha mikro cuma punya satu tempat uang. Kalau bukunya ditentukan dompet, mereka tidak bisa memisahkan apa pun. Dengan buku melekat di tiap catatan, belanja dapur yang dibayar pakai uang dagangan cukup dicatat berbuku rumah dari dompet yang sama.
 
-**Pemindahan antar dompet bukan penghasilan dan bukan biaya.** Uang jahit yang dipakai belanja bukan pemasukan rumah tangga — itu uang yang sama, pindah tempat. Menghitungnya berarti rekap bulanan menghitung dua kali, dan angkanya akan berbeda dari yang biasa ibu dapat. Kalau berbeda, yang dia percayai adalah bukunya.
+**Rekap bulanan buku usaha adalah angka utama aplikasi.** Itu angka yang selama ini dihitung tangan tiap bulan.
 
-**Snack akan mengubah angkanya.** Selama ini uang snack dipisah tapi tidak pernah dicatat, jadi rekap ibu sebenarnya di bawah yang sebenarnya. Ini perlu diberitahukan, bukan dibiarkan jadi kejutan yang bikin ragu.
+**Pemindahan antar dompet bukan penghasilan dan bukan biaya.** Uang yang dipindahkan ke rekening bukan pemasukan baru — itu uang yang sama, pindah tempat. Menghitungnya berarti rekap bulanan menghitung dua kali.
 
 ---
 
@@ -63,11 +67,11 @@ Tiga hal yang mengalir dari sini:
 
 ### Masuk
 
-**Catat pemasukan** — jahit, snack, lain. Tanggal, keterangan, nominal, dompet.
+**Catat pemasukan** — buku usaha (penjualan, jasa) dan buku rumah (gaji, pemberian). Tanggal, keterangan, nominal, dompet.
 
-**Catat pengeluaran** — buku usaha (modal, ongkos) dan buku rumah (belanja, gas, listrik, transport, arisan, sekolah, kesehatan).
+**Catat pengeluaran** — buku usaha (modal, operasional, upah, sewa) dan buku rumah (belanja, transportasi, utilitas, komunikasi, pendidikan, kesehatan, sosial, angsuran).
 
-**Pintasan yang tumbuh sendiri** — begitu "Potong 30.000" dicatat dua kali, ia naik jadi tombol sekali tap. Tidak ada layar pengaturan, tidak ada gerbang di awal.
+**Pintasan yang tumbuh sendiri** — begitu "Potong rambut 15.000" dicatat dua kali, ia naik jadi tombol sekali tap. Tidak ada layar pengaturan, tidak ada gerbang di awal.
 
 **Pindah dompet** — dengan kedua sisinya tercatat sekaligus.
 
@@ -85,12 +89,12 @@ Tiga hal yang mengalir dari sini:
 
 | Dibuang | Alasan |
 |---|---|
-| Katalog produk | Ibu belum pernah mencatat snack sama sekali. Katalog jadi gerbang sebelum manfaat pertama terasa |
-| Stok, kulakan per item, produk terlaris | Tidak ada satu pun yang ibu lacak |
+| Katalog produk | Gerbang sebelum manfaat pertama terasa. Diganti pintasan yang tumbuh dari pemakaian |
+| Stok, kulakan per item, produk terlaris | Bukan yang dilacak usaha mikro; menambah beban input tanpa jawaban yang dicari |
 | Untung dengan modal barang terjual (COGS) | Tanpa katalog dan stok, tidak ada dasarnya |
-| Order jahit: ukuran, DP, deadline, status | Yang ibu tulis cuma tanggal + jenis + harga |
-| Barcode, kasir, struk | Tidak ada satu pun di bukunya |
-| Multi-cabang, RBAC | Satu orang |
+| Order berjangka: DP, tenggat, status | Yang dicatat cuma tanggal + jenis + harga |
+| Barcode, kasir, struk | Untuk usaha berkasir, bukan usaha rumahan |
+| Multi-cabang, RBAC | Satu orang yang mencatat |
 | WhatsApp Business API | Berbayar per pesan, perlu verifikasi Meta. Web Push cukup |
 | Redis, BullMQ, WebSocket | Tidak dibutuhkan untuk skala ini |
 
@@ -100,13 +104,15 @@ Tiga hal yang mengalir dari sini:
 
 ### 5.1 Beranda
 
-Satu angka besar (masuk hari ini), tiga tombol, lalu **rekap bulan ini**.
+Pemilih buku di paling atas, satu angka besar (masuk hari ini), dua tombol, lalu **rekap bulan ini**.
 
-Rekap bulanan naik ke layar pertama, tidak disembunyikan di balik menu laporan. Inilah kegagalan bot WhatsApp sebelumnya: ibu menyerahkan datanya dan tidak pernah menerima apa pun sebagai gantinya.
+Pemilih buku ada di atas karena itu keputusan pertama tiap kali mencatat — dan karena menaruhnya di sana membuat pemisahan terasa wajar, bukan seperti pengaturan lanjutan.
+
+Rekap bulanan naik ke layar pertama, tidak disembunyikan di balik menu laporan. Inilah kegagalan bot WhatsApp sebelumnya: penggunanya menyerahkan data dan tidak pernah menerima apa pun sebagai gantinya.
 
 ### 5.2 Aturan timbal balik
 
-> **Setiap kali ibu memasukkan sesuatu, dia harus langsung menerima sesuatu.**
+> **Setiap kali pengguna memasukkan sesuatu, dia harus langsung menerima sesuatu.**
 
 Minimal: total hari ini dan total bulan ini, terlihat tanpa berpindah layar. Ini berlaku di setiap layar catat, bukan cuma di beranda.
 
@@ -117,7 +123,7 @@ Target: **satu catatan selesai di bawah 10 detik.**
 - Pintasan sekali tap untuk yang sering, dengan nominal terakhir sudah terisi
 - Papan angka sendiri, bukan keyboard bawaan yang memakan separuh layar
 - Keterangan bebas, tidak dipecah per barang
-- Kategori sudah dipilihkan dari tombol yang ditekan; ibu tidak memilih dari daftar panjang
+- Kategori dipersempit oleh buku yang sedang aktif; tidak ada daftar panjang
 - Tidak pernah ada layar tunggu di jalur mencatat
 
 ### 5.4 Bahasa
@@ -131,7 +137,7 @@ Target: **satu catatan selesai di bawah 10 detik.**
 | Balance | Isi dompet |
 | Reconcile | Cocokkan |
 
-Sebutan kategori diambil dari kata yang benar-benar ibu tulis: belanja, listrik, gas, bensin, arisan. Semuanya dikumpulkan di `CATEGORY_LABELS` supaya bisa diganti tanpa menyentuh sisa aplikasi.
+Sebutan kategori memakai kata baku dan cukup umum untuk usaha apa pun: Penjualan, Jasa, Belanja, Transportasi. Semuanya dikumpulkan di `CATEGORY_LABELS` supaya bisa diganti tanpa menyentuh sisa aplikasi.
 
 ### 5.5 Fisik layar
 
@@ -147,15 +153,17 @@ Sebutan kategori diambil dari kata yang benar-benar ibu tulis: belanja, listrik,
 
 ```
 Catat pemasukan
-  Beranda → Jahit masuk → tap "Potong 30.000"  → selesai
-                        └ atau ketik nominal    → selesai
+  Beranda → [Usaha] → Uang Masuk → tap pintasan   → selesai
+                                 └ atau ketik nominal + kategori → selesai
 
-Catat belanja
-  Beranda → Belanja → nominal → keterangan bebas → selesai
+Catat belanja rumah
+  Beranda → [Rumah] → Uang Keluar → nominal → Belanja → keterangan → selesai
+        (dibayar dari dompet mana pun, termasuk dompet yang sama
+         dengan uang dagangan)
 
 Pindah dompet
   Dompet → Pindah → dari, ke, nominal → selesai
-        (dua sisi tercatat sekaligus, tidak masuk hitungan penghasilan)
+        (dua sisi tercatat sekaligus, tanpa buku, tidak masuk laporan)
 
 Lihat rekap
   Beranda → sudah terlihat
@@ -172,8 +180,8 @@ Lihat rekap
 | 2 | Ibu mencatat pertama kali tanpa dibantu | Amati, jangan dibantu, catat di mana macet |
 | 3 | Saldo aplikasi cocok dengan isi dompet | Hitung fisik akhir hari, 7 hari berturut |
 | 4 | Jalan penuh tanpa internet | Mode pesawat, catat 5 entri, nyalakan, pastikan tersinkron sekali |
-| 5 | Ibu tahu penghasilannya bulan ini tanpa bertanya | Tanya langsung |
-| 6 | Angka uang dari bapak tidak pernah tercampur ke penghasilan | Periksa rekap |
+| 5 | Pengguna tahu penghasilannya bulan ini tanpa bertanya | Tanya langsung |
+| 6 | Pemasukan rumah tangga tidak pernah tercampur ke penghasilan usaha | Periksa rekap |
 | 7 | **Hari ke-30, buku tulis tidak dipakai lagi** | Lihat bukunya |
 
 ---
@@ -183,5 +191,5 @@ Lihat rekap
 1. **Mengulang kesalahan bot WhatsApp** — menerima catatan tanpa memberi apa pun kembali. → Rekap di layar pertama, timbal balik di setiap layar catat.
 2. **Mencatat terasa lebih berat daripada menulis.** → Pintasan, papan angka sendiri, luring lebih dulu.
 3. **Angkanya tidak cocok dengan dompet.** Sekali tidak cocok tanpa penjelasan, kepercayaan hilang. → Cocokkan dompet, pemindahan berpasangan, pembatalan lunak.
-4. **Dua buku diam-diam tercampur.** Angka penghasilan yang tiba-tiba melonjak karena uang dari bapak ikut terhitung akan langsung terasa salah oleh ibu. → Ditegakkan di peladen, bukan cuma di aplikasi.
+4. **Dua buku diam-diam tercampur.** Angka penghasilan yang melonjak karena uang rumah tangga ikut terhitung akan langsung terasa salah. → Ditegakkan di peladen, bukan cuma di aplikasi.
 5. **Membangun untuk pasar imajiner.** → Multi-tenant hanya boleh menyentuh lapisan data, tidak menambah satu pun layar di MVP.

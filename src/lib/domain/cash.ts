@@ -86,6 +86,25 @@ export function filterByBook(
   return entries.filter((entry) => entry.book === book)
 }
 
+/**
+ * Seluruh uang yang dipegang, di semua dompet.
+ *
+ * Ini pasangan dari `filterByBook`, dan bedanya penting: uang punya
+ * tempat (dompet), sedangkan buku cuma menggolongkan arusnya. Satu dompet
+ * bisa menampung uang usaha dan uang rumah sekaligus — itu keadaan
+ * mayoritas usaha mikro — jadi tidak ada yang namanya "saldo buku".
+ */
+export function totalBalance(
+  wallets: readonly Wallet[],
+  entries: readonly CashEntry[],
+): Rupiah {
+  return M.sum(
+    wallets
+      .filter((wallet) => !wallet.archivedAt)
+      .map((wallet) => walletBalance(wallet, entries)),
+  )
+}
+
 export function filterByWallet(
   entries: readonly CashEntry[],
   walletId: string,
@@ -113,19 +132,6 @@ export function walletBalance(
     (entry) => entry.walletId === wallet.id && isLive(entry),
   )
   return M.add(wallet.openingBalance, M.sum(own.map(signedAmount)))
-}
-
-/** Saldo seluruh dompet dalam satu buku. */
-export function bookBalance(
-  wallets: readonly Wallet[],
-  entries: readonly CashEntry[],
-  book: Book,
-): Rupiah {
-  return M.sum(
-    wallets
-      .filter((wallet) => wallet.book === book && !wallet.archivedAt)
-      .map((wallet) => walletBalance(wallet, entries)),
-  )
 }
 
 /**

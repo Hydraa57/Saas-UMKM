@@ -15,11 +15,11 @@ Scope-nya menyusut drastis setelah melihat bukunya — tidak ada katalog, stok, 
 
 - Perhitungan uang, 43 tes
 - Tanggal & zona waktu, 18 tes
-- Buku kas, dua buku, saldo dompet, cocokkan — 20 tes
+- Buku kas, dua buku, saldo dompet, cocokkan — 23 tes
 - Rekap bulanan & total tahunan — 14 tes
 - Utang & piutang — 17 tes
 - Antrean kirim luring + penggolongan kegagalan — 30 tes
-- Skema, RLS, jalur tulis — 48 penegasan di PostgreSQL sungguhan
+- Skema, RLS, jalur tulis — 51 penegasan di PostgreSQL sungguhan
 - Kerangka PWA, papan angka, tampilan rupiah
 
 ---
@@ -28,6 +28,7 @@ Scope-nya menyusut drastis setelah melihat bukunya — tidak ada katalog, stok, 
 
 Yang paling menentukan, dan sekarang satu-satunya yang tersisa antara kode dan ibu.
 
+- [ ] Onboarding: nama usaha, jenis usaha, buku rumah aktif atau tidak
 - [ ] Layar catat pemasukan: pintasan sekali tap + papan angka
 - [ ] Layar catat pengeluaran, buku rumah dan buku usaha
 - [ ] Timbal balik di tiap layar: total hari ini dan bulan ini terlihat setelah menyimpan
@@ -78,9 +79,10 @@ Tidak ada fitur baru.
 **Jangan menambah fitur.** Amati.
 
 - [ ] Buku tulis masih dipakai? Untuk apa? — jawabannya adalah spesifikasi fitur berikutnya
+- [ ] Apakah pemisahan dua buku benar-benar dipakai, atau semua masuk satu buku saja?
 - [ ] Fitur mana yang tidak pernah disentuh? Hapus atau sembunyikan
 - [ ] Berapa hari berturut-turut ibu memakainya?
-- [ ] Setelah snack ikut tercatat, penghasilannya jadi berapa? — ini angka yang belum pernah ibu lihat, dan mungkin jadi kejutan yang menyenangkan
+- [ ] Setelah pemasukan yang dulu tidak dicatat ikut masuk, penghasilannya jadi berapa? — angka yang belum pernah dilihat, dan mungkin jadi kejutan yang menyenangkan
 
 **Gerbang:** kalau setelah 30 hari ibu masih memakai buku tulis untuk hal yang seharusnya sudah tercakup, jangan lanjut ke fase produk. Perbaiki dulu.
 
@@ -92,11 +94,9 @@ Hanya kalau Fase 5 lulus.
 
 - [ ] Pendaftaran publik + onboarding
 - [ ] Pemilih tenant di UI (lapisan datanya sudah siap)
-- [ ] Cari 5 usaha rumahan sejenis
+- [ ] Cari 5 usaha **berbeda jenis** — warung, kuliner, jasa. Ini yang menguji apakah kosakatanya benar-benar umum, atau cuma terasa umum
 
-**Positioning yang terbukti, bukan yang dibayangkan:** bukan POS, bukan aplikasi kasir. Aplikasi pencatatan untuk usaha rumahan yang punya dua buku — uang hasil kerja sendiri, dan uang belanja rumah tangga.
-
-Pemisahan itu ada di kepala jutaan ibu rumah tangga di Indonesia, dan tidak ada satu pun aplikasi pembukuan UMKM yang memodelkannya. Mereka semua mengasumsikan usaha adalah entitas terpisah dari rumah tangga. Untuk usaha rumahan, itu asumsi yang salah.
+Posisi lengkapnya di [`08-posisi-produk.md`](08-posisi-produk.md). Ringkasnya: bukan POS, bukan aplikasi kasir — aplikasi yang **melakukan** pemisahan uang usaha dan rumah tangga, untuk 73% UMKM yang belum memisahkannya.
 
 ---
 
@@ -105,7 +105,7 @@ Pemisahan itu ada di kepala jutaan ibu rumah tangga di Indonesia, dan tidak ada 
 | Fase | Perkiraan | Hasil |
 |---|---|---|
 | 0 | selesai | Paham cara ibu mencatat, dari bukunya sendiri |
-| — | selesai | Fondasi, skema, logika, 190 tes |
+| — | selesai | Fondasi, skema, logika, 196 tes |
 | 1 | 5 hari | **Ibu mulai memakai aplikasi** |
 | 2 | 4 hari | Rekap bulanan & dompet |
 | 3 | 3 hari | Utang & pengingat |

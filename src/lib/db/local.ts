@@ -9,8 +9,8 @@ import Dexie, { type EntityTable } from 'dexie'
  *
  * Alasannya bukan kenyamanan. Pesaing aplikasi ini adalah buku tulis,
  * dan buku tulis terbuka dalam nol detik tanpa sinyal. Aplikasi yang
- * menampilkan lingkaran berputar saat ibu ingin mencatat pemasukan
- * Rp5.000 sudah kalah sebelum fiturnya sempat dinilai.
+ * menampilkan lingkaran berputar saat penggunanya ingin mencatat
+ * pemasukan Rp5.000 sudah kalah sebelum fiturnya sempat dinilai.
  *
  * Bentuk barisnya dibuat sama persis dengan tabel di peladen
  * (`snake_case`, uang sebagai bilangan bulat rupiah), supaya hasil
@@ -26,8 +26,9 @@ export interface LocalRow {
 
 export interface LocalWallet extends LocalRow {
   name: string
-  book: 'usaha' | 'rumah'
-  kind: 'cash' | 'bank' | 'ewallet'
+  kind: 'tunai' | 'bank' | 'ewallet'
+  /** Usulan untuk mengisi layar catat, bukan aturan. Boleh kosong. */
+  default_book: 'usaha' | 'rumah' | null
   opening_balance: number
   is_default: boolean
   sort_order: number
@@ -36,7 +37,8 @@ export interface LocalWallet extends LocalRow {
 
 export interface LocalCashEntry extends LocalRow {
   wallet_id: string
-  book: 'usaha' | 'rumah'
+  /** Kosong untuk pemindahan antar dompet. */
+  book: 'usaha' | 'rumah' | null
   occurred_at: string
   direction: 'in' | 'out'
   amount: number
@@ -113,7 +115,7 @@ export class LocalDatabase extends Dexie {
     // dari semua kolom yang mungkin. Indeks berlebih memperlambat
     // penulisan, dan penulisan ada di jalur yang harus paling cepat.
     this.version(1).stores({
-      wallets: 'id, tenant_id, book',
+      wallets: 'id, tenant_id',
       cashEntries: 'id, tenant_id, occurred_at, [book+occurred_at], wallet_id, category',
       quickEntries: 'id, tenant_id, [book+kind], use_count',
       debts: 'id, tenant_id, [side+settled_at], person',

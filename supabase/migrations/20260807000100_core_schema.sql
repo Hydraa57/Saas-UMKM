@@ -1,30 +1,55 @@
 -- Skema inti.
 --
--- Ditulis ulang setelah melihat catatan ibu yang sebenarnya
--- (docs/07-temuan-catatan-ibu.md). Versi sebelumnya dirancang untuk POS
--- dengan katalog produk, stok, dan order jahit berjangka — tidak satu pun
--- dari itu ada di bukunya. Migrasi lama diganti, bukan ditumpuk migrasi
--- baru, karena belum pernah ada yang dijalankan di produksi.
+-- Dirancang untuk UMKM mikro Indonesia pada umumnya, divalidasi pada satu
+-- pengguna nyata (docs/07-temuan-catatan-ibu.md). Kosakatanya umum;
+-- pembuktiannya spesifik.
 --
--- Prinsip yang bertahan dari versi sebelumnya:
+-- Prinsip:
 --   1. Uang selalu `bigint` rupiah utuh.
 --   2. Primary key `uuid` dibuat di perangkat, supaya pencatatan tanpa
 --      sinyal tidak menunggu apa pun.
 --   3. Riwayat memakai salinan, bukan referensi.
 --   4. `tenant_id` di setiap tabel sejak hari pertama.
 --
--- Yang baru, dan berasal langsung dari bukunya:
---   5. **Dua buku.** Ibu memisahkan uang hasil kerjanya dari uang belanja
---      pemberian bapak, dan sudah menjalankannya bertahun-tahun. Aplikasi
---      mengikuti pemisahan itu, tidak mencampurnya lalu memberi label.
---   6. **Dompet adalah wadah nyata.** Ibu benar-benar memisahkan uang ke
---      dompet berbeda. Ini bukan abstraksi akuntansi, ini benda.
+--   5. **Dompet dan buku tegak lurus.**
+--
+--      Dompet menjawab "uangnya ada di mana" — itu soal saldo.
+--      Buku menjawab "kegiatan mana yang menghasilkan atau
+--      menghabiskannya" — itu soal laporan.
+--
+--      Keduanya sengaja tidak diikat. Penelitian menemukan 73% UMKM
+--      Indonesia belum memisahkan keuangan usaha dan pribadi, dan
+--      mayoritas usaha mikro hanya punya satu rekening untuk keduanya.
+--      Kalau buku ditentukan oleh dompet, mereka harus mengarang dompet
+--      palsu sebelum bisa memakai fiturnya sama sekali.
+--
+--      Dengan buku melekat pada tiap entri, pengguna berdompet tunggal
+--      tetap bisa memisahkan: belanja dapur yang dibayar dari uang
+--      dagangan cukup dicatat sebagai pengeluaran berbuku rumah dari
+--      dompet yang sama. Pemisahannya terjadi tepat saat uangnya keluar,
+--      bukan menuntut penggunanya sudah memisahkan lebih dulu.
 
 -- ── Tenant & akses ───────────────────────────────────────────────────────
 
 create table tenants (
   id            uuid primary key,
   name          text not null check (length(trim(name)) > 0),
+
+  -- Menentukan pintasan awal yang disemai. Bukan pembatas: kategori dan
+  -- pintasan tidak bergantung pada nilai ini setelah tenant dibuat.
+  business_type text not null default 'lainnya' check (business_type in (
+                  'dagang',    -- warung, toko, kelontong, olshop
+                  'makanan',   -- kuliner, katering, gerobak
+                  'jasa',      -- jahit, laundry, salon, servis
+                  'campuran',  -- barang sekaligus jasa
+                  'lainnya'
+                )),
+
+  -- Buku rumah tangga bisa dimatikan untuk usaha yang keuangannya sudah
+  -- benar-benar terpisah. Menyala secara bawaan karena mayoritas UMKM
+  -- mikro belum memisahkannya, dan bagi merekalah buku ini paling berguna.
+  household_book boolean not null default true,
+
   timezone      text not null default 'Asia/Jakarta',
   created_at    timestamptz not null default now(),
   updated_at    timestamptz not null default now()
@@ -44,16 +69,19 @@ create index memberships_tenant_idx on memberships (tenant_id);
 
 -- ── Dompet ───────────────────────────────────────────────────────────────
 
--- `book` menentukan dompet ini bagian dari uang usaha atau uang rumah.
--- Dua nilai saja, dan sengaja tidak dibuat tabel tersendiri: ibu punya
--- dua buku, bukan sejumlah buku yang bisa bertambah. Tabel referensi
--- untuk dua nilai tetap hanya menambah join di setiap query.
+-- Tempat uang berada: laci, amplop, rekening, e-wallet. Menentukan saldo,
+-- bukan menentukan buku.
 create table wallets (
   id              uuid primary key,
   tenant_id       uuid not null references tenants(id) on delete cascade,
   name            text not null check (length(trim(name)) > 0),
-  book            text not null check (book in ('usaha', 'rumah')),
-  kind            text not null default 'cash' check (kind in ('cash', 'bank', 'ewallet')),
+  kind            text not null default 'tunai'
+                  check (kind in ('tunai', 'bank', 'ewallet')),
+
+  -- Sekadar usulan untuk mengisi layar catat, bukan aturan. Boleh kosong,
+  -- dan memang kosong untuk pengguna yang dompetnya cuma satu.
+  default_book    text check (default_book in ('usaha', 'rumah')),
+
   opening_balance bigint not null default 0,
   is_default      boolean not null default false,
   sort_order      integer not null default 0,
@@ -63,66 +91,56 @@ create table wallets (
 );
 
 create index wallets_tenant_idx on wallets (tenant_id);
-create index wallets_book_idx on wallets (tenant_id, book) where archived_at is null;
 
--- Satu dompet bawaan per buku. Tanpa ini, layar catat harus menebak
--- dompet mana yang dimaksud — dan tebakan yang salah soal uang selalu
--- ketahuan belakangan, saat isi dompet tidak cocok dengan catatan.
-create unique index wallets_one_default_per_book_idx
-  on wallets (tenant_id, book)
+-- Tepat satu dompet bawaan per tenant. Tanpa ini, layar catat harus
+-- menebak dompet mana yang dimaksud.
+create unique index wallets_one_default_idx
+  on wallets (tenant_id)
   where is_default and archived_at is null;
 
 -- ── Buku kas ─────────────────────────────────────────────────────────────
 
--- Satu-satunya tabel transaksi di aplikasi ini.
---
--- Versi sebelumnya punya sales, sale_items, purchases, purchase_items,
--- stock_movements, tailor_orders, payments, dan customer_measurements.
--- Semuanya dibangun untuk mencatat hal yang ternyata tidak pernah ibu
--- catat. Yang benar-benar ada di bukunya: tanggal, keterangan, nominal.
+-- Satu-satunya tabel transaksi.
 create table cash_entries (
   id          uuid primary key,
   tenant_id   uuid not null references tenants(id) on delete cascade,
+
+  -- Di mana uangnya berpindah.
   wallet_id   uuid not null references wallets(id),
 
-  -- Disalin dari dompet saat entri dibuat, bukan dibaca lewat join.
-  -- Kalau nanti sebuah dompet dipindah bukunya, riwayat lama tidak boleh
-  -- ikut berpindah — laporan bulan lalu harus tetap seperti waktu itu.
-  book        text not null check (book in ('usaha', 'rumah')),
+  -- Kegiatan mana yang menghasilkan atau menghabiskannya. Kosong untuk
+  -- pemindahan — memindahkan uang antar dompet bukan kegiatan usaha
+  -- maupun rumah tangga, cuma uang berpindah tempat.
+  book        text check (book in ('usaha', 'rumah')),
 
   occurred_at timestamptz not null default now(),
   direction   text not null check (direction in ('in', 'out')),
   amount      bigint not null check (amount > 0),
-
-  -- 'income'/'expense' ikut hitungan laporan; 'transfer' tidak.
-  -- Memindahkan uang antar dompet bukan penghasilan dan bukan biaya,
-  -- tapi tetap harus terlihat di saldo masing-masing dompet.
   kind        text not null check (kind in ('income', 'expense', 'transfer')),
 
   -- Daftar tertutup. Kategori bebas akan berkembang jadi puluhan ejaan
-  -- untuk hal yang sama ("bensin", "Bensin", "bensin motor"), dan rekap
-  -- bulanan yang menjumlahkannya berhenti bisa dipercaya.
+  -- untuk hal yang sama ("bensin", "Bensin", "bensin motor"), dan laporan
+  -- yang menjumlahkannya berhenti bisa dipercaya.
   --
-  -- Isinya diambil dari kata yang benar-benar dipakai ibu di bukunya:
-  -- belanja, listrik, gas, bensin, arisan. Pasangan buku/kategori yang
-  -- masuk akal ditegakkan di jalur tulis, bukan di sini.
+  -- Dipilih supaya cukup umum untuk usaha apa pun — warung, kuliner,
+  -- laundry, jahit, bengkel — dan memakai kata baku, bukan singkatan.
   category    text not null check (category in (
                 -- pemasukan usaha
-                'jahit', 'snack',
-                -- pemasukan rumah
-                'dari_bapak',
+                'penjualan', 'jasa',
                 -- pengeluaran usaha
-                'modal', 'operasional',
+                'modal', 'operasional', 'upah', 'sewa',
+                -- pemasukan rumah
+                'gaji', 'pemberian',
                 -- pengeluaran rumah
-                'belanja', 'listrik_air', 'gas', 'transport',
-                'arisan', 'sekolah', 'kesehatan',
-                -- keduanya
-                'lain', 'pindah'
+                'belanja', 'transportasi', 'utilitas', 'komunikasi',
+                'pendidikan', 'kesehatan', 'sosial', 'angsuran',
+                -- di mana saja
+                'lainnya', 'pindah'
               )),
 
-  -- Keterangan bebas, seperti di buku: "syr, tahu, cabe, bensin".
-  -- Ibu tidak memecah per barang, dan memaksanya memecah akan membuat
-  -- aplikasi lebih lambat daripada bukunya.
+  -- Keterangan bebas, seperti di buku tulis: "sayur, tahu, cabai, bensin".
+  -- Pengguna tidak memecah per barang, dan memaksanya memecah membuat
+  -- aplikasi lebih lambat daripada buku.
   note        text,
 
   -- Dua sisi sebuah pemindahan berbagi nilai ini.
@@ -133,6 +151,12 @@ create table cash_entries (
   created_at  timestamptz not null default now(),
   updated_at  timestamptz not null default now(),
 
+  -- Pemasukan dan pengeluaran selalu punya buku; pemindahan tidak pernah.
+  -- Tanpa ini, pemindahan bisa bocor ke laporan dan menghitung uang yang
+  -- sama dua kali.
+  constraint book_only_for_flows check (
+    (kind = 'transfer') = (book is null)
+  ),
   -- Pemindahan wajib berpasangan; tanpa ini, satu sisi yang gagal
   -- tersimpan akan terlihat seperti uang yang lenyap.
   constraint transfer_needs_group check (
@@ -148,8 +172,7 @@ create table cash_entries (
 create index cash_entries_time_idx
   on cash_entries (tenant_id, occurred_at desc) where deleted_at is null;
 
--- Rekap bulanan per buku — laporan yang paling sering dibuka, dan yang
--- selama ini ibu hitung tangan.
+-- Rekap bulanan per buku — laporan yang paling sering dibuka.
 create index cash_entries_book_idx
   on cash_entries (tenant_id, book, kind, occurred_at) where deleted_at is null;
 
@@ -166,14 +189,13 @@ create index cash_entries_transfer_idx
 
 -- Menggantikan katalog produk.
 --
--- Katalog mengharuskan ibu menyiapkan puluhan barang sebelum bisa
--- mencatat apa pun, dan itu tempat orang berhenti. Tabel ini terisi
--- sendiri dari pemakaian: begitu ibu mencatat "Potong 30.000" dua kali,
+-- Katalog mengharuskan pengguna menyiapkan puluhan barang sebelum bisa
+-- mencatat apa pun, dan di situlah orang berhenti. Tabel ini terisi
+-- sendiri dari pemakaian: begitu "Potong rambut 15.000" dicatat dua kali,
 -- barisnya naik ke atas dan jadi tombol sekali tap.
 --
--- Tidak ada layar pengaturan, tidak ada gerbang di awal, dan daftarnya
--- selalu menggambarkan apa yang benar-benar sering terjadi — bukan apa
--- yang dikira sering saat mengisi katalog.
+-- Beberapa baris disemai saat pendaftaran sesuai jenis usaha, supaya hari
+-- pertama tidak kosong sama sekali. Yang tidak terpakai tenggelam sendiri.
 create table quick_entries (
   id             uuid primary key,
   tenant_id      uuid not null references tenants(id) on delete cascade,
@@ -198,18 +220,17 @@ create index quick_entries_popular_idx
 
 -- Sengaja kecil dan berdiri sendiri.
 --
--- Ibu tidak mencatat utang secara rapi — di buku belanja, "hutang" cuma
--- muncul sebagai salah satu kata dalam keterangan. Tapi berutang memang
--- terjadi, dan lupa menagih adalah kerugian yang nyata. Jadi tabelnya ada,
--- tapi tidak menjadi pusat apa pun: sebuah utang tidak menyentuh buku kas
--- sampai uangnya benar-benar berpindah.
+-- Aturan yang menentukan bentuknya: **sebuah utang tidak menyentuh buku
+-- kas sampai uangnya benar-benar berpindah.** Mencatatnya lebih awal
+-- membuat saldo menunjukkan uang yang belum ada di dompet, dan saat itu
+-- terjadi penggunanya berhenti percaya pada seluruh angkanya.
 create table debts (
   id          uuid primary key,
   tenant_id   uuid not null references tenants(id) on delete cascade,
   book        text not null check (book in ('usaha', 'rumah')),
 
-  -- 'receivable' = orang lain berutang ke ibu.
-  -- 'payable'    = ibu berutang ke orang lain.
+  -- 'receivable' = orang lain berutang kepada kita.
+  -- 'payable'    = kita berutang kepada orang lain.
   side        text not null check (side in ('receivable', 'payable')),
 
   person      text not null check (length(trim(person)) > 0),
@@ -235,8 +256,7 @@ create index debts_person_idx on debts (tenant_id, person);
 
 -- Sinkronisasi inkremental menarik perubahan dengan `updated_at > terakhir`.
 -- Satu pembaruan yang lupa menyentuh kolom ini berarti perubahannya tidak
--- pernah sampai ke perangkat lain, tanpa pesan error apa pun. Karena itu
--- diurus trigger, bukan kode aplikasi.
+-- pernah sampai ke perangkat lain, tanpa pesan error apa pun.
 create or replace function set_updated_at()
 returns trigger
 language plpgsql
