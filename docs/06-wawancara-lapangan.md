@@ -1,3 +1,8 @@
+> **Sebagian besar sudah terjawab lewat foto catatan ibu**, tanpa perlu
+> wawancara — lihat [`07-temuan-catatan-ibu.md`](07-temuan-catatan-ibu.md).
+> Yang masih terbuka ada di bagian 9 dokumen itu. Daftar di bawah tetap
+> disimpan sebagai panduan kalau nanti perlu menggali lebih dalam.
+
 # 06 — Wawancara Lapangan
 
 Semua asumsi di dokumen lain disusun dari wawancara **denganmu**, bukan dengan ibu. Dokumen ini yang memeriksanya.

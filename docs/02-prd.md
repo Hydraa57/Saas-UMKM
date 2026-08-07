@@ -1,289 +1,187 @@
+> **Ditulis ulang setelah melihat catatan ibu.** Versi sebelumnya merancang
+> POS dengan katalog produk, stok, dan order jahit berjangka. Tidak satu pun
+> dari itu ada di bukunya. Bukti dan asumsi yang gugur:
+> [`07-temuan-catatan-ibu.md`](07-temuan-catatan-ibu.md).
+
 # 02 — PRD
 
 ## 1. Posisi produk
 
-> Aplikasi pencatatan usaha untuk usaha rumahan yang **menjual barang sekaligus menerima pesanan jasa** — dalam satu buku kas yang jujur.
+> Aplikasi pencatatan untuk usaha rumahan yang punya **dua buku**: uang hasil kerja sendiri, dan uang belanja rumah tangga.
 
-Pembandingnya buku tulis, bukan Majoo. Ini bukan kerendahan hati, ini strategi: melawan buku tulis kita bisa menang di kecepatan, rekap, dan pengingat. Melawan POS bermodal kita kalah di setiap kolom fitur.
+Pembandingnya buku tulis, bukan Majoo. Ini strategi, bukan kerendahan hati: melawan buku tulis kita menang di penjumlahan, rekap, dan ingatan. Melawan POS bermodal kita kalah di setiap kolom fitur.
 
-### Yang dimenangkan produk ini
-
-| Dibanding | Menang di |
-|---|---|
-| Buku tulis | Rekap otomatis, ingat siapa belum bayar, ingat jahitan jatuh tempo, tidak bisa hilang |
-| Aplikasi pembukuan (BukuWarung/BukuKas) | Order jasa berjangka dengan DP, deadline, dan ukuran pelanggan |
-| POS retail (Majoo/Qasir/Kasir Pintar) | Jauh lebih sederhana, gratis, tidak menuntut setup, dan mengerti usaha yang campur barang + jasa |
+Dan pembanding yang lebih dekat lagi: **bot WhatsApp yang sudah pernah dicoba dan ditinggalkan.** Aplikasi ini harus menang melawan itu, bukan cuma melawan kertas.
 
 ---
 
 ## 2. Pengguna
 
-**Pengguna tunggal MVP: Ibu.** Bukan "persona owner UMKM". Satu orang nyata, dengan HP Android, yang sekarang memakai buku tulis dan tidak punya kesabaran untuk aplikasi yang ribet.
+**Pengguna tunggal MVP: Ibu.** Satu orang nyata, HP Android, yang sudah mencatat rapi di buku tulis selama bertahun-tahun.
 
-Semua keputusan desain diuji terhadap satu pertanyaan: *apakah ini membuat ibu lebih cepat daripada buku tulis, atau lebih lambat?*
+Yang penting dari profilnya, dan semuanya terbaca dari bukunya:
 
-Persona lain (kasir, admin, multi-cabang) **tidak ada di MVP** dan tidak boleh memengaruhi desain UI. Mereka hanya boleh memengaruhi desain skema database.
+- **Sudah disiplin mencatat.** Delapan belas bulan rekap bulanan berturut-turut. Masalahnya media, bukan kebiasaan.
+- **Sudah memisahkan uang.** Dompet fisik terpisah untuk snack, jahit, dan belanja. Aplikasi mengikuti sistem yang sudah ada.
+- **Sudah pernah mencoba aplikasi dan berhenti.** Itu bukti kesediaannya, sekaligus daftar hal yang tidak boleh diulang.
+- **Mencatat ringkas.** Satu baris memuat beberapa barang: "syr, tahu, cabe, bensin — 42.000". Memaksanya memecah per barang membuat aplikasi lebih lambat daripada bukunya.
 
 ---
 
-## 3. Tiga aliran uang
+## 3. Dua buku
 
-Ini kerangka yang menggantikan model POS. Semua fitur MVP turun dari sini.
+Kerangka yang menggantikan model POS.
 
 ```
-                     ┌──────────────────┐
-   Jual snack ──────▶│                  │
-                     │    BUKU KAS      │
-   Order jahit ─────▶│  (cash_entries)  │──▶ Saldo, laporan, ringkasan
-                     │                  │
-   Kulakan & ───────▶│                  │
-   pengeluaran       └──────────────────┘
+┌───────────────────────┐     ┌───────────────────────┐
+│    BUKU USAHA         │     │    BUKU RUMAH         │
+│  penghasilan ibu      │     │  belanja rumah tangga │
+│                       │     │                       │
+│  masuk : jahit, snack │     │  masuk : dari bapak   │
+│  keluar: modal,ongkos │     │  keluar: belanja,gas, │
+│                       │     │          listrik,dll  │
+│  Dompet Jahit         │     │  Dompet Belanja       │
+│  Dompet Snack         │     │                       │
+└───────────┬───────────┘     └───────────┬───────────┘
+            │                             │
+            └────── pindah dompet ────────┘
+                  (bukan pemasukan,
+                   bukan pengeluaran)
 ```
 
-Setiap kejadian yang menyentuh uang menghasilkan entri buku kas. Buku kas adalah satu-satunya sumber kebenaran untuk "berapa uang saya". Fitur lain adalah *cara memasukkan* entri itu dengan konteks yang lebih kaya.
+Tiga hal yang mengalir dari sini:
 
-Konsekuensi penting: **saldo aplikasi harus selalu bisa dicocokkan dengan uang fisik di laci.** Kalau tidak cocok, ibu berhenti percaya, dan aplikasi mati. Ini kriteria penerimaan yang lebih keras daripada fitur mana pun.
+**Rekap bulanan buku usaha adalah angka utama aplikasi.** Itu angka yang ibu hitung tangan tiap bulan, dan dia sendiri menegaskan tidak termasuk uang dari bapak.
+
+**Pemindahan antar dompet bukan penghasilan dan bukan biaya.** Uang jahit yang dipakai belanja bukan pemasukan rumah tangga — itu uang yang sama, pindah tempat. Menghitungnya berarti rekap bulanan menghitung dua kali, dan angkanya akan berbeda dari yang biasa ibu dapat. Kalau berbeda, yang dia percayai adalah bukunya.
+
+**Snack akan mengubah angkanya.** Selama ini uang snack dipisah tapi tidak pernah dicatat, jadi rekap ibu sebenarnya di bawah yang sebenarnya. Ini perlu diberitahukan, bukan dibiarkan jadi kejutan yang bikin ragu.
 
 ---
 
 ## 4. Scope MVP
 
-### Masuk MVP
+### Masuk
 
-**Buku kas**
-- Catat uang masuk dan uang keluar
-- Kategori pengeluaran sederhana (kulakan, ongkos, lain-lain)
-- Saldo berjalan
-- Input mundur (backdate) — untuk memindahkan catatan buku yang belum masuk
-- Catatan bebas di setiap entri
+**Catat pemasukan** — jahit, snack, lain. Tanggal, keterangan, nominal, dompet.
 
-**Jualan snack**
-- Katalog produk dengan foto, nama, harga jual, harga modal
-- Layar jual: grid produk, tap untuk tambah
-- Keranjang, total, bayar
-- Tandai "belum bayar" → jadi piutang
-- Stok berkurang otomatis
+**Catat pengeluaran** — buku usaha (modal, ongkos) dan buku rumah (belanja, gas, listrik, transport, arisan, sekolah, kesehatan).
 
-**Order jahit**
-- Data pelanggan (nama, no. HP)
-- Ukuran tersimpan per pelanggan, dipakai ulang di order berikutnya
-- Order: jenis jahitan, harga, DP, tanggal janji jadi, catatan
-- Status: antre → dikerjakan → selesai → diambil
-- Pelunasan saat diambil
-- Daftar "jatuh tempo minggu ini"
+**Pintasan yang tumbuh sendiri** — begitu "Potong 30.000" dicatat dua kali, ia naik jadi tombol sekali tap. Tidak ada layar pengaturan, tidak ada gerbang di awal.
 
-**Piutang**
-- Daftar siapa berutang berapa, dari transaksi apa
-- Cicilan (bayar sebagian)
-- Total piutang di dashboard
+**Pindah dompet** — dengan kedua sisinya tercatat sekaligus.
 
-**Dompet & uang pribadi**
-- Dompet: Tunai, Bank/e-wallet
-- "Ambil buat rumah" — mencatat uang usaha yang dipakai pribadi
-- "Tambah modal" — uang pribadi masuk ke usaha
-- Laporan memisahkan untung usaha dari uang yang sudah diambil
+**Rekap bulanan per buku** — pemasukan, pengeluaran, sisa; plus total tahunan, persis seperti di bukunya.
 
-**Stok**
-- Stok per produk
-- Catat kulakan → stok bertambah + uang keluar, sekaligus
-- Koreksi stok manual
-- Peringatan stok menipis
+**Saldo per dompet + cocokkan** — hitung isi dompet fisik, aplikasi tunjukkan selisihnya.
 
-**Laporan**
-- Hari ini: uang masuk, uang keluar, untung kotor
-- Bulan ini: omzet, modal, untung, uang diambil
-- Produk terlaris
-- Grafik sederhana
+**Utang & piutang** — siapa, berapa, sejak kapan. Tidak menyentuh buku kas sampai uangnya berpindah.
 
-**Lain-lain**
-- PWA, bisa dipasang di home screen
-- Jalan offline penuh
-- Web Push untuk pengingat
-- Tombol share ringkasan / nota ke WhatsApp
+**Input mundur** — untuk memindahkan catatan buku yang belum masuk.
 
-### Tidak masuk MVP
+**Jalan penuh tanpa internet**, PWA bisa dipasang, Web Push untuk pengingat.
 
-Dikeluarkan dari blueprint awal, dengan alasan:
+### Tidak masuk
 
 | Dibuang | Alasan |
 |---|---|
-| Multi-cabang (UI) | Ibu punya satu tempat. Kolom `branch_id` tetap disiapkan di DB |
-| Role kasir & RBAC penuh | Tidak ada kasir. Diganti tabel `memberships` sederhana |
-| Varian produk | Snack biskuit tidak punya varian ukuran/warna |
-| Barcode scanner | Snack curah/kemasan kecil sering tanpa barcode; kolom disiapkan, fiturnya nanti |
-| Satuan (tabel `units`) | Cukup teks bebas. Tabel tersendiri menambah setup tanpa manfaat |
-| Supplier | Cukup nama toko grosir di catatan kulakan |
-| Stock opname (dokumen) | Cukup koreksi stok manual |
-| Pajak | Ibu bukan PKP. Kolom disiapkan, tidak ditampilkan |
-| WhatsApp Business API | Berbayar per pesan & perlu verifikasi Meta. Lihat `04-arsitektur.md` |
-| Audit log | Berguna saat multi-user. Sekarang belum |
-| AI promo, AI chat data toko | Nilainya rendah di awal. Satu-satunya AI di MVP: katalog dari foto |
-| Redis, BullMQ, WebSocket, worker | Tidak dibutuhkan untuk skala ini |
+| Katalog produk | Ibu belum pernah mencatat snack sama sekali. Katalog jadi gerbang sebelum manfaat pertama terasa |
+| Stok, kulakan per item, produk terlaris | Tidak ada satu pun yang ibu lacak |
+| Untung dengan modal barang terjual (COGS) | Tanpa katalog dan stok, tidak ada dasarnya |
+| Order jahit: ukuran, DP, deadline, status | Yang ibu tulis cuma tanggal + jenis + harga |
+| Barcode, kasir, struk | Tidak ada satu pun di bukunya |
+| Multi-cabang, RBAC | Satu orang |
+| WhatsApp Business API | Berbayar per pesan, perlu verifikasi Meta. Web Push cukup |
+| Redis, BullMQ, WebSocket | Tidak dibutuhkan untuk skala ini |
 
 ---
 
 ## 5. Keputusan UX
 
-Bagian ini yang paling menentukan sukses/gagal. Fitur bisa ditambah kapan saja; kepercayaan pengguna hanya sekali.
+### 5.1 Beranda
 
-### 5.1 Beranda: tiga tombol dan satu angka
+Satu angka besar (masuk hari ini), tiga tombol, lalu **rekap bulan ini**.
 
-```
-┌─────────────────────────────┐
-│  Hari ini masuk             │
-│      Rp 185.000             │   ← angka besar, langsung terlihat
-│  keluar Rp 40.000           │
-├─────────────────────────────┤
-│  ┌───────────────────────┐  │
-│  │   🍪  Jual Snack      │  │   ← tombol besar
-│  └───────────────────────┘  │
-│  ┌───────────────────────┐  │
-│  │   ✂️  Order Jahit     │  │
-│  └───────────────────────┘  │
-│  ┌───────────────────────┐  │
-│  │   💸  Catat Keluar    │  │
-│  └───────────────────────┘  │
-├─────────────────────────────┤
-│  ⚠️ 3 jahitan jatuh tempo   │
-│  ⚠️ Piutang Rp 120.000      │
-└─────────────────────────────┘
-```
+Rekap bulanan naik ke layar pertama, tidak disembunyikan di balik menu laporan. Inilah kegagalan bot WhatsApp sebelumnya: ibu menyerahkan datanya dan tidak pernah menerima apa pun sebagai gantinya.
 
-Tidak ada menu sepuluh item. Tidak ada dashboard analitik di halaman depan. Laporan ada, tapi di lapis kedua — karena yang ibu lakukan tiap hari adalah *mencatat*, bukan *menganalisis*.
+### 5.2 Aturan timbal balik
 
-### 5.2 Layar jual: grid, bukan pencarian
+> **Setiap kali ibu memasukkan sesuatu, dia harus langsung menerima sesuatu.**
 
-Ini titik paling rawan. Katalog per item (yang sudah diputuskan) memberi data yang jauh lebih berguna — produk terlaris, untung per item, stok — tapi juga menambah beban input dibanding sekadar mencatat total. Di situlah kebanyakan pengguna berhenti.
+Minimal: total hari ini dan total bulan ini, terlihat tanpa berpindah layar. Ini berlaku di setiap layar catat, bukan cuma di beranda.
 
-Mitigasinya dirancang eksplisit:
+### 5.3 Mencatat harus lebih ringan daripada menulis
 
-1. **Grid foto, bukan kotak pencarian.** Tap foto = masuk keranjang qty 1. Tap lagi = 2. Tidak perlu mengetik apa pun.
-2. **Urutan otomatis berdasarkan frekuensi.** Produk yang paling sering dijual naik sendiri ke atas. Setelah seminggu, 6 produk teratas menutup sebagian besar penjualan dan semuanya muat di satu layar tanpa scroll.
-3. **Selalu ada jalan keluar.** Tombol "Lainnya" untuk mencatat nominal bebas tanpa memilih produk. Ibu tidak boleh pernah terjebak karena barangnya belum ada di katalog. Barang tak dikenal bisa dirapikan belakangan.
-4. **Setup katalog tidak boleh jadi gerbang.** Aplikasi harus bisa dipakai mencatat sejak menit pertama, dengan katalog kosong.
-5. **Target keras: satu penjualan tercatat dalam < 10 detik**, dari membuka aplikasi sampai selesai.
+Target: **satu catatan selesai di bawah 10 detik.**
 
-### 5.3 Bahasa
+- Pintasan sekali tap untuk yang sering, dengan nominal terakhir sudah terisi
+- Papan angka sendiri, bukan keyboard bawaan yang memakan separuh layar
+- Keterangan bebas, tidak dipecah per barang
+- Kategori sudah dipilihkan dari tombol yang ditekan; ibu tidak memilih dari daftar panjang
+- Tidak pernah ada layar tunggu di jalur mencatat
 
-Bahasa Indonesia sehari-hari. Bukan istilah akuntansi, bukan istilah aplikasi.
+### 5.4 Bahasa
 
 | Jangan | Pakai |
 |---|---|
-| Revenue / Omzet | Uang masuk |
-| Expense | Uang keluar |
-| Receivable / Piutang | Belum bayar |
-| Prive / Owner draw | Ambil buat rumah |
-| Capital injection | Tambah modal |
-| COGS / HPP | Modal barang |
-| Gross profit | Untung |
-| Inventory adjustment | Betulkan stok |
-| Transaction | Catatan |
+| Revenue / Omzet | Masuk |
+| Expense | Keluar |
+| Receivable | Belum bayar |
+| Transfer | Pindah dompet |
+| Balance | Isi dompet |
+| Reconcile | Cocokkan |
 
-Istilah akuntansi boleh muncul di laporan lanjutan nanti, tidak di alur harian.
+Sebutan kategori diambil dari kata yang benar-benar ibu tulis: belanja, listrik, gas, bensin, arisan. Semuanya dikumpulkan di `CATEGORY_LABELS` supaya bisa diganti tanpa menyentuh sisa aplikasi.
 
-### 5.4 Fisik layar
+### 5.5 Fisik layar
 
-- Target sentuh minimal 56px — jari, bukan kursor
-- Ukuran font dasar minimal 18px; angka utama jauh lebih besar
-- Kontras tinggi; aplikasi ini dipakai di ruang yang terangnya tidak menentu
-- Angka rupiah selalu diformat penuh (`Rp 5.000`, bukan `5000`)
-- Papan angka besar untuk input nominal, bukan keyboard biasa
-- Satu layar = satu keputusan
-
-### 5.5 Kepercayaan
-
-- Tidak pernah ada layar loading di jalur mencatat. Tulis lokal dulu, sinkron belakangan.
-- Setiap penyimpanan memberi konfirmasi yang terlihat dan bisa dibatalkan (undo) beberapa detik
-- Menghapus catatan minta konfirmasi dan menyimpan jejak
-- Saldo aplikasi harus bisa dicocokkan dengan uang di laci kapan saja; sediakan fitur "cocokkan kas"
+- Target sentuh minimal 56px
+- Ukuran dasar 18px; angka utama jauh lebih besar
+- Kontras tinggi
+- Rupiah selalu diformat penuh (`Rp 5.000`)
+- Perbesar-cubit **tidak** dimatikan
 
 ---
 
 ## 6. Alur utama
 
-### Jual snack
-
 ```
-Beranda → Jual Snack → tap produk (1..n) → Bayar
-                                            ├─ Tunai → selesai
-                                            ├─ QRIS/transfer → pilih dompet → selesai
-                                            └─ Belum bayar → pilih/ketik nama → jadi piutang
+Catat pemasukan
+  Beranda → Jahit masuk → tap "Potong 30.000"  → selesai
+                        └ atau ketik nominal    → selesai
+
+Catat belanja
+  Beranda → Belanja → nominal → keterangan bebas → selesai
+
+Pindah dompet
+  Dompet → Pindah → dari, ke, nominal → selesai
+        (dua sisi tercatat sekaligus, tidak masuk hitungan penghasilan)
+
+Lihat rekap
+  Beranda → sudah terlihat
+          → ketuk untuk daftar bulanan + total tahunan
 ```
-
-### Terima order jahit
-
-```
-Beranda → Order Jahit → Order Baru
-  → pilih pelanggan (atau tambah baru)
-  → jenis jahitan + harga
-  → ukuran (terisi otomatis kalau pelanggan pernah order)
-  → tanggal janji jadi
-  → DP (boleh 0)
-  → simpan
-        → DP masuk buku kas
-        → order masuk antrean
-        → opsional: share detail order ke WhatsApp pelanggan
-```
-
-### Selesaikan order jahit
-
-```
-Daftar Order → pilih order → Tandai Selesai
-  → opsional: kabari pelanggan via WhatsApp
-  → saat diambil → Terima Pelunasan → masuk buku kas → order ditutup
-```
-
-### Kulakan
-
-```
-Beranda → Catat Keluar → Kulakan
-  → pilih produk + jumlah + total bayar
-  → simpan
-        → stok bertambah
-        → uang keluar tercatat
-        → harga modal produk diperbarui
-```
-
-Satu aksi, tiga akibat. Ini yang tidak bisa dilakukan buku tulis.
-
-### Ambil uang buat rumah
-
-```
-Beranda → Catat Keluar → Ambil buat rumah
-  → nominal → simpan
-        → kas usaha berkurang
-        → TIDAK dihitung sebagai biaya usaha
-        → muncul terpisah di laporan bulanan
-```
-
-Ini yang menjawab masalah "uang usaha dan pribadi campur". Bukan dengan menyuruh ibu disiplin memisahkan dompet, tapi dengan membuat aplikasi mencatat percampurannya secara jujur.
 
 ---
 
 ## 7. Kriteria penerimaan
 
-Diuji terhadap pengguna nyata, bukan checklist:
-
 | # | Kriteria | Cara ukur |
 |---|---|---|
-| 1 | Mencatat satu penjualan < 10 detik | Stopwatch, 10 percobaan, ambil median |
-| 2 | Ibu bisa mencatat penjualan pertama tanpa dibantu | Amati, jangan dibantu, catat di mana dia macet |
-| 3 | Saldo aplikasi cocok dengan uang laci | Hitung uang fisik akhir hari, 7 hari berturut-turut |
-| 4 | Jalan penuh tanpa internet | Mode pesawat, catat 5 transaksi, nyalakan lagi, pastikan tersinkron |
-| 5 | Ibu bisa jawab "siapa yang belum bayar" tanpa buka buku | Tanya langsung |
-| 6 | Ibu tahu jahitan mana jatuh tempo besok | Tanya langsung |
+| 1 | Satu catatan selesai < 10 detik | Stopwatch, 10 percobaan, ambil median |
+| 2 | Ibu mencatat pertama kali tanpa dibantu | Amati, jangan dibantu, catat di mana macet |
+| 3 | Saldo aplikasi cocok dengan isi dompet | Hitung fisik akhir hari, 7 hari berturut |
+| 4 | Jalan penuh tanpa internet | Mode pesawat, catat 5 entri, nyalakan, pastikan tersinkron sekali |
+| 5 | Ibu tahu penghasilannya bulan ini tanpa bertanya | Tanya langsung |
+| 6 | Angka uang dari bapak tidak pernah tercampur ke penghasilan | Periksa rekap |
 | 7 | **Hari ke-30, buku tulis tidak dipakai lagi** | Lihat bukunya |
-
-Nomor 7 adalah satu-satunya metrik yang benar-benar penting. Enam lainnya adalah prasyaratnya.
 
 ---
 
 ## 8. Yang membuat ini gagal
 
-Ditulis di depan supaya bisa diperiksa selama pengerjaan:
-
-1. **Setup katalog jadi gerbang.** Kalau ibu harus memasukkan 40 produk sebelum bisa mencatat apa pun, dia berhenti di produk ke-8. → Mitigasi: aplikasi berguna dengan katalog kosong; ada impor katalog dari foto.
-2. **Terlalu banyak menu.** Tiap menu tambahan menurunkan peluang menemukan yang benar. → Mitigasi: batas keras tiga aksi di beranda.
-3. **Terasa lebih lambat dari buku.** → Mitigasi: offline-first, tidak ada loading di jalur mencatat.
-4. **Angkanya tidak cocok dengan laci.** Sekali saja tidak cocok tanpa penjelasan, kepercayaan hilang. → Mitigasi: piutang & pengambilan pribadi masuk MVP, ada fitur cocokkan kas.
-5. **Saya membangun untuk pasar imajiner, bukan untuk ibu.** Godaan terbesar, karena membangun multi-tenant lebih menarik daripada membuat tombol lebih besar. → Mitigasi: multi-tenant hanya boleh menyentuh lapisan data, tidak boleh menambah satu pun layar di MVP.
+1. **Mengulang kesalahan bot WhatsApp** — menerima catatan tanpa memberi apa pun kembali. → Rekap di layar pertama, timbal balik di setiap layar catat.
+2. **Mencatat terasa lebih berat daripada menulis.** → Pintasan, papan angka sendiri, luring lebih dulu.
+3. **Angkanya tidak cocok dengan dompet.** Sekali tidak cocok tanpa penjelasan, kepercayaan hilang. → Cocokkan dompet, pemindahan berpasangan, pembatalan lunak.
+4. **Dua buku diam-diam tercampur.** Angka penghasilan yang tiba-tiba melonjak karena uang dari bapak ikut terhitung akan langsung terasa salah oleh ibu. → Ditegakkan di peladen, bukan cuma di aplikasi.
+5. **Membangun untuk pasar imajiner.** → Multi-tenant hanya boleh menyentuh lapisan data, tidak menambah satu pun layar di MVP.

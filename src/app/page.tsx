@@ -2,50 +2,72 @@
 
 import { useEffect } from 'react'
 import { useLiveQuery } from 'dexie-react-hooks'
-import { db } from '@/lib/db/local'
-import { summarizeCash } from '@/lib/domain/cash'
-import { buildBoard } from '@/lib/domain/tailor'
+import { db, type LocalCashEntry } from '@/lib/db/local'
+import { summarizeFlow, filterByBook } from '@/lib/domain/cash'
+import { monthOf, monthlyRecap, formatMonth } from '@/lib/domain/recap'
+import { summarizeDebts } from '@/lib/domain/debt'
 import { dayRange, today } from '@/lib/domain/dates'
-import { summarizeReceivables, saleReceivable } from '@/lib/domain/receivable'
 import { fromDb, ZERO } from '@/lib/money'
 import { Uang } from '@/components/Uang'
-import type { CashEntry, Sale, TailorOrder } from '@/lib/domain/types'
+import type { CashEntry, Category, Debt } from '@/lib/domain/types'
 
 /**
  * Beranda.
  *
- * Tiga tombol dan satu angka — batas keras dari docs/02-prd.md §5.1.
- * Tiap menu tambahan menurunkan peluang menemukan yang benar, dan yang
- * ibu lakukan tiap hari adalah *mencatat*, bukan *menganalisis*. Laporan
- * ada, tapi di lapis kedua.
+ * Dua aturan yang membentuknya, keduanya berasal dari catatan ibu:
  *
- * Label dan urutan tombolnya masih hipotesis sampai wawancara lapangan
- * selesai (docs/06-wawancara-lapangan.md). Istilah yang dipakai di sini
- * harus diganti dengan istilah yang ibu pakai sendiri — itu sebabnya
- * semuanya dikumpulkan di satu tempat di bawah, bukan disebar ke
- * seluruh berkas.
+ * **1. Setiap kali ibu memasukkan sesuatu, dia harus langsung menerima
+ * sesuatu.** Percobaan sebelumnya — bot WhatsApp — gagal justru di sini:
+ * ia bisa menerima catatan tapi cuma menjawab "sudah disimpan". Untuk
+ * tahu pemasukan sebulan, ibu tetap harus membuka spreadsheet, dan
+ * akhirnya berhenti memakainya. Jadi total bulan ini muncul di layar
+ * pertama, bukan di balik menu laporan.
+ *
+ * **2. Dua buku, tidak dicampur.** Ibu sudah memisahkan uang hasil
+ * kerjanya dari uang belanja pemberian bapak bertahun-tahun — rekap
+ * bulanan tulisan tangannya secara tegas tidak memasukkan uang dari
+ * bapak. Aplikasi mengikuti pemisahan yang sudah ada.
+ *
+ * Label dan urutan tombol masih perlu diperiksa bersama ibu; semuanya
+ * dikumpulkan di satu tempat di bawah, bukan disebar ke seluruh berkas.
  */
 
 const AKSI = [
   {
-    href: '/jual',
-    ikon: '🍪',
-    judul: 'Jual Snack',
-    warna: 'bg-masuk-soft text-emerald-900',
-  },
-  {
-    href: '/jahit',
+    href: '/catat/jahit',
     ikon: '✂️',
-    judul: 'Order Jahit',
-    warna: 'bg-indigo-100 text-indigo-900',
+    judul: 'Jahit masuk',
+    warna: 'bg-emerald-100 text-emerald-900',
   },
   {
-    href: '/keluar',
-    ikon: '💸',
-    judul: 'Catat Keluar',
-    warna: 'bg-keluar-soft text-red-900',
+    href: '/catat/snack',
+    ikon: '🍪',
+    judul: 'Snack masuk',
+    warna: 'bg-amber-100 text-amber-900',
+  },
+  {
+    href: '/catat/belanja',
+    ikon: '🛒',
+    judul: 'Belanja',
+    warna: 'bg-slate-200 text-slate-900',
   },
 ] as const
+
+function toDomain(row: LocalCashEntry): CashEntry {
+  return {
+    id: row.id,
+    walletId: row.wallet_id,
+    book: row.book,
+    occurredAt: row.occurred_at,
+    direction: row.direction,
+    amount: fromDb(row.amount),
+    kind: row.kind,
+    category: row.category as Category,
+    note: row.note,
+    transferGroupId: row.transfer_group_id,
+    deletedAt: row.deleted_at,
+  }
+}
 
 export default function Beranda() {
   useEffect(() => {
@@ -55,93 +77,51 @@ export default function Beranda() {
   }, [])
 
   const hariIni = today()
-  const ringkasan = useLiveQuery(async () => {
+  const bulanIni = monthOf(new Date())
+
+  const data = useLiveQuery(async () => {
     const { from, to } = dayRange(hariIni)
 
-    const entriHariIni = await db()
-      .cashEntries.where('occurred_at')
-      .between(from, to, true, false)
-      .toArray()
-
-    const kas = summarizeCash(
-      entriHariIni
-        .filter((baris) => !baris.deleted_at)
-        .map(
-          (baris): CashEntry => ({
-            id: baris.id,
-            walletId: baris.wallet_id,
-            occurredAt: baris.occurred_at,
-            direction: baris.direction,
-            amount: fromDb(baris.amount),
-            category: baris.category as CashEntry['category'],
-            note: baris.note,
-          }),
-        ),
+    const semua = (await db().cashEntries.toArray()).map(toDomain)
+    const entriHariIni = semua.filter(
+      (entry) => entry.occurredAt >= from && entry.occurredAt < to,
     )
 
-    const orders = await db().tailorOrders.toArray()
-    const papan = buildBoard(
-      orders.map(
-        (baris): TailorOrder => ({
-          id: baris.id,
-          orderNo: baris.order_no,
-          customerId: baris.customer_id,
-          garmentType: baris.garment_type,
-          price: fromDb(baris.price),
-          paidAmount: fromDb(baris.paid_amount),
-          promisedDate: baris.promised_date,
-          status: baris.status,
-          createdAt: baris.created_at,
-        }),
-      ),
-      hariIni,
+    const utang = (await db().debts.toArray()).map(
+      (row): Debt => ({
+        id: row.id,
+        book: row.book,
+        side: row.side,
+        person: row.person,
+        amount: fromDb(row.amount),
+        paidAmount: fromDb(row.paid_amount),
+        occurredAt: row.occurred_at,
+        note: row.note,
+        settledAt: row.settled_at,
+        deletedAt: row.deleted_at,
+      }),
     )
 
-    const penjualan = await db().sales.toArray()
-    const piutang = summarizeReceivables(
-      (
-        await Promise.all(
-          penjualan.map(async (baris) => {
-            const items = await db().saleItems.where('sale_id').equals(baris.id).toArray()
-            const sale: Sale = {
-              id: baris.id,
-              occurredAt: baris.occurred_at,
-              lines: items.map((item) => ({
-                itemName: item.item_name,
-                productId: item.product_id,
-                qty: item.qty,
-                unitPrice: fromDb(item.unit_price),
-                unitCost: fromDb(item.unit_cost),
-              })),
-              discountAmount: fromDb(baris.discount_amount),
-              paidAmount: fromDb(baris.paid_amount),
-              customerId: baris.customer_id,
-              voidedAt: baris.voided_at,
-            }
-            return saleReceivable(sale, hariIni)
-          }),
-        )
-      ).filter((item) => item !== null),
-    )
-
-    return { kas, papan, piutang }
+    return {
+      usahaHariIni: summarizeFlow(filterByBook(entriHariIni, 'usaha')),
+      rumahHariIni: summarizeFlow(filterByBook(entriHariIni, 'rumah')),
+      rekapUsaha: monthlyRecap(semua, 'usaha'),
+      rekapRumah: monthlyRecap(semua, 'rumah'),
+      piutang: summarizeDebts(utang, 'receivable', hariIni),
+    }
   }, [hariIni])
 
-  const masuk = ringkasan?.kas.totalIn ?? ZERO
-  const keluar = ringkasan?.kas.totalOut ?? ZERO
-  const jatuhTempo =
-    (ringkasan?.papan.overdue.length ?? 0) + (ringkasan?.papan.dueToday.length ?? 0)
-  const piutang = ringkasan?.piutang.total ?? ZERO
+  const masukHariIni = data?.usahaHariIni.income ?? ZERO
+  const bulanUsaha = data?.rekapUsaha.months.find((row) => row.month === bulanIni)
+  const bulanRumah = data?.rekapRumah.months.find((row) => row.month === bulanIni)
+  const piutang = data?.piutang
 
   return (
     <main className="flex flex-1 flex-col gap-4 p-4 pb-8">
       <header className="kartu">
-        <p className="text-sm text-slate-500">Uang masuk hari ini</p>
+        <p className="text-sm text-slate-500">Masuk hari ini</p>
         <p className="text-money text-masuk">
-          <Uang nilai={masuk} />
-        </p>
-        <p className="mt-1 text-slate-600">
-          Keluar <Uang nilai={keluar} className="font-semibold text-keluar" />
+          <Uang nilai={masukHariIni} />
         </p>
       </header>
 
@@ -156,27 +136,33 @@ export default function Beranda() {
         ))}
       </nav>
 
-      {/* Pengingat hanya muncul kalau ada isinya. Penanda kosong yang
-          selalu ada akan berhenti dibaca dalam seminggu. */}
-      {(jatuhTempo > 0 || piutang > 0) && (
-        <section className="flex flex-col gap-2">
-          {jatuhTempo > 0 && (
-            <a href="/jahit" className="kartu flex items-center gap-3 text-tunggu">
-              <span aria-hidden>⏰</span>
-              <span className="font-semibold">
-                {jatuhTempo} jahitan harus jadi hari ini
-              </span>
-            </a>
-          )}
-          {piutang > 0 && (
-            <a href="/utang" className="kartu flex items-center gap-3">
-              <span aria-hidden>📒</span>
-              <span className="font-semibold">
-                Belum bayar <Uang nilai={piutang} />
-              </span>
-            </a>
-          )}
-        </section>
+      {/* Inilah yang hilang dari percobaan sebelumnya, dan yang selama ini
+          ibu hitung sendiri dengan pulpen tiap bulan. */}
+      <section className="kartu">
+        <h2 className="mb-3 text-sm text-slate-500">{formatMonth(bulanIni)}</h2>
+
+        <div className="flex items-baseline justify-between border-b border-slate-100 pb-3">
+          <span className="font-semibold">Penghasilan ibu</span>
+          <span className="text-xl font-bold text-masuk">
+            <Uang nilai={bulanUsaha?.income ?? ZERO} />
+          </span>
+        </div>
+
+        <div className="flex items-baseline justify-between pt-3">
+          <span className="text-slate-600">Belanja rumah</span>
+          <span className="font-semibold text-keluar">
+            <Uang nilai={bulanRumah?.expense ?? ZERO} />
+          </span>
+        </div>
+      </section>
+
+      {piutang && piutang.count > 0 && (
+        <a href="/utang" className="kartu flex items-center gap-3">
+          <span aria-hidden>📒</span>
+          <span className="font-semibold">
+            {piutang.count} orang belum bayar · <Uang nilai={piutang.total} />
+          </span>
+        </a>
       )}
     </main>
   )

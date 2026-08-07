@@ -5,7 +5,7 @@
 -- query — dan satu tabel yang terlewat berarti data satu usaha terlihat
 -- oleh usaha lain.
 --
--- Empat hal yang menentukan benar dan cepatnya, semuanya dipakai di sini:
+-- Empat hal yang menentukan benar dan cepatnya:
 --
 --   1. Policy dibungkus `(select ...)` supaya PostgreSQL mengevaluasinya
 --      sekali sebagai InitPlan. Tanpa itu, fungsinya dipanggil ulang
@@ -13,13 +13,11 @@
 --   2. `with check` ditulis eksplisit, tidak cuma `using`. Untuk policy
 --      `for all`, PostgreSQL sebenarnya memakai ulang `using` sebagai
 --      pemeriksa penulisan kalau `with check` dihilangkan — jadi
---      menuliskannya di sini tidak mengubah perilaku hari ini. Yang
---      dijaga adalah hari nanti: begitu policy ini dipecah menjadi
---      policy per-perintah, atau ada policy `for insert` (yang sama
---      sekali tidak punya `using`), perilaku implisit itu tidak berlaku
---      lagi dan penulisan lintas-tenant jadi terbuka. Menulis maksudnya
---      secara eksplisit membuat kebenarannya tidak bergantung pada
---      seluk-beluk yang mudah terlupakan.
+--      menuliskannya tidak mengubah perilaku hari ini. Yang dijaga adalah
+--      hari nanti: begitu policy ini dipecah per-perintah, atau ada policy
+--      `for insert` (yang tidak punya `using` sama sekali), perilaku
+--      implisit itu tidak berlaku lagi dan penulisan lintas-tenant jadi
+--      terbuka.
 --   3. Setiap kolom yang dipakai policy sudah diindeks di migrasi
 --      sebelumnya — indeks yang hilang adalah penyebab nomor satu RLS
 --      menjadi lambat.
@@ -39,20 +37,15 @@ $$;
 revoke all on function public.current_tenant_ids() from public;
 grant execute on function public.current_tenant_ids() to authenticated;
 
--- Terapkan pola yang sama ke seluruh tabel ber-tenant_id.
---
--- Ditulis sebagai perulangan, bukan disalin dua puluh kali, karena
--- tabel yang policy-nya berbeda sendiri dari yang lain hampir selalu
--- berbeda karena kelalaian — dan kelalaian di sini berarti kebocoran data.
+-- Ditulis sebagai perulangan, bukan disalin sekian kali: tabel yang
+-- policy-nya berbeda sendiri dari yang lain hampir selalu berbeda karena
+-- kelalaian, dan kelalaian di sini berarti kebocoran data.
 do $$
 declare
   target text;
 begin
   foreach target in array array[
-    'wallets', 'products', 'stock_movements', 'customers',
-    'customer_measurements', 'sales', 'sale_items', 'tailor_orders',
-    'tailor_order_sequences', 'purchases', 'purchase_items', 'payments',
-    'cash_entries', 'ai_jobs'
+    'wallets', 'cash_entries', 'quick_entries', 'debts'
   ]
   loop
     execute format('alter table %I enable row level security', target);
@@ -78,7 +71,6 @@ create policy tenant_read on tenants
   to authenticated
   using (id in (select public.current_tenant_ids()));
 
--- Hanya pemilik yang boleh mengubah data toko.
 create policy tenant_update on tenants
   for update
   to authenticated
@@ -110,22 +102,21 @@ create policy membership_self_read on memberships
   to authenticated
   using (user_id = auth.uid());
 
--- Pembuatan tenant dan pengundangan anggota lewat fungsi ber-`security
--- definer` (migrasi berikutnya), bukan `insert` langsung dari klien.
--- Membiarkan klien menulis ke tabel ini berarti membiarkan siapa pun
--- menambahkan dirinya ke tenant orang lain.
+-- Pembuatan tenant lewat fungsi ber-`security definer` di migrasi
+-- berikutnya, bukan `insert` langsung dari klien. Membiarkan klien
+-- menulis ke tabel ini berarti membiarkan siapa pun menambahkan dirinya
+-- ke tenant orang lain.
 
 -- ── Hak akses peran ──────────────────────────────────────────────────────
 
--- Hak tabel dan RLS adalah dua lapis yang berbeda: hak menentukan tabel
--- mana yang boleh disentuh, RLS menentukan baris mana. Keduanya harus
--- diberikan; hak tanpa RLS berarti semua baris terbuka, RLS tanpa hak
--- berarti tidak ada yang bisa dibaca sama sekali.
+-- Hak tabel dan RLS adalah dua lapis berbeda: hak menentukan tabel mana
+-- yang boleh disentuh, RLS menentukan baris mana. Keduanya harus ada;
+-- hak tanpa RLS berarti semua baris terbuka, RLS tanpa hak berarti tidak
+-- ada yang bisa dibaca sama sekali.
 grant select, insert, update, delete on all tables in schema public to authenticated;
 grant usage, select on all sequences in schema public to authenticated;
 grant execute on all functions in schema public to authenticated;
 
--- Tabel dan fungsi yang dibuat migrasi berikutnya ikut terkena.
 alter default privileges in schema public
   grant select, insert, update, delete on tables to authenticated;
 alter default privileges in schema public

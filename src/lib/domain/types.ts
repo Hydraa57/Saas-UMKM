@@ -8,95 +8,147 @@ import type { Rupiah } from '@/lib/money'
 /** Tanggal kalender lokal, `YYYY-MM-DD`. Bukan instan waktu. */
 export type LocalDate = string
 
-export type CashDirection = 'in' | 'out'
+/** Bulan kalender, `YYYY-MM`. */
+export type LocalMonth = string
 
 /**
- * Kategori entri buku kas.
+ * Dua buku.
  *
- * Pembagiannya tidak sembarangan: kategori inilah yang menentukan sebuah
- * pergerakan uang ikut dihitung sebagai untung atau tidak. Lihat
- * `profit.ts` untuk aturannya, dan `cash.ts` untuk arus kasnya.
+ * Ibu memisahkan uang hasil kerjanya sendiri dari uang belanja pemberian
+ * bapak, dan sudah menjalankannya bertahun-tahun — rekap bulanan tulisan
+ * tangannya secara tegas tidak memasukkan uang dari bapak. Aplikasi
+ * mengikuti pemisahan yang sudah ada, bukan mencampurnya lalu memberi
+ * label.
  */
-export type CashCategory =
-  /** Uang masuk dari penjualan barang yang dibayar saat itu juga. */
-  | 'sale'
-  /** Uang masuk dari jasa — DP maupun pelunasan jahitan. */
-  | 'service'
-  /** Pelunasan utang lama. Bukan pendapatan baru. */
-  | 'receivable'
-  /** Uang pribadi dimasukkan ke usaha. Bukan pendapatan. */
-  | 'capital'
-  /** Pemasukan lain yang benar-benar pendapatan. */
-  | 'other_in'
-  /** Kulakan barang dagangan. Jadi persediaan, bukan biaya. */
-  | 'purchase'
-  /** Biaya jalan: listrik, plastik, benang, ongkos. */
-  | 'operational'
-  /** Uang usaha dipakai untuk keperluan pribadi. Bukan biaya. */
-  | 'owner_draw'
-  /** Pengeluaran lain yang benar-benar biaya. */
-  | 'other_out'
+export type Book = 'usaha' | 'rumah'
 
-export const IN_CATEGORIES = [
-  'sale',
-  'service',
-  'receivable',
-  'capital',
-  'other_in',
-] as const satisfies readonly CashCategory[]
+export type EntryKind = 'income' | 'expense' | 'transfer'
+export type Direction = 'in' | 'out'
 
-export const OUT_CATEGORIES = [
-  'purchase',
-  'operational',
-  'owner_draw',
-  'other_out',
-] as const satisfies readonly CashCategory[]
+export type IncomeCategory = 'jahit' | 'snack' | 'dari_bapak' | 'lain'
+export type ExpenseCategory =
+  | 'modal'
+  | 'operasional'
+  | 'belanja'
+  | 'listrik_air'
+  | 'gas'
+  | 'transport'
+  | 'arisan'
+  | 'sekolah'
+  | 'kesehatan'
+  | 'lain'
+export type Category = IncomeCategory | ExpenseCategory | 'pindah'
+
+/**
+ * Kategori yang sah untuk tiap pasangan buku dan jenis.
+ *
+ * Sepadan dengan fungsi `category_fits` di peladen. Keduanya sengaja
+ * ada: peladen menjaga kebenaran data, dan daftar ini yang menyusun
+ * pilihan di layar — supaya kategori yang tidak mungkin tidak pernah
+ * sempat ditawarkan.
+ */
+export const CATEGORIES: Readonly<
+  Record<Book, Readonly<Record<'income' | 'expense', readonly Category[]>>>
+> = {
+  usaha: {
+    income: ['jahit', 'snack', 'lain'],
+    expense: ['modal', 'operasional', 'lain'],
+  },
+  rumah: {
+    income: ['dari_bapak', 'lain'],
+    expense: [
+      'belanja',
+      'listrik_air',
+      'gas',
+      'transport',
+      'arisan',
+      'sekolah',
+      'kesehatan',
+      'lain',
+    ],
+  },
+}
+
+/**
+ * Sebutan yang dipakai di layar.
+ *
+ * Diambil dari kata yang benar-benar ibu tulis di bukunya — "belanja",
+ * "listrik", "gas", "bensin", "arisan" — bukan dari istilah akuntansi.
+ * Ini yang perlu diperiksa ulang bersama ibu; sisa aplikasi tidak perlu
+ * ikut berubah kalau sebutannya diganti.
+ */
+export const CATEGORY_LABELS: Readonly<Record<Category, string>> = {
+  jahit: 'Jahit',
+  snack: 'Snack',
+  dari_bapak: 'Dari Bapak',
+  modal: 'Modal / kulakan',
+  operasional: 'Ongkos usaha',
+  belanja: 'Belanja',
+  listrik_air: 'Listrik & air',
+  gas: 'Gas',
+  transport: 'Bensin & transport',
+  arisan: 'Arisan',
+  sekolah: 'Sekolah',
+  kesehatan: 'Kesehatan',
+  lain: 'Lain-lain',
+  pindah: 'Pindah dompet',
+}
+
+export const BOOK_LABELS: Readonly<Record<Book, string>> = {
+  usaha: 'Uang Usaha',
+  rumah: 'Uang Belanja',
+}
+
+export type WalletKind = 'cash' | 'bank' | 'ewallet'
+
+export interface Wallet {
+  readonly id: string
+  readonly name: string
+  readonly book: Book
+  readonly kind: WalletKind
+  readonly openingBalance: Rupiah
+  readonly isDefault: boolean
+  readonly archivedAt?: string | null
+}
 
 export interface CashEntry {
   readonly id: string
   readonly walletId: string
+  /** Disalin dari dompet saat entri dibuat, supaya riwayat tidak berubah. */
+  readonly book: Book
   readonly occurredAt: string
-  readonly direction: CashDirection
+  readonly direction: Direction
   readonly amount: Rupiah
-  readonly category: CashCategory
+  readonly kind: EntryKind
+  readonly category: Category
   readonly note?: string | null
+  readonly transferGroupId?: string | null
+  readonly deletedAt?: string | null
 }
 
-export interface SaleLine {
-  /** Salinan nama saat transaksi — nama produk boleh berubah nanti. */
-  readonly itemName: string
-  readonly productId?: string | null
-  readonly qty: number
-  readonly unitPrice: Rupiah
-  /** Salinan modal saat transaksi. Inilah yang jadi modal barang terjual. */
-  readonly unitCost: Rupiah
-}
-
-export interface Sale {
+/** Pintasan yang tumbuh sendiri dari pemakaian. Menggantikan katalog produk. */
+export interface QuickEntry {
   readonly id: string
+  readonly book: Book
+  readonly kind: 'income' | 'expense'
+  readonly category: Category
+  readonly label: string
+  readonly defaultAmount: Rupiah
+  readonly useCount: number
+  readonly lastUsedAt?: string | null
+}
+
+export type DebtSide = 'receivable' | 'payable'
+
+export interface Debt {
+  readonly id: string
+  readonly book: Book
+  readonly side: DebtSide
+  readonly person: string
+  readonly amount: Rupiah
+  readonly paidAmount: Rupiah
   readonly occurredAt: string
-  readonly lines: readonly SaleLine[]
-  readonly discountAmount: Rupiah
-  readonly paidAmount: Rupiah
-  readonly customerId?: string | null
-  readonly voidedAt?: string | null
-}
-
-export type TailorStatus =
-  | 'queued'
-  | 'in_progress'
-  | 'done'
-  | 'picked_up'
-  | 'cancelled'
-
-export interface TailorOrder {
-  readonly id: string
-  readonly orderNo: string
-  readonly customerId: string
-  readonly garmentType: string
-  readonly price: Rupiah
-  readonly paidAmount: Rupiah
-  readonly promisedDate?: LocalDate | null
-  readonly status: TailorStatus
-  readonly createdAt: string
+  readonly note?: string | null
+  readonly settledAt?: string | null
+  readonly deletedAt?: string | null
 }

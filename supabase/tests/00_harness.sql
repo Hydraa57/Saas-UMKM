@@ -94,6 +94,8 @@ begin
     when insufficient_privilege
       or check_violation
       or foreign_key_violation
+      or unique_violation
+      or not_null_violation
       or raise_exception then
       raise notice '  ok  %', label;
       return;

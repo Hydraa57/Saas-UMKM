@@ -1,3 +1,9 @@
+> **Sebagian isi dokumen ini sudah tidak berlaku.** Ditulis sebelum melihat
+> catatan ibu, jadi bagian tentang katalog produk, stok, dan order jahit
+> berjangka berangkat dari asumsi yang ternyata keliru. Riset pasar dan
+> riset teknisnya masih berlaku. Yang gugur dan buktinya:
+> [`07-temuan-catatan-ibu.md`](07-temuan-catatan-ibu.md).
+
 # 01 — Riset & Temuan
 
 Dokumen ini merekam apa yang ditemukan dari riset, dan mengapa blueprint awal digeser. Setiap keputusan di dokumen lain merujuk ke sini.

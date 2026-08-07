@@ -1,428 +1,410 @@
--- Jalur tulis: penjualan, kulakan, pembayaran, entri kas manual.
+-- Jalur tulis: entri buku kas, pemindahan antar dompet, utang.
 --
--- Yang paling penting diuji di sini bukan "jalan atau tidak", tapi dua
--- sifat yang kalau rusak akan merusak kepercayaan pengguna tanpa pernah
--- memunculkan pesan error:
+-- Yang paling penting diuji bukan "jalan atau tidak", tapi tiga sifat
+-- yang kalau rusak akan salah tanpa memunculkan pesan error apa pun:
 --
---   1. Idempotensi — pemutaran ulang antrean offline tidak boleh
---      menghasilkan penjualan kedua.
---   2. Kesesuaian buku kas — jumlah entri kas harus selalu bisa
---      dicocokkan dengan uang yang benar-benar berpindah.
+--   1. Idempotensi — pemutaran ulang antrean luring tidak menggandakan.
+--   2. Pemisahan buku — uang dari bapak tidak boleh pernah masuk rekap
+--      penghasilan ibu, karena ibu sendiri memisahkannya bertahun-tahun.
+--   3. Pemindahan bukan penghasilan — uang yang sama pindah tempat tidak
+--      boleh terhitung dua kali.
 
 \set ON_ERROR_STOP on
 
--- Berkas uji berbagi satu database, jadi pengguna yang sama bisa sudah
--- dibuat oleh berkas sebelumnya.
 insert into auth.users (id, email)
-values ('11111111-1111-1111-1111-111111111111', 'ibu@example.com')
+values ('33333333-3333-3333-3333-333333333333', 'ibu2@example.com')
 on conflict (id) do nothing;
 
-select login_as('11111111-1111-1111-1111-111111111111');
+select login_as('33333333-3333-3333-3333-333333333333');
 set role authenticated;
 
-select create_tenant(
-  'cccccccc-0000-0000-0000-000000000001',
-  'Warung Ibu',
-  'toko_jasa',
-  'cccccccc-0000-0000-0000-0000000f0001'
-);
+select create_tenant('cccccccc-0000-0000-0000-000000000001', 'Catatan Ibu');
 
-insert into products (id, tenant_id, name, sell_price, cost_price, stock_qty, min_stock)
-values
-  ('cccccccc-1111-0000-0000-000000000001', 'cccccccc-0000-0000-0000-000000000001',
-   'Biskuit Roma', 5000, 3500, 100, 10),
-  ('cccccccc-1111-0000-0000-000000000002', 'cccccccc-0000-0000-0000-000000000001',
-   'Oreo', 12000, 9000, 50, 5);
+-- Pegang id dompet dalam tabel sementara supaya kasus uji terbaca.
+create temp table w as
+select
+  (select id from wallets where book='usaha' and name='Dompet Jahit')   as jahit,
+  (select id from wallets where book='usaha' and name='Dompet Snack')   as snack,
+  (select id from wallets where book='rumah' and name='Dompet Belanja') as belanja;
 
--- ── Penjualan tunai ──────────────────────────────────────────────────────
+-- ── Pemasukan jahit ──────────────────────────────────────────────────────
 
-select record_sale(
-  p_sale_id     => 'cccccccc-2222-0000-0000-000000000001',
-  p_tenant_id   => 'cccccccc-0000-0000-0000-000000000001',
-  p_items       => '[
-    {"product_id":"cccccccc-1111-0000-0000-000000000001",
-     "item_name":"Biskuit Roma","qty":3,"unit_price":5000,"unit_cost":3500},
-    {"product_id":"cccccccc-1111-0000-0000-000000000002",
-     "item_name":"Oreo","qty":1,"unit_price":12000,"unit_cost":9000}
-  ]'::jsonb,
-  p_wallet_id   => 'cccccccc-0000-0000-0000-0000000f0001',
-  p_paid_amount => 27000
+-- Persis seperti yang ibu tulis di buku: tanggal, jenis, harga.
+select record_entry(
+  p_entry_id  => 'cccccccc-1111-0000-0000-000000000001',
+  p_tenant_id => 'cccccccc-0000-0000-0000-000000000001',
+  p_wallet_id => (select jahit from w),
+  p_kind      => 'income',
+  p_amount    => 30000,
+  p_category  => 'jahit',
+  p_label     => 'Potong'
 );
 
 select assert_eq(
-  (select total_amount from sales where id = 'cccccccc-2222-0000-0000-000000000001'),
-  27000::bigint,
-  'total dihitung ulang di peladen: 3x5000 + 1x12000'
+  (select book from cash_entries where id = 'cccccccc-1111-0000-0000-000000000001'),
+  'usaha',
+  'buku disalin dari dompet, bukan dikirim klien'
 );
 
 select assert_eq(
-  (select stock_qty from products where id = 'cccccccc-1111-0000-0000-000000000001'),
-  97::numeric,
-  'stok berkurang sesuai jumlah terjual'
+  (select direction from cash_entries where id = 'cccccccc-1111-0000-0000-000000000001'),
+  'in',
+  'arah ditentukan jenisnya, bukan dikirim terpisah'
+);
+
+-- ── Pintasan tumbuh sendiri ──────────────────────────────────────────────
+
+select assert_eq(
+  (select use_count from quick_entries where label = 'Potong'), 1,
+  'pintasan lahir dari pencatatan pertama, tanpa layar pengaturan'
+);
+
+select record_entry(
+  p_entry_id  => 'cccccccc-1111-0000-0000-000000000002',
+  p_tenant_id => 'cccccccc-0000-0000-0000-000000000001',
+  p_wallet_id => (select jahit from w),
+  p_kind      => 'income',
+  p_amount    => 35000,
+  p_category  => 'jahit',
+  p_label     => 'Potong'
 );
 
 select assert_eq(
-  (select sold_count from products where id = 'cccccccc-1111-0000-0000-000000000001'),
-  1,
-  'sold_count naik satu per penjualan, bukan per jumlah barang'
+  (select use_count from quick_entries where label = 'Potong'), 2,
+  'pemakaian kedua menaikkan hitungan, bukan membuat pintasan baru'
 );
 
 select assert_eq(
-  (select count(*)::int from stock_movements
-   where source_id = 'cccccccc-2222-0000-0000-000000000001'),
-  2,
-  'setiap baris berproduk menghasilkan satu mutasi stok'
+  (select default_amount from quick_entries where label = 'Potong'),
+  35000::bigint,
+  'nominal terakhir yang menang — harga naik, pintasan ikut'
+);
+
+-- ── Pemasukan snack ──────────────────────────────────────────────────────
+
+-- Snack dicatat nominal saja, tanpa katalog produk. Ibu belum pernah
+-- mencatatnya sama sekali; katalog akan jadi gerbang yang menghentikannya
+-- sebelum manfaat pertama terasa.
+select record_entry(
+  p_entry_id  => 'cccccccc-1111-0000-0000-000000000003',
+  p_tenant_id => 'cccccccc-0000-0000-0000-000000000001',
+  p_wallet_id => (select snack from w),
+  p_kind      => 'income',
+  p_amount    => 5000,
+  p_category  => 'snack'
 );
 
 select assert_eq(
-  (select amount from cash_entries
-   where source_id = 'cccccccc-2222-0000-0000-000000000001' and direction = 'in'),
-  27000::bigint,
-  'uang masuk buku kas sebesar yang dibayar'
+  (select count(*)::int from quick_entries), 1,
+  'entri tanpa keterangan tidak membuat pintasan'
 );
 
-select assert_eq(
-  (select category from cash_entries
-   where source_id = 'cccccccc-2222-0000-0000-000000000001'),
-  'sale',
-  'entri kas penjualan berkategori sale'
+-- ── Buku rumah ───────────────────────────────────────────────────────────
+
+select record_entry(
+  p_entry_id  => 'cccccccc-1111-0000-0000-000000000004',
+  p_tenant_id => 'cccccccc-0000-0000-0000-000000000001',
+  p_wallet_id => (select belanja from w),
+  p_kind      => 'income',
+  p_amount    => 1400000,
+  p_category  => 'dari_bapak'
 );
+
+select record_entry(
+  p_entry_id  => 'cccccccc-1111-0000-0000-000000000005',
+  p_tenant_id => 'cccccccc-0000-0000-0000-000000000001',
+  p_wallet_id => (select belanja from w),
+  p_kind      => 'expense',
+  p_amount    => 42000,
+  p_category  => 'belanja',
+  p_label     => 'syr, tahu, cabe, bensin'
+);
+
+-- Satu entri memuat beberapa barang, persis seperti di buku ibu.
+-- Memaksanya memecah per barang akan lebih lambat daripada bukunya.
+select assert_eq(
+  (select note from cash_entries where id = 'cccccccc-1111-0000-0000-000000000005'),
+  'syr, tahu, cabe, bensin',
+  'keterangan bebas, tidak dipecah per barang'
+);
+
+-- ── Rekap penghasilan ibu ────────────────────────────────────────────────
+
+-- Inilah angka yang selama ini ibu jumlah tangan tiap bulan, dan yang
+-- dia sendiri tegaskan tidak termasuk uang dari bapak.
+select assert_eq(
+  (select coalesce(sum(amount), 0)::bigint from cash_entries
+   where book = 'usaha' and kind = 'income' and deleted_at is null),
+  70000::bigint,
+  'rekap usaha = 30.000 + 35.000 + 5.000, tanpa uang dari bapak'
+);
+
+-- ── Kategori tidak boleh nyasar buku ─────────────────────────────────────
+
+select assert_denied($$
+  select record_entry(
+    p_entry_id  => gen_random_uuid(),
+    p_tenant_id => 'cccccccc-0000-0000-0000-000000000001',
+    p_wallet_id => (select belanja from w),
+    p_kind      => 'income',
+    p_amount    => 30000,
+    p_category  => 'jahit'
+  )
+$$, 'kategori jahit ditolak di buku rumah');
+
+select assert_denied($$
+  select record_entry(
+    p_entry_id  => gen_random_uuid(),
+    p_tenant_id => 'cccccccc-0000-0000-0000-000000000001',
+    p_wallet_id => (select jahit from w),
+    p_kind      => 'expense',
+    p_amount    => 30000,
+    p_category  => 'belanja'
+  )
+$$, 'kategori belanja ditolak di buku usaha');
+
+select assert_denied($$
+  select record_entry(
+    p_entry_id  => gen_random_uuid(),
+    p_tenant_id => 'cccccccc-0000-0000-0000-000000000001',
+    p_wallet_id => (select jahit from w),
+    p_kind      => 'transfer',
+    p_amount    => 1000,
+    p_category  => 'pindah'
+  )
+$$, 'pemindahan harus lewat record_transfer');
 
 -- ── Idempotensi ──────────────────────────────────────────────────────────
 
--- Inilah yang terjadi saat jaringan putus sesudah peladen memproses tapi
--- sebelum balasannya sampai: klien mengirim ulang panggilan yang sama.
-select record_sale(
-  p_sale_id     => 'cccccccc-2222-0000-0000-000000000001',
-  p_tenant_id   => 'cccccccc-0000-0000-0000-000000000001',
-  p_items       => '[
-    {"product_id":"cccccccc-1111-0000-0000-000000000001",
-     "item_name":"Biskuit Roma","qty":3,"unit_price":5000,"unit_cost":3500}
-  ]'::jsonb,
-  p_wallet_id   => 'cccccccc-0000-0000-0000-0000000f0001',
-  p_paid_amount => 27000
-);
-
-select assert_eq(
-  (select count(*)::int from sales where id = 'cccccccc-2222-0000-0000-000000000001'),
-  1,
-  'pemutaran ulang tidak membuat penjualan kedua'
-);
-
-select assert_eq(
-  (select stock_qty from products where id = 'cccccccc-1111-0000-0000-000000000001'),
-  97::numeric,
-  'pemutaran ulang tidak mengurangi stok dua kali'
-);
-
-select assert_eq(
-  (select count(*)::int from cash_entries
-   where source_id = 'cccccccc-2222-0000-0000-000000000001'),
-  1,
-  'pemutaran ulang tidak menggandakan entri kas'
-);
-
--- Sepuluh kali sekalipun.
+-- Kegagalan paling merusak: peladen berhasil memproses, lalu koneksi
+-- putus sebelum balasannya sampai. Klien mengira gagal dan mengirim ulang.
 do $$
 declare i int;
 begin
   for i in 1..10 loop
-    perform record_sale(
-      p_sale_id     => 'cccccccc-2222-0000-0000-000000000001',
-      p_tenant_id   => 'cccccccc-0000-0000-0000-000000000001',
-      p_items       => '[{"product_id":"cccccccc-1111-0000-0000-000000000001",
-                          "item_name":"Biskuit Roma","qty":3,
-                          "unit_price":5000,"unit_cost":3500}]'::jsonb,
-      p_wallet_id   => 'cccccccc-0000-0000-0000-0000000f0001',
-      p_paid_amount => 27000
+    perform record_entry(
+      p_entry_id  => 'cccccccc-1111-0000-0000-000000000001',
+      p_tenant_id => 'cccccccc-0000-0000-0000-000000000001',
+      p_wallet_id => (select jahit from w),
+      p_kind      => 'income',
+      p_amount    => 30000,
+      p_category  => 'jahit',
+      p_label     => 'Potong'
     );
   end loop;
 end;
 $$;
 
 select assert_eq(
-  (select count(*)::int from sales where id = 'cccccccc-2222-0000-0000-000000000001'),
+  (select count(*)::int from cash_entries
+   where id = 'cccccccc-1111-0000-0000-000000000001'),
   1,
-  'sepuluh pemutaran ulang tetap satu penjualan'
-);
-
--- ── Penjualan diutang ────────────────────────────────────────────────────
-
-select record_sale(
-  p_sale_id     => 'cccccccc-2222-0000-0000-000000000002',
-  p_tenant_id   => 'cccccccc-0000-0000-0000-000000000001',
-  p_items       => '[{"product_id":"cccccccc-1111-0000-0000-000000000002",
-                      "item_name":"Oreo","qty":2,
-                      "unit_price":12000,"unit_cost":9000}]'::jsonb,
-  p_wallet_id   => 'cccccccc-0000-0000-0000-0000000f0001',
-  p_paid_amount => 0
+  'sepuluh pemutaran ulang tetap satu entri'
 );
 
 select assert_eq(
-  (select payment_method from sales where id = 'cccccccc-2222-0000-0000-000000000002'),
-  'unpaid',
-  'penjualan tanpa bayar ditandai unpaid'
+  (select use_count from quick_entries where label = 'Potong'), 2,
+  'pemutaran ulang tidak menaikkan hitungan pintasan'
+);
+
+-- ── Pemindahan antar dompet ──────────────────────────────────────────────
+
+-- Uang jahit dipakai belanja. Ini menyeberangi buku, dan tidak boleh
+-- terhitung sebagai penghasilan rumah tangga: uangnya sama, cuma pindah.
+select record_transfer(
+  p_transfer_id => 'cccccccc-2222-0000-0000-000000000001',
+  p_tenant_id   => 'cccccccc-0000-0000-0000-000000000001',
+  p_from_wallet => (select jahit from w),
+  p_to_wallet   => (select belanja from w),
+  p_amount      => 50000,
+  p_note        => 'Buat belanja dapur'
 );
 
 select assert_eq(
   (select count(*)::int from cash_entries
-   where source_id = 'cccccccc-2222-0000-0000-000000000002'),
-  0,
-  'penjualan diutang tidak menghasilkan entri kas — uangnya memang belum masuk'
+   where transfer_group_id = 'cccccccc-2222-0000-0000-000000000001'),
+  2,
+  'pemindahan menghasilkan dua entri berpasangan'
 );
 
 select assert_eq(
-  (select stock_qty from products where id = 'cccccccc-1111-0000-0000-000000000002'),
-  47::numeric,
-  'stok tetap berkurang walau belum dibayar — barangnya sudah keluar'
-);
-
--- ── Pelunasan piutang ────────────────────────────────────────────────────
-
-select record_payment(
-  p_payment_id   => 'cccccccc-3333-0000-0000-000000000001',
-  p_tenant_id    => 'cccccccc-0000-0000-0000-000000000001',
-  p_subject_type => 'sale',
-  p_subject_id   => 'cccccccc-2222-0000-0000-000000000002',
-  p_amount       => 10000,
-  p_wallet_id    => 'cccccccc-0000-0000-0000-0000000f0001'
+  (select coalesce(sum(amount), 0)::bigint from cash_entries
+   where book = 'usaha' and kind = 'income' and deleted_at is null),
+  70000::bigint,
+  'pemindahan tidak menambah penghasilan usaha'
 );
 
 select assert_eq(
-  (select paid_amount from sales where id = 'cccccccc-2222-0000-0000-000000000002'),
-  10000::bigint,
-  'cicilan menambah jumlah terbayar'
+  (select coalesce(sum(amount), 0)::bigint from cash_entries
+   where book = 'rumah' and kind = 'income' and deleted_at is null),
+  1400000::bigint,
+  'pemindahan tidak terhitung sebagai pemasukan rumah'
 );
 
+-- Saldo dompet tetap bergerak, karena uangnya memang berpindah.
 select assert_eq(
-  (select category from cash_entries
-   where source_id = 'cccccccc-2222-0000-0000-000000000002'),
-  'receivable',
-  'pelunasan piutang berkategori receivable, bukan sale — pendapatannya sudah diakui'
+  (select coalesce(sum(case when direction='in' then amount else -amount end), 0)::bigint
+   from cash_entries
+   where wallet_id = (select jahit from w) and deleted_at is null),
+  15000::bigint,
+  'saldo dompet jahit: 30.000 + 35.000 - 50.000'
 );
 
--- Bayar lebih dari sisanya.
-select record_payment(
-  p_payment_id   => 'cccccccc-3333-0000-0000-000000000002',
-  p_tenant_id    => 'cccccccc-0000-0000-0000-000000000001',
-  p_subject_type => 'sale',
-  p_subject_id   => 'cccccccc-2222-0000-0000-000000000002',
-  p_amount       => 50000,
-  p_wallet_id    => 'cccccccc-0000-0000-0000-0000000f0001'
-);
-
-select assert_eq(
-  (select paid_amount from sales where id = 'cccccccc-2222-0000-0000-000000000002'),
-  24000::bigint,
-  'kelebihan bayar tidak membuat paid_amount melampaui total'
-);
-
-select assert_eq(
-  (select amount from payments where id = 'cccccccc-3333-0000-0000-000000000002'),
-  14000::bigint,
-  'hanya sisa tagihan yang tercatat sebagai pembayaran'
-);
-
--- ── Diskon ───────────────────────────────────────────────────────────────
-
-select record_sale(
-  p_sale_id     => 'cccccccc-2222-0000-0000-000000000003',
-  p_tenant_id   => 'cccccccc-0000-0000-0000-000000000001',
-  p_items       => '[{"product_id":"cccccccc-1111-0000-0000-000000000001",
-                      "item_name":"Biskuit Roma","qty":4,
-                      "unit_price":5000,"unit_cost":3500}]'::jsonb,
-  p_wallet_id   => 'cccccccc-0000-0000-0000-0000000f0001',
-  p_paid_amount => 18000,
-  p_discount    => 2000
-);
-
-select assert_eq(
-  (select total_amount from sales where id = 'cccccccc-2222-0000-0000-000000000003'),
-  18000::bigint,
-  'diskon mengurangi total'
-);
-
--- Diskon berlebih: total tidak boleh negatif, karena itu akan membuat
--- penjualan mencatat uang keluar.
-select record_sale(
-  p_sale_id     => 'cccccccc-2222-0000-0000-000000000004',
-  p_tenant_id   => 'cccccccc-0000-0000-0000-000000000001',
-  p_items       => '[{"product_id":"cccccccc-1111-0000-0000-000000000001",
-                      "item_name":"Biskuit Roma","qty":1,
-                      "unit_price":5000,"unit_cost":3500}]'::jsonb,
-  p_wallet_id   => 'cccccccc-0000-0000-0000-0000000f0001',
-  p_paid_amount => 0,
-  p_discount    => 999999
-);
-
-select assert_eq(
-  (select total_amount from sales where id = 'cccccccc-2222-0000-0000-000000000004'),
-  0::bigint,
-  'diskon berlebih dibatasi di subtotal, total tidak negatif'
-);
-
--- ── Jumlah pecahan ───────────────────────────────────────────────────────
-
-select record_sale(
-  p_sale_id     => 'cccccccc-2222-0000-0000-000000000005',
-  p_tenant_id   => 'cccccccc-0000-0000-0000-000000000001',
-  p_items       => '[{"product_id":"cccccccc-1111-0000-0000-000000000001",
-                      "item_name":"Snack timbang","qty":0.25,
-                      "unit_price":30000,"unit_cost":22000}]'::jsonb,
-  p_wallet_id   => 'cccccccc-0000-0000-0000-0000000f0001',
-  p_paid_amount => 7500
-);
-
-select assert_eq(
-  (select total_amount from sales where id = 'cccccccc-2222-0000-0000-000000000005'),
-  7500::bigint,
-  'barang timbang: 0,25 kg x Rp30.000'
-);
-
--- Pembulatan harus sepadan dengan multiplyByQty() di sisi klien.
-select assert_eq(
-  money_round(10000 * 0.3335::numeric), 3335::bigint,
-  'pembulatan peladen sepadan dengan pembulatan klien'
-);
-select assert_eq(
-  money_round(1001 * 0.5::numeric), 501::bigint,
-  'setengah dibulatkan menjauh dari nol'
-);
-select assert_eq(
-  money_round(-1001 * 0.5::numeric), -501::bigint,
-  'pembulatan simetris untuk nilai negatif — retur membatalkan penjualan dengan persis'
-);
-
--- ── Kulakan ──────────────────────────────────────────────────────────────
-
-select record_purchase(
-  p_purchase_id   => 'cccccccc-4444-0000-0000-000000000001',
-  p_tenant_id     => 'cccccccc-0000-0000-0000-000000000001',
-  p_items         => '[{"product_id":"cccccccc-1111-0000-0000-000000000001",
-                        "item_name":"Biskuit Roma","qty":100,"unit_cost":3600}]'::jsonb,
-  p_wallet_id     => 'cccccccc-0000-0000-0000-0000000f0001',
-  p_supplier_name => 'Toko Grosir Pak Har'
-);
-
-select assert_eq(
-  (select total_amount from purchases where id = 'cccccccc-4444-0000-0000-000000000001'),
-  360000::bigint,
-  'total kulakan dihitung dari itemnya'
-);
-
-select assert_eq(
-  (select cost_price from products where id = 'cccccccc-1111-0000-0000-000000000001'),
-  3600::bigint,
-  'harga modal diperbarui ke harga kulakan terakhir'
-);
-
-select assert_eq(
-  (select direction from cash_entries
-   where source_id = 'cccccccc-4444-0000-0000-000000000001'),
-  'out',
-  'kulakan mencatat uang keluar'
-);
-
-select assert_eq(
-  (select category from cash_entries
-   where source_id = 'cccccccc-4444-0000-0000-000000000001'),
-  'purchase',
-  'kulakan berkategori purchase — persediaan, bukan biaya'
-);
-
--- ── Entri kas manual ─────────────────────────────────────────────────────
-
-select record_cash(
-  p_entry_id    => 'cccccccc-5555-0000-0000-000000000001',
-  p_tenant_id   => 'cccccccc-0000-0000-0000-000000000001',
-  p_direction   => 'out',
-  p_amount      => 300000,
-  p_category    => 'owner_draw',
-  p_wallet_id   => 'cccccccc-0000-0000-0000-0000000f0001',
-  p_note        => 'Belanja dapur'
-);
-
-select assert_eq(
-  (select category from cash_entries where id = 'cccccccc-5555-0000-0000-000000000001'),
-  'owner_draw',
-  'ambil buat rumah tercatat sebagai owner_draw'
-);
-
--- Kategori bersumber tidak boleh dibuat manual: buku kas tidak boleh
--- punya baris penjualan yang tidak berpasangan dengan penjualan mana pun.
 select assert_denied($$
-  select record_cash(
-    p_entry_id  => gen_random_uuid(),
-    p_tenant_id => 'cccccccc-0000-0000-0000-000000000001',
-    p_direction => 'in',
-    p_amount    => 1000,
-    p_category  => 'sale',
-    p_wallet_id => 'cccccccc-0000-0000-0000-0000000f0001'
+  select record_transfer(
+    p_transfer_id => gen_random_uuid(),
+    p_tenant_id   => 'cccccccc-0000-0000-0000-000000000001',
+    p_from_wallet => (select jahit from w),
+    p_to_wallet   => (select jahit from w),
+    p_amount      => 1000
   )
-$$, 'kategori sale ditolak di jalur manual');
+$$, 'dompet asal dan tujuan tidak boleh sama');
 
--- Arah dan kategori yang bertentangan ditahan constraint tabel.
-select assert_denied($$
-  insert into cash_entries (id, tenant_id, wallet_id, direction, amount, category)
-  values (gen_random_uuid(), 'cccccccc-0000-0000-0000-000000000001',
-          'cccccccc-0000-0000-0000-0000000f0001', 'out', 1000, 'sale')
-$$, 'entri keluar berkategori sale ditolak constraint');
-
--- ── Pembatalan penjualan ─────────────────────────────────────────────────
-
-select void_sale(
-  'cccccccc-2222-0000-0000-000000000001',
-  'cccccccc-0000-0000-0000-000000000001',
-  'Salah input'
-);
-
-select assert_eq(
-  (select stock_qty from products where id = 'cccccccc-1111-0000-0000-000000000002'),
-  48::numeric,
-  'pembatalan mengembalikan stok'
+-- Pemindahan juga idempoten.
+select record_transfer(
+  p_transfer_id => 'cccccccc-2222-0000-0000-000000000001',
+  p_tenant_id   => 'cccccccc-0000-0000-0000-000000000001',
+  p_from_wallet => (select jahit from w),
+  p_to_wallet   => (select belanja from w),
+  p_amount      => 50000
 );
 
 select assert_eq(
   (select count(*)::int from cash_entries
-   where source_id = 'cccccccc-2222-0000-0000-000000000001' and direction = 'out'),
-  1,
-  'uang yang sudah diterima dikembalikan sebagai entri keluar, bukan dengan menghapus barisnya'
+   where transfer_group_id = 'cccccccc-2222-0000-0000-000000000001'),
+  2,
+  'pemindahan ulang tidak menggandakan'
 );
 
-select assert_eq(
-  (select voided_at is not null from sales
-   where id = 'cccccccc-2222-0000-0000-000000000001'),
-  true,
-  'penjualan ditandai batal, bukan dihapus'
-);
+-- ── Pembatalan ───────────────────────────────────────────────────────────
 
--- Pembatalan juga idempoten.
-select void_sale(
-  'cccccccc-2222-0000-0000-000000000001',
+-- Membatalkan satu sisi pemindahan akan membuat uang seolah lenyap dari
+-- salah satu dompet, jadi keduanya dibatalkan sepasang.
+select delete_entry(
+  (select id from cash_entries
+   where transfer_group_id = 'cccccccc-2222-0000-0000-000000000001'
+   and direction = 'out'),
   'cccccccc-0000-0000-0000-000000000001'
 );
 
 select assert_eq(
   (select count(*)::int from cash_entries
-   where source_id = 'cccccccc-2222-0000-0000-000000000001' and direction = 'out'),
-  1,
-  'pembatalan ulang tidak mengembalikan uang dua kali'
+   where transfer_group_id = 'cccccccc-2222-0000-0000-000000000001'
+     and deleted_at is null),
+  0,
+  'membatalkan satu sisi pemindahan membatalkan keduanya'
 );
 
--- ── Buku kas cocok dengan uang yang berpindah ────────────────────────────
-
--- Pemeriksaan menyeluruh: saldo dompet menurut buku kas harus sama dengan
--- penjumlahan manual seluruh uang yang benar-benar berpindah di atas.
---
---   masuk  : 27.000 (tunai) + 10.000 + 14.000 (piutang)
---            + 18.000 (diskon) + 7.500 (timbang)
---   keluar : 360.000 (kulakan) + 300.000 (ambil rumah) + 27.000 (batal)
 select assert_eq(
-  (select coalesce(sum(case when direction = 'in' then amount else -amount end), 0)::bigint
-   from cash_entries
-   where tenant_id = 'cccccccc-0000-0000-0000-000000000001'),
-  (27000 + 10000 + 14000 + 18000 + 7500 - 360000 - 300000 - 27000)::bigint,
-  'saldo buku kas sama dengan jumlah seluruh uang yang berpindah'
+  (select count(*)::int from cash_entries
+   where transfer_group_id = 'cccccccc-2222-0000-0000-000000000001'),
+  2,
+  'pembatalan lunak: barisnya tetap ada supaya bisa tersinkron'
 );
+
+-- ── Utang & piutang ──────────────────────────────────────────────────────
+
+select record_debt(
+  p_debt_id   => 'cccccccc-3333-0000-0000-000000000001',
+  p_tenant_id => 'cccccccc-0000-0000-0000-000000000001',
+  p_book      => 'usaha',
+  p_side      => 'receivable',
+  p_person    => 'Bu Tetangga',
+  p_amount    => 25000,
+  p_note      => 'Ambil snack dulu'
+);
+
+-- Utang belum menyentuh buku kas: uangnya belum berpindah.
+select assert_eq(
+  (select coalesce(sum(amount), 0)::bigint from cash_entries
+   where book = 'usaha' and kind = 'income' and deleted_at is null),
+  70000::bigint,
+  'utang tidak menambah penghasilan sebelum dibayar'
+);
+
+select pay_debt(
+  p_payment_id => 'cccccccc-4444-0000-0000-000000000001',
+  p_tenant_id  => 'cccccccc-0000-0000-0000-000000000001',
+  p_debt_id    => 'cccccccc-3333-0000-0000-000000000001',
+  p_amount     => 10000,
+  p_wallet_id  => (select snack from w)
+);
+
+select assert_eq(
+  (select paid_amount from debts where id = 'cccccccc-3333-0000-0000-000000000001'),
+  10000::bigint,
+  'cicilan menambah jumlah terbayar'
+);
+
+select assert_eq(
+  (select settled_at is null from debts
+   where id = 'cccccccc-3333-0000-0000-000000000001'),
+  true,
+  'belum lunas selama masih ada sisa'
+);
+
+-- Kategorinya `lain`, bukan `snack`: penghasilannya sudah terjadi saat
+-- barangnya diberikan. Menghitungnya sebagai penjualan baru berarti
+-- rekap bulanan menghitung uang yang sama dua kali.
+select assert_eq(
+  (select category from cash_entries where id = 'cccccccc-4444-0000-0000-000000000001'),
+  'lain',
+  'pelunasan piutang bukan penjualan baru'
+);
+
+-- Bayar melebihi sisa.
+select pay_debt(
+  p_payment_id => 'cccccccc-4444-0000-0000-000000000002',
+  p_tenant_id  => 'cccccccc-0000-0000-0000-000000000001',
+  p_debt_id    => 'cccccccc-3333-0000-0000-000000000001',
+  p_amount     => 99000,
+  p_wallet_id  => (select snack from w)
+);
+
+select assert_eq(
+  (select paid_amount from debts where id = 'cccccccc-3333-0000-0000-000000000001'),
+  25000::bigint,
+  'kelebihan bayar tidak membuat terbayar melampaui utangnya'
+);
+
+select assert_eq(
+  (select amount from cash_entries where id = 'cccccccc-4444-0000-0000-000000000002'),
+  15000::bigint,
+  'hanya sisa utang yang masuk buku kas'
+);
+
+select assert_eq(
+  (select settled_at is not null from debts
+   where id = 'cccccccc-3333-0000-0000-000000000001'),
+  true,
+  'utang ditandai lunas saat tertutup'
+);
+
+-- ── Jumlah harus masuk akal ──────────────────────────────────────────────
+
+select assert_denied($$
+  select record_entry(
+    p_entry_id  => gen_random_uuid(),
+    p_tenant_id => 'cccccccc-0000-0000-0000-000000000001',
+    p_wallet_id => (select jahit from w),
+    p_kind      => 'income',
+    p_amount    => 0,
+    p_category  => 'jahit'
+  )
+$$, 'nominal nol ditolak');
+
+select assert_denied($$
+  insert into cash_entries (id, tenant_id, wallet_id, book, direction,
+                            amount, kind, category)
+  select gen_random_uuid(), 'cccccccc-0000-0000-0000-000000000001',
+         (select jahit from w), 'usaha', 'out', 1000, 'income', 'jahit'
+$$, 'pemasukan berarah keluar ditolak constraint');
+
+select assert_denied($$
+  insert into cash_entries (id, tenant_id, wallet_id, book, direction,
+                            amount, kind, category)
+  select gen_random_uuid(), 'cccccccc-0000-0000-0000-000000000001',
+         (select jahit from w), 'usaha', 'out', 1000, 'transfer', 'pindah'
+$$, 'pemindahan tanpa pasangan ditolak constraint');
 
 reset role;

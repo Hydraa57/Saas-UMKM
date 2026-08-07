@@ -1,80 +1,126 @@
 import { rupiah } from '@/lib/money'
 import type {
-  CashCategory,
+  Book,
   CashEntry,
-  Sale,
-  SaleLine,
-  TailorOrder,
-  TailorStatus,
+  Category,
+  Debt,
+  EntryKind,
+  Wallet,
 } from './types'
 
 /**
- * Pembangun data uji. Hanya dipakai oleh berkas `.test.ts`, tapi disimpan
+ * Pembangun data uji. Hanya dipakai berkas `.test.ts`, tapi disimpan
  * sebagai modul biasa supaya ikut diperiksa `tsc` — data uji yang tidak
- * ikut dicek tipe akan diam-diam melenceng dari skema aslinya.
+ * ikut dicek tipe akan diam-diam melenceng dari skemanya.
  */
 
 let counter = 0
 const nextId = (prefix: string): string => `${prefix}-${++counter}`
 
-export function makeLine(overrides: Partial<SaleLine> = {}): SaleLine {
+export const DOMPET_JAHIT = 'wallet-jahit'
+export const DOMPET_SNACK = 'wallet-snack'
+export const DOMPET_BELANJA = 'wallet-belanja'
+
+export function makeWallet(overrides: Partial<Wallet> = {}): Wallet {
   return {
-    itemName: 'Biskuit Roma',
-    productId: nextId('product'),
-    qty: 1,
-    unitPrice: rupiah(5000),
-    unitCost: rupiah(3500),
+    id: DOMPET_JAHIT,
+    name: 'Dompet Jahit',
+    book: 'usaha',
+    kind: 'cash',
+    openingBalance: rupiah(0),
+    isDefault: true,
+    archivedAt: null,
     ...overrides,
   }
 }
 
-export function makeSale(overrides: Partial<Sale> = {}): Sale {
-  return {
-    id: nextId('sale'),
-    occurredAt: '2026-08-06T03:00:00.000Z', // 10.00 WIB
-    lines: [makeLine()],
-    discountAmount: rupiah(0),
-    paidAmount: rupiah(5000),
-    customerId: null,
-    voidedAt: null,
-    ...overrides,
-  }
+interface EntryOptions {
+  readonly book?: Book
+  readonly kind?: EntryKind
+  readonly walletId?: string
+  readonly occurredAt?: string
+  readonly category?: Category
+  readonly note?: string | null
+  readonly transferGroupId?: string | null
+  readonly deletedAt?: string | null
 }
 
-export function makeEntry(
-  category: CashCategory,
+/** Pemasukan. Arah dan jenisnya ditentukan, tidak perlu diulang tiap kali. */
+export function income(
   amount: number,
-  overrides: Partial<CashEntry> = {},
+  category: Category = 'jahit',
+  options: EntryOptions = {},
 ): CashEntry {
-  const outgoing: readonly CashCategory[] = [
-    'purchase',
-    'operational',
-    'owner_draw',
-    'other_out',
-  ]
   return {
     id: nextId('entry'),
-    walletId: 'wallet-tunai',
-    occurredAt: '2026-08-06T03:00:00.000Z',
-    direction: outgoing.includes(category) ? 'out' : 'in',
+    walletId: options.walletId ?? DOMPET_JAHIT,
+    book: options.book ?? 'usaha',
+    occurredAt: options.occurredAt ?? '2026-08-06T03:00:00.000Z',
+    direction: 'in',
     amount: rupiah(amount),
+    kind: 'income',
     category,
-    note: null,
-    ...overrides,
+    note: options.note ?? null,
+    transferGroupId: null,
+    deletedAt: options.deletedAt ?? null,
   }
 }
 
-export function makeOrder(overrides: Partial<TailorOrder> = {}): TailorOrder {
+export function expense(
+  amount: number,
+  category: Category = 'belanja',
+  options: EntryOptions = {},
+): CashEntry {
   return {
-    id: nextId('order'),
-    orderNo: '2026-0001',
-    customerId: 'customer-1',
-    garmentType: 'Kemeja',
-    price: rupiah(150_000),
-    paidAmount: rupiah(50_000),
-    promisedDate: '2026-08-10',
-    status: 'queued' as TailorStatus,
-    createdAt: '2026-08-01T03:00:00.000Z',
+    id: nextId('entry'),
+    walletId: options.walletId ?? DOMPET_BELANJA,
+    book: options.book ?? 'rumah',
+    occurredAt: options.occurredAt ?? '2026-08-06T03:00:00.000Z',
+    direction: 'out',
+    amount: rupiah(amount),
+    kind: 'expense',
+    category,
+    note: options.note ?? null,
+    transferGroupId: null,
+    deletedAt: options.deletedAt ?? null,
+  }
+}
+
+/** Sepasang entri pemindahan, seperti yang dibuat `record_transfer`. */
+export function transfer(
+  amount: number,
+  from: { walletId: string; book: Book },
+  to: { walletId: string; book: Book },
+  occurredAt = '2026-08-06T03:00:00.000Z',
+): [CashEntry, CashEntry] {
+  const group = nextId('transfer')
+  const base = {
+    kind: 'transfer' as const,
+    category: 'pindah' as const,
+    amount: rupiah(amount),
+    occurredAt,
+    transferGroupId: group,
+    note: null,
+    deletedAt: null,
+  }
+  return [
+    { ...base, id: nextId('entry'), walletId: from.walletId, book: from.book, direction: 'out' },
+    { ...base, id: nextId('entry'), walletId: to.walletId, book: to.book, direction: 'in' },
+  ]
+}
+
+export function makeDebt(overrides: Partial<Debt> = {}): Debt {
+  return {
+    id: nextId('debt'),
+    book: 'usaha',
+    side: 'receivable',
+    person: 'Bu Tetangga',
+    amount: rupiah(25_000),
+    paidAmount: rupiah(0),
+    occurredAt: '2026-08-01T03:00:00.000Z',
+    note: null,
+    settledAt: null,
+    deletedAt: null,
     ...overrides,
   }
 }

@@ -1,91 +1,89 @@
 import * as M from '@/lib/money'
 import type { Rupiah } from '@/lib/money'
-import type { CashCategory, CashEntry } from './types'
+import type { Book, CashEntry, Category, Wallet } from './types'
 
 /**
- * Arus kas — menjawab **"uang saya sekarang berapa"**.
+ * Buku kas.
  *
- * Ini sengaja dipisah dari `profit.ts`, yang menjawab pertanyaan
- * berbeda: "usaha saya untung berapa". Di buku tulis ibu kedua
- * pertanyaan itu tercampur jadi satu kolom, dan itulah sumber
- * kebingungannya:
+ * Satu aturan menjelaskan hampir seluruh berkas ini:
  *
- *   - Uang dagangan dipakai belanja dapur → uang berkurang, untung tidak
- *   - Kulakan sekarung → uang berkurang banyak, untung belum berubah
- *   - Tetangga melunasi utang bulan lalu → uang bertambah, untung tidak
+ * > **Pemindahan antar dompet bukan penghasilan dan bukan biaya.**
  *
- * Modul ini menghitung yang pertama. Setiap entri kas ikut, tanpa
- * kecuali — karena semuanya benar-benar menggerakkan uang di laci.
+ * Uang jahit yang dipindahkan untuk belanja dapur bukan pemasukan rumah
+ * tangga — itu uang yang sama, berpindah tempat. Menghitungnya sebagai
+ * pemasukan berarti rekap bulanan menghitungnya dua kali, dan rekap
+ * bulanan adalah satu-satunya angka yang selama ini ibu hitung sendiri.
+ * Kalau angka aplikasi berbeda dari angka yang biasa dia dapat, yang
+ * dia percayai adalah bukunya.
+ *
+ * Saldo dompet tetap bergerak, karena uangnya memang benar-benar pindah.
  */
 
-export interface CashSummary {
-  readonly totalIn: Rupiah
-  readonly totalOut: Rupiah
-  /** totalIn − totalOut. Boleh negatif. */
-  readonly net: Rupiah
-  /** Rincian per kategori, untuk laporan. */
-  readonly byCategory: Readonly<Record<CashCategory, Rupiah>>
-  readonly entryCount: number
+/** Entri yang ikut dihitung: belum dibatalkan. */
+export function isLive(entry: CashEntry): boolean {
+  return !entry.deletedAt
 }
 
-const EMPTY_BY_CATEGORY: Record<CashCategory, Rupiah> = {
-  sale: M.ZERO,
-  service: M.ZERO,
-  receivable: M.ZERO,
-  capital: M.ZERO,
-  other_in: M.ZERO,
-  purchase: M.ZERO,
-  operational: M.ZERO,
-  owner_draw: M.ZERO,
-  other_out: M.ZERO,
+/** Entri yang ikut laporan penghasilan/biaya: bukan pemindahan. */
+export function countsAsFlow(entry: CashEntry): boolean {
+  return isLive(entry) && entry.kind !== 'transfer'
 }
 
-/**
- * Nilai bertanda sebuah entri: positif untuk masuk, negatif untuk keluar.
- * `amount` di skema selalu positif (ada `check (amount > 0)`); arahnya
- * ada di kolom `direction`.
- */
+/** Nilai bertanda: positif untuk masuk, negatif untuk keluar. */
 export function signedAmount(entry: CashEntry): Rupiah {
   return entry.direction === 'in' ? entry.amount : M.negate(entry.amount)
 }
 
-export function summarizeCash(entries: readonly CashEntry[]): CashSummary {
-  const byCategory: Record<CashCategory, Rupiah> = { ...EMPTY_BY_CATEGORY }
-  let totalIn = M.ZERO
-  let totalOut = M.ZERO
+export interface FlowSummary {
+  readonly income: Rupiah
+  readonly expense: Rupiah
+  /** income − expense. Boleh negatif. */
+  readonly net: Rupiah
+  readonly byCategory: ReadonlyMap<Category, Rupiah>
+  readonly entryCount: number
+}
+
+/**
+ * Ringkasan pemasukan dan pengeluaran.
+ *
+ * Pemindahan dilewati. Entri yang dibatalkan dilewati.
+ */
+export function summarizeFlow(entries: readonly CashEntry[]): FlowSummary {
+  const byCategory = new Map<Category, Rupiah>()
+  let income = M.ZERO
+  let expense = M.ZERO
+  let entryCount = 0
 
   for (const entry of entries) {
-    byCategory[entry.category] = M.add(byCategory[entry.category], entry.amount)
-    if (entry.direction === 'in') {
-      totalIn = M.add(totalIn, entry.amount)
+    if (!countsAsFlow(entry)) continue
+    entryCount += 1
+
+    byCategory.set(
+      entry.category,
+      M.add(byCategory.get(entry.category) ?? M.ZERO, entry.amount),
+    )
+
+    if (entry.kind === 'income') {
+      income = M.add(income, entry.amount)
     } else {
-      totalOut = M.add(totalOut, entry.amount)
+      expense = M.add(expense, entry.amount)
     }
   }
 
   return {
-    totalIn,
-    totalOut,
-    net: M.subtract(totalIn, totalOut),
+    income,
+    expense,
+    net: M.subtract(income, expense),
     byCategory,
-    entryCount: entries.length,
+    entryCount,
   }
 }
 
-/**
- * Saldo sebuah dompet.
- *
- * Saldo sengaja **tidak** disimpan sebagai kolom di database. Kolom saldo
- * yang diperbarui setiap transaksi akan melenceng cepat atau lambat —
- * satu sinkronisasi gagal separuh sudah cukup — dan begitu melenceng
- * tidak ada cara memulihkannya, karena tidak ada lagi kebenaran untuk
- * dibandingkan. Saldo turunan selalu bisa dihitung ulang dari nol.
- */
-export function walletBalance(
-  openingBalance: Rupiah,
+export function filterByBook(
   entries: readonly CashEntry[],
-): Rupiah {
-  return M.add(openingBalance, M.sum(entries.map(signedAmount)))
+  book: Book,
+): CashEntry[] {
+  return entries.filter((entry) => entry.book === book)
 }
 
 export function filterByWallet(
@@ -96,20 +94,74 @@ export function filterByWallet(
 }
 
 /**
+ * Saldo sebuah dompet.
+ *
+ * Saldo sengaja **tidak** disimpan sebagai kolom. Kolom saldo yang
+ * diperbarui tiap transaksi akan melenceng cepat atau lambat — satu
+ * sinkronisasi gagal separuh sudah cukup — dan begitu melenceng tidak ada
+ * cara memulihkannya, karena tidak ada lagi kebenaran untuk dibandingkan.
+ * Saldo turunan selalu bisa dihitung ulang dari nol.
+ *
+ * Semua entri hidup ikut, **termasuk pemindahan**: uangnya memang
+ * berpindah dari dompet ini ke dompet lain.
+ */
+export function walletBalance(
+  wallet: Pick<Wallet, 'id' | 'openingBalance'>,
+  entries: readonly CashEntry[],
+): Rupiah {
+  const own = entries.filter(
+    (entry) => entry.walletId === wallet.id && isLive(entry),
+  )
+  return M.add(wallet.openingBalance, M.sum(own.map(signedAmount)))
+}
+
+/** Saldo seluruh dompet dalam satu buku. */
+export function bookBalance(
+  wallets: readonly Wallet[],
+  entries: readonly CashEntry[],
+  book: Book,
+): Rupiah {
+  return M.sum(
+    wallets
+      .filter((wallet) => wallet.book === book && !wallet.archivedAt)
+      .map((wallet) => walletBalance(wallet, entries)),
+  )
+}
+
+/**
  * Selisih antara uang fisik yang dihitung dan saldo menurut aplikasi.
  *
- * Positif berarti uang di laci lebih banyak daripada catatan — biasanya
- * ada penjualan yang belum tercatat. Negatif berarti sebaliknya.
+ * Positif berarti isi dompet lebih banyak daripada catatan — biasanya ada
+ * pemasukan yang belum tercatat. Negatif berarti sebaliknya.
  *
- * Fitur "cocokkan kas" ada karena kriteria penerimaan yang paling keras
- * adalah saldo aplikasi cocok dengan laci. Selisih yang bisa dilihat dan
- * dijelaskan jauh lebih baik daripada selisih yang diam-diam menumpuk
- * sampai ibu berhenti percaya pada angkanya.
+ * Ada karena kriteria penerimaan yang paling keras adalah saldo aplikasi
+ * cocok dengan isi dompet. Selisih yang bisa dilihat dan dijelaskan jauh
+ * lebih baik daripada selisih yang diam-diam menumpuk sampai ibu berhenti
+ * percaya pada angkanya.
  */
 export function reconcile(
-  countedCash: Rupiah,
-  expectedBalance: Rupiah,
+  counted: Rupiah,
+  expected: Rupiah,
 ): { readonly difference: Rupiah; readonly matches: boolean } {
-  const difference = M.subtract(countedCash, expectedBalance)
+  const difference = M.subtract(counted, expected)
   return { difference, matches: M.isZero(difference) }
+}
+
+/**
+ * Dua sisi sebuah pemindahan.
+ *
+ * Berguna untuk menampilkannya sebagai satu baris di riwayat, bukan dua
+ * baris yang terlihat seperti uang keluar lalu uang masuk entah dari mana.
+ */
+export function pairTransfer(
+  entries: readonly CashEntry[],
+  transferGroupId: string,
+): { readonly out?: CashEntry; readonly in?: CashEntry } {
+  const pair = entries.filter(
+    (entry) => entry.transferGroupId === transferGroupId,
+  )
+  return {
+    out: pair.find((entry) => entry.direction === 'out'),
+    in: pair.find((entry) => entry.direction === 'in'),
+  }
 }
