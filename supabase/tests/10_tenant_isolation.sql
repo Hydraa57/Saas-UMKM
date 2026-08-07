@@ -30,14 +30,46 @@ select assert_eq(
 -- punya satu tempat uang, dan membuatkan beberapa dompet di awal memaksa
 -- pengguna memilih sesuatu yang belum dia butuhkan.
 select assert_eq(
-  (select count(*)::int from wallets), 1,
+  (select count(*)::int from wallets
+   where tenant_id = 'aaaaaaaa-0000-0000-0000-000000000001'),
+  1,
   'satu dompet bawaan, bukan beberapa'
 );
 
 select assert_eq(
-  (select default_book is null from wallets),
+  (select bool_and(default_book is null) from wallets
+   where tenant_id = 'aaaaaaaa-0000-0000-0000-000000000001'),
   true,
   'dompet bawaan tidak terikat buku mana pun'
+);
+
+-- ID dompet dikirim perangkat, bukan dibuat peladen. Kalau berbeda,
+-- entri pertama yang menyusul akan menunjuk dompet yang tidak ada di
+-- sini dan gagal karena kunci asing — tepat setelah pengguna mengira
+-- catatannya sudah aman.
+select create_tenant(
+  'aaaaaaaa-0000-0000-0000-000000000002', 'Usaha Dengan Dompet Kiriman',
+  'jasa', true, 'aaaaaaaa-dddd-0000-0000-000000000001'
+);
+
+select assert_eq(
+  (select count(*)::int from wallets
+   where id = 'aaaaaaaa-dddd-0000-0000-000000000001'),
+  1,
+  'peladen memakai ID dompet yang dikirim perangkat'
+);
+
+-- Dan entri yang menyusul benar-benar bisa memakainya.
+select record_entry(
+  gen_random_uuid(), 'aaaaaaaa-0000-0000-0000-000000000002',
+  'aaaaaaaa-dddd-0000-0000-000000000001', 'usaha', 'income', 15000, 'jasa'
+);
+
+select assert_eq(
+  (select count(*)::int from cash_entries
+   where wallet_id = 'aaaaaaaa-dddd-0000-0000-000000000001'),
+  1,
+  'entri pertama dari perangkat langsung diterima peladen'
 );
 
 select assert_denied($$
@@ -49,12 +81,16 @@ $$, 'tidak boleh ada dua dompet bawaan');
 -- Pintasan awal disemai sesuai jenis usaha supaya hari pertama tidak
 -- kosong sama sekali.
 select assert_eq(
-  (select count(*)::int from quick_entries where book = 'usaha'), 3,
+  (select count(*)::int from quick_entries
+   where book = 'usaha' and tenant_id = 'aaaaaaaa-0000-0000-0000-000000000001'),
+  3,
   'jenis usaha campuran disemai pintasan barang sekaligus jasa'
 );
 
 select assert_eq(
-  (select count(*)::int from quick_entries where book = 'rumah'), 2,
+  (select count(*)::int from quick_entries
+   where book = 'rumah' and tenant_id = 'aaaaaaaa-0000-0000-0000-000000000001'),
+  2,
   'buku rumah disemai pintasan belanja dan transportasi'
 );
 

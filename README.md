@@ -50,7 +50,7 @@ Percobaan itu juga meninggalkan bukti berharga: ibu bersedia mencatat lewat apli
 
 ## Status
 
-Fondasi selesai dan teruji. Yang tersisa: layar-layar catat.
+Alur pokoknya sudah jalan: pengaturan awal → catat → lihat rekap. Diuji di peramban sungguhan, bukan cuma di tes unit.
 
 | Selesai | Tes |
 |---|---|
@@ -60,9 +60,12 @@ Fondasi selesai dan teruji. Yang tersisa: layar-layar catat.
 | Rekap bulanan & total tahunan | 14 |
 | Utang & piutang | 17 |
 | Antrean kirim luring + penggolongan kegagalan | 30 |
-| Skema, RLS, jalur tulis (PostgreSQL sungguhan) | 51 |
+| Aksi tulis (tulis lokal + antre, tanpa menunggu jaringan) | 27 |
+| Skema, RLS, jalur tulis (PostgreSQL sungguhan) | 53 |
 
-Belum ada: layar catat pemasukan/pengeluaran, layar rekap, autentikasi.
+Layar yang sudah ada: pengaturan awal, beranda (pemilih buku + rekap bulan berjalan), catat pemasukan, catat pengeluaran.
+
+Belum ada: autentikasi, penarikan data dari peladen, layar rekap bulanan penuh, dompet & pemindahan, utang.
 
 ## Dokumen
 
@@ -88,10 +91,15 @@ npm run dev
 ### Pengujian
 
 ```bash
-npm test          # 145 tes unit
+npm test          # 172 tes unit
 npm run typecheck
-npm run db:test   # 51 penegasan: migrasi, RLS, jalur tulis
+npm run db:test   # 53 penegasan: migrasi, RLS, jalur tulis
+
+npm run build && npx next start -p 3311 &
+npm run smoke     # alur nyata di peramban sungguhan
 ```
+
+`npm run smoke` menangkap hal yang tidak bisa ditangkap tes unit. Dua bug UX pertama — pilihan buku yang hilang saat kembali dari mencatat, dan ikon PWA yang tidak ada — lolos dari seluruh tes unit dan baru ketahuan di sana.
 
 `db:test` butuh cluster PostgreSQL lokal, sekali siapkan:
 

@@ -100,6 +100,19 @@ export interface MetaRow {
   value: unknown
 }
 
+export const TENANT_KEY = 'tenant_id'
+export const HOUSEHOLD_KEY = 'household_book'
+
+/**
+ * Buku yang terakhir dipilih.
+ *
+ * Disimpan supaya pilihannya bertahan saat pengguna pergi mencatat lalu
+ * kembali. Kalau tidak, dia memilih "Rumah Tangga", mencatat belanja,
+ * kembali ke beranda, dan melihat buku usaha — catatannya tidak ada di
+ * situ, dan yang paling wajar disimpulkan adalah catatannya hilang.
+ */
+export const ACTIVE_BOOK_KEY = 'active_book'
+
 export class LocalDatabase extends Dexie {
   wallets!: EntityTable<LocalWallet, 'id'>
   cashEntries!: EntityTable<LocalCashEntry, 'id'>

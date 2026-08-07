@@ -63,7 +63,7 @@ export function PapanAngka({ nilai, onChange, pintasan = [] }: PapanAngkaProps) 
               className="min-h-touch rounded-xl bg-slate-200 px-5 font-semibold
                          text-slate-800 active:bg-slate-300"
             >
-              {M.formatCompact(M.rupiah(jumlah))}
+              {M.format(M.rupiah(jumlah))}
             </button>
           ))}
         </div>

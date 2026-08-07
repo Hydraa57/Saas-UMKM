@@ -45,11 +45,19 @@ $$;
 
 -- ── Pembuatan tenant ─────────────────────────────────────────────────────
 
+-- `p_wallet_id` dikirim perangkat, tidak dibuat di sini.
+--
+-- Pengaturan awal dikerjakan di perangkat lebih dulu supaya pencatatan
+-- bisa langsung jalan tanpa sinyal. Kalau peladen membuat ID dompetnya
+-- sendiri, entri pertama yang menyusul akan menunjuk dompet yang tidak
+-- ada di sana — dan gagal karena kunci asing, tepat setelah pengguna
+-- mengira catatannya sudah aman.
 create or replace function create_tenant(
   p_tenant_id      uuid,
   p_name           text,
   p_business_type  text default 'lainnya',
-  p_household_book boolean default true
+  p_household_book boolean default true,
+  p_wallet_id      uuid default null
 )
 returns uuid
 language plpgsql
@@ -81,7 +89,10 @@ begin
   -- berhenti sebelum manfaat pertama terasa. Yang sudah memisahkan
   -- uangnya tinggal menambah dompet sendiri; buku tetap jalan tanpa itu.
   insert into wallets (id, tenant_id, name, kind, is_default, sort_order)
-  values (gen_random_uuid(), p_tenant_id, 'Dompet Utama', 'tunai', true, 1);
+  values (
+    coalesce(p_wallet_id, gen_random_uuid()),
+    p_tenant_id, 'Dompet Utama', 'tunai', true, 1
+  );
 
   perform seed_quick_entries(p_tenant_id, p_business_type, p_household_book);
 

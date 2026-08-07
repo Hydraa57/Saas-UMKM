@@ -1,8 +1,9 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect } from 'react'
 import { useLiveQuery } from 'dexie-react-hooks'
 import { db, type LocalCashEntry } from '@/lib/db/local'
+import { setActiveBook, useApp } from '@/lib/useApp'
 import { summarizeFlow, filterByBook, totalBalance } from '@/lib/domain/cash'
 import { monthOf, monthlyRecap, formatMonth } from '@/lib/domain/recap'
 import { summarizeDebts } from '@/lib/domain/debt'
@@ -57,7 +58,14 @@ function toEntry(row: LocalCashEntry): CashEntry {
 }
 
 export default function Beranda() {
-  const [buku, setBuku] = useState<Book>('usaha')
+  const { tenantId, householdBook, activeBook, ready } = useApp()
+
+  // Sumber kebenarannya di IndexedDB, bukan di state komponen — pilihan
+  // buku harus bertahan saat pengguna pergi mencatat lalu kembali.
+  const buku: Book = activeBook
+  const setBuku = (pilihan: Book) => {
+    void setActiveBook(pilihan)
+  }
 
   useEffect(() => {
     if ('serviceWorker' in navigator) {
@@ -118,12 +126,37 @@ export default function Beranda() {
   const bulan = rekap.months.find((row) => row.month === bulanIni)
   const piutang = data?.piutang
 
+  if (!ready) {
+    return <main className="flex-1 p-4" aria-busy="true" />
+  }
+
+  if (!tenantId) {
+    return (
+      <main className="flex flex-1 flex-col justify-center gap-5 p-4">
+        <div>
+          <h1 className="text-xl font-bold">Catatan Usaha</h1>
+          <p className="mt-1 text-slate-600">
+            Catat uang masuk dan keluar, tanpa tercampur uang rumah.
+          </p>
+        </div>
+        <a href="/mulai" className="btn-aksi justify-center bg-slate-900 text-white">
+          Mulai
+        </a>
+      </main>
+    )
+  }
+
   return (
     <main className="flex flex-1 flex-col gap-4 p-4 pb-8">
       {/* Buku dipilih di sini, bukan ditebak dari dompet — supaya pengguna
           berdompet tunggal tetap bisa memisahkan uang usaha dari uang
-          rumah tangga. */}
-      <div role="tablist" className="flex gap-2 rounded-2xl bg-slate-200 p-1">
+          rumah tangga. Disembunyikan kalau buku rumah dimatikan: pemilih
+          dengan satu pilihan cuma menambah ruang tanpa menambah apa pun. */}
+      <div
+        role="tablist"
+        hidden={!householdBook}
+        className="flex gap-2 rounded-2xl bg-slate-200 p-1"
+      >
         {(['usaha', 'rumah'] as const).map((pilihan) => (
           <button
             key={pilihan}
