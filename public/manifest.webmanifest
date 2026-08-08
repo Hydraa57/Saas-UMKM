@@ -1,7 +1,7 @@
 {
-  "name": "Catatan Usaha",
-  "short_name": "Catatan",
-  "description": "Catat jualan, jasa, dan uang usaha dalam satu buku.",
+  "name": "Kasir Usaha",
+  "short_name": "Kasir",
+  "description": "Layani pembeli, cetak struk — pembukuan dan stok terisi sendiri.",
   "start_url": "/",
   "display": "standalone",
   "orientation": "portrait",

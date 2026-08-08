@@ -1,33 +1,32 @@
-> **Ditulis ulang setelah melihat catatan ibu.** Versi sebelumnya punya
-> `products`, `sale_items`, `stock_movements`, `purchases`,
-> `tailor_orders`, dan `customer_measurements` — semuanya dibangun untuk
-> mencatat hal yang ternyata tidak pernah ibu catat. Bukti:
-> [`07-temuan-catatan-ibu.md`](07-temuan-catatan-ibu.md).
+> **Ditulis ulang setelah arah produknya dikoreksi.** Versi sebelumnya
+> punya satu tabel transaksi (`cash_entries`) dan `quick_entries` sebagai
+> pengganti katalog, dengan kolom `book` untuk memisahkan uang usaha dari
+> uang rumah tangga. Alasan perubahannya di
+> [`08-posisi-produk.md`](08-posisi-produk.md) §1 dan §7.
 
 # 03 — Data Model
 
 ## 1. Prinsip
 
-**1. Buku kas adalah satu-satunya tabel transaksi.**
-Yang benar-benar ada di buku tulis UMKM: tanggal, keterangan, nominal. Tidak lebih. Setiap tabel tambahan adalah satu layar setup yang harus dilewati sebelum manfaat pertama terasa.
+**1. Barang dan jasa satu tabel, dibedakan constraint.**
+Di layar kasir keduanya hal yang sama: sesuatu yang dijual, punya nama dan harga, diketuk untuk masuk keranjang. Satu-satunya bedanya — **barang punya stok, jasa tidak** — ditegakkan di lapisan data, bukan diserahkan ke kedisiplinan kode.
 
-**2. Dompet dan buku tegak lurus.**
-Dompet menjawab "uangnya ada di mana" — itu soal saldo. Buku menjawab "kegiatan mana yang menghasilkan atau menghabiskannya" — itu soal laporan.
-
-Keduanya sengaja tidak diikat. [73% UMKM Indonesia belum memisahkan keuangan usaha dan pribadi](https://journal.unespadang.ac.id/jaaip/article/view/596), dan mayoritas usaha mikro cuma punya satu rekening untuk keduanya. Kalau buku ditentukan oleh dompet, mereka harus mengarang dompet palsu sebelum bisa memakai fitur intinya sama sekali.
-
-Pasangan buku dan kategori ditegakkan di peladen, bukan cuma di aplikasi — satu perangkat dengan versi lama sudah cukup untuk mencampurnya, dan begitu tercampur, rekap bulanan jadi salah tanpa terlihat salah.
+**2. Satu ketukan "Bayar", satu operasi atomik.**
+Penjualan, barisnya, mutasi stok, entri kas, dan piutang ditulis bersama-sama atau tidak sama sekali. Koneksi yang putus di tengah — hal biasa di HP — akan meninggalkan penjualan tanpa entri kas, atau stok yang berkurang tanpa penjualannya, kalau ditulis terpisah. Aplikasi kasir yang angkanya tidak cocok dengan laci kehilangan kepercayaan penggunanya untuk seterusnya.
 
 **3. Uang disimpan sebagai `bigint` rupiah utuh.**
 Di TypeScript nilainya dipetakan ke `number` bertanda merek, bukan `bigint` JavaScript — lihat `src/lib/money.ts` untuk alasannya. Yang membuatnya aman adalah invarian yang dipaksakan di setiap titik masuk: selalu bilangan bulat, selalu di bawah batas aman.
 
 **4. Primary key `uuid` dibuat di perangkat.**
-Konsekuensi langsung dari luring-lebih-dulu. Kalau pengguna mencatat tanpa sinyal, barisnya butuh ID sekarang juga.
+Konsekuensi langsung dari luring-lebih-dulu. Pembeli tidak bisa disuruh menunggu sinyal untuk menerima struknya, jadi barisnya butuh ID sekarang juga — termasuk nomor struknya.
 
 **5. Riwayat tidak berubah karena master datanya diubah.**
-`book` melekat di entri, bukan dibaca lewat join ke dompet. Kalau sebuah dompet nanti diganti perannya, laporan bulan lalu harus tetap seperti waktu itu.
+`sale_items` menyimpan salinan nama, harga jual, dan harga modal saat transaksi. Harga naik dan nama diperbaiki; struk bulan lalu harus tetap seperti waktu itu. Karena itu juga barang **diarsipkan, bukan dihapus.**
 
-**6. `tenant_id` di setiap tabel sejak hari pertama.**
+**6. Stok adalah turunan yang dijaga, bukan angka yang diketik.**
+`items.stock_qty` selalu berpasangan dengan satu baris di `stock_movements`. Angka stok yang bisa disetel langsung dari formulir katalog adalah angka yang tidak bisa dijelaskan asalnya.
+
+**7. `tenant_id` di setiap tabel sejak hari pertama.**
 Meski UI-nya satu pengguna.
 
 ---
@@ -39,109 +38,142 @@ auth.users
     │
     └─▶ memberships ──▶ tenants
                             │
-        ┌───────────────────┼──────────────────┐
-        ▼                   ▼                  ▼
-     wallets          quick_entries          debts
-   (uang di mana)    (tumbuh sendiri)   (tidak menyentuh kas
-        │                   │            sampai uang berpindah)
-        │                   │                  │
-        └───────────▶ cash_entries ◀───────────┘
-                   (buku melekat di sini)
-                     satu-satunya tabel
-                     transaksi
+        ┌───────────────────┴──────────┬────────────────┐
+        ▼                              ▼                ▼
+     wallets                        items            sale_sequences
+   (uang di mana)         (barang: punya stok        (nomor struk
+        │                  jasa : tidak punya)        per tahun)
+        │                        │
+        │            ┌───────────┼───────────┐
+        │            ▼           ▼           ▼
+        │       sale_items  stock_movements  purchase_items
+        │            │           │                │
+        │            ▼           │                ▼
+        │         sales ─────────┘            purchases
+        │            │                            │
+        └──▶ cash_entries ◀──────────────────────┘
+                     ▲
+                   debts
+        (tidak menyentuh kas sampai uang berpindah)
 ```
 
-Lima tabel. Versi sebelumnya punya lima belas.
+Sebelas tabel. Bertambah dari lima, dan tiap tambahan menjawab satu hal yang tidak bisa dijawab satu tabel transaksi: apa yang dijual, berapa sisanya, dan apa isi struknya.
 
 ---
 
 ## 3. Tabel
 
-### `wallets`
+### `items` — jantung pembedanya
 
-Tempat uang berada: laci, amplop, rekening, e-wallet. Menentukan saldo — **bukan** menentukan buku.
+```sql
+kind        text    not null check (kind in ('barang', 'jasa'))
+stock_qty   numeric(12,3)          -- kosong untuk jasa
+min_stock   numeric(12,3)          -- kosong untuk jasa
 
-`default_book` boleh kosong, dan memang kosong untuk pengguna yang dompetnya cuma satu. Isinya sekadar usulan untuk mengisi layar catat, bukan aturan.
+constraint stock_only_for_goods check (
+  (kind = 'barang') = (stock_qty is not null)
+)
+constraint min_stock_follows_stock check (
+  (stock_qty is null) = (min_stock is null)
+)
+```
 
-Satu dompet dibuat otomatis saat tenant dibuat. Tanpa itu, pencatatan pertama gagal karena tidak ada wadah untuk uangnya — dan itu terjadi persis di menit paling menentukan. Sengaja cuma satu: membuatkan beberapa dompet di awal memaksa pengguna memilih sesuatu yang belum dia butuhkan.
+Constraint pertama itu inti produk ini. Ia dua arah: barang **wajib** punya stok, jasa **tidak boleh** punya. Bukan stok nol, bukan stok tak terbatas — kolomnya memang kosong, jadi tidak ada yang bisa dikurangi saat jasanya terjual.
 
-### `cash_entries`
+Ditegakkan tiga lapis, karena satu kebocoran saja membuat "Potong celana" bisa dilaporkan habis:
 
-Satu-satunya tabel transaksi.
+| Lapis | Bentuknya |
+|---|---|
+| TypeScript | `Item = Barang \| Jasa`; `stockQty` hanya ada pada `Barang` |
+| RPC | `upsert_item` memaksa `null` untuk jasa, apa pun yang dikirim klien |
+| Tabel | `stock_only_for_goods` |
+
+Kolom lain yang perlu penjelasan:
 
 | Kolom | Catatan |
 |---|---|
-| `wallet_id` | Di mana uangnya berpindah |
-| `book` | Kegiatan mana. Kosong untuk pemindahan antar dompet |
+| `sold_count` | Menentukan urutan grid kasir. Yang sering dijual naik sendiri, tanpa ada yang perlu mengaturnya |
+| `cost_price` | Harga modal. Disimpan sejak sekarang meski laporan untung per barang belum ada — data yang tidak dikumpulkan sejak awal tidak bisa dihitung mundur |
+| `photo_path` | Jalur di Supabase Storage. Blob-nya tetap di perangkat supaya grid kasir terisi penuh tanpa sinyal |
+| `archived_at` | Diarsipkan, bukan dihapus: barangnya sudah muncul di struk lama |
+
+### `sales` + `sale_items`
+
+`sale_items` menyimpan `item_name`, `unit_price`, dan `unit_cost` sebagai salinan, bukan lewat join ke `items`. `item_id` boleh kosong — untuk barang di luar katalog, supaya kasir tidak pernah macet karena ada yang belum sempat didaftarkan.
+
+`invoice_no` diberikan `sale_sequences` per tenant per tahun. Perangkat membuat nomor sementaranya sendiri supaya struk bisa keluar tanpa sinyal; kalau berbeda saat antrean terkirim, yang menang nomor peladen — dan struk yang sudah tercetak tetap sah, karena penjualannya dikenali lewat UUID, bukan lewat nomornya.
+
+`voided_at` untuk pembatalan lunak. Membatalkan mengembalikan stok, membatalkan entri kasnya, dan membatalkan piutangnya.
+
+### `stock_movements`
+
+Satu baris untuk tiap perubahan stok, dengan `reason`: `penjualan`, `kulakan`, `koreksi`, `retur`, `rusak`.
+
+Tanpa tabel ini, stok yang tidak cocok dengan rak tidak bisa ditelusuri — dan angka stok yang tidak bisa dijelaskan akan berhenti dipercaya, lalu berhenti dipakai. Jasa **tidak pernah** menghasilkan baris di sini.
+
+### `cash_entries`
+
+Buku kas. `book` sudah tidak ada lagi — semua yang masuk aplikasi ini adalah uang usaha.
+
+| Kolom | Catatan |
+|---|---|
 | `kind` | `income` / `expense` / `transfer` — hanya dua yang pertama masuk laporan |
 | `direction` | `in` / `out`, ditegakkan sepadan dengan `kind` oleh constraint |
-| `category` | Daftar tertutup; pasangan buku/kategori ditegakkan di jalur tulis |
-| `note` | Keterangan bebas, seperti "syr, tahu, cabe, bensin" |
+| `category` | Daftar tertutup |
+| `source_type` / `source_id` | Dari mana entri ini lahir: `sale`, `purchase`, `debt`, atau `manual` |
 | `transfer_group_id` | Dua sisi pemindahan berbagi nilai ini |
 | `deleted_at` | Penghapusan lunak |
 
-Lima constraint yang menjaga kebenarannya:
-
 ```sql
-book_only_for_flows   -- (kind = 'transfer') = (book is null)
 transfer_needs_group  -- (kind = 'transfer') = (transfer_group_id is not null)
 transfer_category     -- pemindahan selalu berkategori 'pindah'
 income_is_in          -- pemasukan tidak mungkin berarah keluar
 expense_is_out        -- pengeluaran tidak mungkin berarah masuk
 ```
 
-Dua yang paling penting. `book_only_for_flows` membuat pemindahan **secara struktural tidak mungkin** bocor ke laporan mana pun — bukan diandalkan pada penyaringan yang bisa terlupa. Dan `transfer_needs_group`: tanpa itu, satu sisi pemindahan yang gagal tersimpan akan terlihat seperti uang yang lenyap.
+`transfer_needs_group` yang paling penting: tanpa itu, satu sisi pemindahan yang gagal tersimpan akan terlihat seperti uang yang lenyap.
 
-**Kategori adalah daftar tertutup.** Kategori bebas akan berkembang jadi puluhan ejaan untuk hal yang sama ("bensin", "Bensin", "bensin motor"), dan rekap bulanan yang menjumlahkannya berhenti bisa dipercaya. Isinya memakai kata baku dan dipilih supaya cukup umum untuk usaha apa pun.
+**Kategori adalah daftar tertutup.** Kategori bebas akan berkembang jadi puluhan ejaan untuk hal yang sama ("bensin", "Bensin", "bensin motor"), dan rekap bulanan yang menjumlahkannya berhenti bisa dipercaya.
 
-| Buku | Masuk | Keluar |
-|---|---|---|
-| usaha | `penjualan`, `jasa` | `modal`, `operasional`, `upah`, `sewa` |
-| rumah | `gaji`, `pemberian` | `belanja`, `transportasi`, `utilitas`, `komunikasi`, `pendidikan`, `kesehatan`, `sosial`, `angsuran` |
+| Kategori | Dari mana |
+|---|---|
+| `penjualan` | Kasir |
+| `jasa` | Kasir |
+| `modal` | Kulakan |
+| `operasional`, `upah`, `sewa`, `lainnya` | Dicatat manual |
+| `pindah` | Pemindahan antar dompet — tidak masuk laporan |
 
-`lainnya` sah di kedua buku: selalu ada hal yang tidak masuk kategori mana pun, dan pengguna yang terjebak tanpa pilihan akan berhenti mencatat sama sekali.
-
-Pasangannya ditegakkan fungsi `category_fits` di jalur tulis. "Belanja" di buku usaha akan merusak laporan tanpa pernah terlihat salah di layar mana pun.
-
-### `quick_entries`
-
-Menggantikan katalog produk.
-
-Katalog mengharuskan pengguna menyiapkan puluhan barang sebelum bisa mencatat apa pun, dan itu tempat orang berhenti. Tabel ini terisi sendiri: begitu "Potong rambut 15.000" dicatat dua kali, barisnya naik ke atas dan jadi tombol sekali tap.
-
-Beberapa baris disemai saat pendaftaran sesuai jenis usaha, supaya hari pertama tidak kosong sama sekali. Nominalnya nol — itu usulan bentuk catatan, bukan tebakan harga. Yang tidak terpakai tenggelam sendiri karena daftar diurutkan menurut frekuensi.
-
-`default_amount` memakai nominal terakhir, bukan yang pertama: harga naik, dan pintasan yang menawarkan harga lama justru membuat pengguna membetulkannya tiap kali.
+Tiga yang pertama ditolak `record_expense`. Kalau bisa dibuat manual, buku kas akan punya baris kulakan yang tidak berpasangan dengan kulakan mana pun.
 
 ### `debts`
 
-Sengaja kecil dan berdiri sendiri.
+Aturan yang menentukan bentuknya: **sebuah utang tidak menyentuh buku kas sampai uangnya benar-benar berpindah.** Mencatatnya lebih awal akan membuat saldo menunjukkan uang yang belum ada di laci.
 
-Aturan yang menentukan bentuknya: **sebuah utang tidak menyentuh buku kas sampai uangnya benar-benar berpindah.** Mencatatnya lebih awal akan membuat saldo menunjukkan uang yang belum ada di dompet, dan saat itu terjadi penggunanya berhenti percaya pada seluruh angkanya.
+Dibuat otomatis dari struk yang kurang bayar, tapi **hanya kalau nama pembelinya ada.** Piutang tanpa nama tidak bisa ditagih; ia cuma angka yang membuat laporan terlihat salah.
 
-Saat dibayar, entri kasnya berkategori `lainnya` — bukan `penjualan` atau `jasa`. Penghasilannya sudah terjadi saat barang atau jasanya diberikan; menghitungnya sebagai penjualan baru berarti laporan menghitung uang yang sama dua kali.
+Saat dibayar, entri kasnya berkategori `lainnya` — bukan `penjualan`. Penghasilannya sudah terjadi saat barangnya diberikan; menghitungnya sebagai penjualan baru berarti laporan menghitung uang yang sama dua kali.
+
+### `wallets`
+
+Tempat uang berada: laci, rekening, e-wallet. Satu dompet (`Kas Utama`) dibuat saat tenant dibuat — ID-nya **dikirim perangkat**, tidak dibuat peladen: penjualan pertama menunjuk dompet itu, dan ID yang berbeda membuatnya gagal karena kunci asing, tepat setelah pengguna mengira catatannya sudah aman.
 
 ---
 
-## 4. Saldo tidak disimpan
+## 4. Saldo dan stok
 
-Saldo dompet dihitung dari `opening_balance` ditambah seluruh entri hidup di dompet itu.
+Saldo dompet **tidak** disimpan. Dihitung dari `opening_balance` ditambah seluruh entri hidup di dompet itu. Kolom saldo yang diperbarui tiap transaksi akan melenceng cepat atau lambat — satu sinkronisasi gagal separuh sudah cukup — dan begitu melenceng tidak ada kebenaran untuk dibandingkan.
 
-Kolom saldo yang diperbarui tiap transaksi akan melenceng cepat atau lambat — satu sinkronisasi gagal separuh sudah cukup — dan begitu melenceng tidak ada cara memulihkannya, karena tidak ada lagi kebenaran untuk dibandingkan. Saldo turunan selalu bisa dihitung ulang dari nol.
+Stok **disimpan** di `items.stock_qty`, dan itu perbedaan yang disengaja: grid kasir harus menampilkan sisa stok puluhan barang sekaligus, dan menjumlah seluruh riwayat mutasi tiap kali grid digambar terlalu mahal untuk HP kelas bawah. Yang menjaganya tetap benar adalah aturan bahwa setiap perubahan `stock_qty` menulis satu baris `stock_movements` di transaksi yang sama — jadi kalau melenceng, selisihnya bisa ditemukan dan dijelaskan.
 
-Pemindahan **ikut** menggerakkan saldo dompet (uangnya memang pindah) tapi **tidak** masuk laporan — dan itu dijamin constraint, bukan penyaringan.
-
-Tidak ada yang namanya "saldo buku". Uang punya tempat (dompet); buku cuma menggolongkan arusnya. Satu dompet bisa menampung uang usaha dan uang rumah sekaligus — itu keadaan mayoritas usaha mikro.
+**Stok boleh minus.** Angka stok sering tertinggal dari kenyataan, dan menolak penjualan karenanya akan membuat kasir ditinggalkan tepat saat pembeli menunggu.
 
 ---
 
 ## 5. Row Level Security
 
-Sama seperti versi sebelumnya, dan itu bagian yang memang tidak perlu berubah:
-
 - Fungsi bantu `current_tenant_ids()` ber-`security definer`, supaya pengecekan keanggotaan tidak ikut disaring RLS dan tidak menimbulkan rekursi policy
 - Policy dibungkus `(select ...)` supaya dievaluasi sekali sebagai InitPlan, bukan per baris
-- `with check` ditulis eksplisit
+- `with check` ditulis eksplisit. Untuk policy `for all`, PostgreSQL memang memakai ulang `using` sebagai pemeriksa tulis — jadi ini bukan penambal lubang, melainkan penjaga kalau policy per-perintah ditambahkan nanti
 - Setiap kolom yang dipakai policy sudah diindeks
 - Service role key tidak boleh pernah sampai ke sisi klien
 
@@ -153,14 +185,19 @@ Pengujian isolasi punya tiga penjaga untuk tabel yang ditambahkan nanti: setiap 
 
 | Fungsi | Menyentuh |
 |---|---|
-| `create_tenant` | tenant + membership + satu dompet bawaan + pintasan semaian |
-| `record_entry` | satu entri kas (buku dikirim eksplisit) + menaikkan pintasan |
-| `record_transfer` | dua entri kas berpasangan, tanpa buku |
-| `delete_entry` | penghapusan lunak; pemindahan dibatalkan sepasang |
-| `record_debt` | satu utang, tanpa menyentuh kas |
+| `create_tenant` | tenant + membership + dompet bawaan (ID dari perangkat) |
+| `upsert_item` | satu barang/jasa; stok **tidak** ditimpa saat menyunting |
+| `archive_item` | menandai arsip, tidak menghapus |
+| `next_invoice_no` | nomor struk per tenant per tahun |
+| `record_sale` | penjualan + barisnya + mutasi stok (barang saja) + entri kas + piutang |
+| `void_sale` | membatalkan penjualan, mengembalikan stok, membatalkan kas & piutangnya |
+| `record_purchase` | kulakan + mutasi stok + entri kas |
+| `adjust_stock` | selisih hasil hitung fisik + mutasi stok |
+| `record_expense` | satu entri kas; menolak kategori yang lahir dari kasir/kulakan |
+| `record_transfer` | dua entri kas berpasangan |
 | `pay_debt` | entri kas + memperbarui utang |
 
-Semua idempoten terhadap `id` dari perangkat. Ini menutup celah paling merusak: permintaan yang **berhasil** di peladen lalu putus sebelum balasannya sampai. Tanpa itu, klien mengira gagal, mengirim ulang, dan catatannya tercatat dua kali.
+Semua idempoten terhadap `id` dari perangkat. Ini menutup celah paling merusak: permintaan yang **berhasil** di peladen lalu putus sebelum balasannya sampai. Tanpa itu, klien mengira gagal, mengirim ulang, dan penjualannya tercatat dua kali.
 
 Semua `security invoker` supaya RLS tetap berlaku — kecuali `create_tenant`, yang memang berjalan saat keanggotaan belum ada.
 
@@ -170,14 +207,11 @@ Semua `security invoker` supaya RLS tetap berlaku — kecuali `create_tenant`, y
 
 | Tidak dibuat | Alasan |
 |---|---|
-| `products`, `sale_items` | Snack dicatat nominal saja |
-| `stocks`, `stock_movements` | Ibu tidak melacak stok |
-| `purchases`, `purchase_items` | Kulakan cukup satu entri pengeluaran |
-| `tailor_orders`, `customer_measurements` | Yang ibu tulis: tanggal + jenis + harga |
-| `customers` | Nama cukup teks di `debts.person` |
+| `products.variants` | Varian menambah beban input di depan pembeli, untuk kasus yang belum terbukti ada |
+| `customers` | Nama cukup teks di `sales.customer_name` dan `debts.person` |
 | `categories` | Daftar tertutup di constraint; kategori bebas merusak laporan |
 | `payments` | Pembayaran utang langsung jadi entri kas |
+| `tailor_orders`, `customer_measurements` | Yang dicatat cuma nama jasa + harga |
 | `branches`, `roles` | Satu orang, satu tempat |
-| `categories` | Daftar tertutup di constraint |
 | `audit_logs` | Berguna saat multi-user; belum sekarang |
-| `ai_jobs` | Satu-satunya kegunaannya (katalog dari foto) ikut hilang bersama katalognya |
+| `ai_jobs` | Katalog dari foto menarik, tapi bukan yang menahan orang bertahan |

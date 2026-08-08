@@ -2,7 +2,7 @@ import * as M from '@/lib/money'
 import type { Rupiah } from '@/lib/money'
 import { DEFAULT_TIMEZONE, toLocalDate } from './dates'
 import { countsAsFlow } from './cash'
-import type { Book, CashEntry, LocalMonth } from './types'
+import type { CashEntry, LocalMonth } from './types'
 
 /**
  * Rekap bulanan.
@@ -34,7 +34,6 @@ export interface MonthRow {
 }
 
 export interface Recap {
-  readonly book: Book
   readonly months: readonly MonthRow[]
   readonly totalIncome: Rupiah
   readonly totalExpense: Rupiah
@@ -50,7 +49,7 @@ export function monthOf(
 }
 
 /**
- * Rekap per bulan untuk satu buku.
+ * Rekap per bulan.
  *
  * Pemindahan antar dompet tidak ikut — lihat catatan di `cash.ts`.
  * Bulan tanpa transaksi tidak muncul; menampilkan baris nol untuk bulan
@@ -61,7 +60,6 @@ export function monthOf(
  */
 export function monthlyRecap(
   entries: readonly CashEntry[],
-  book: Book,
   timeZone: string = DEFAULT_TIMEZONE,
 ): Recap {
   const buckets = new Map<
@@ -70,7 +68,7 @@ export function monthlyRecap(
   >()
 
   for (const entry of entries) {
-    if (entry.book !== book || !countsAsFlow(entry)) continue
+    if (!countsAsFlow(entry)) continue
 
     const month = monthOf(entry.occurredAt, timeZone)
     const bucket = buckets.get(month) ?? {
@@ -102,7 +100,6 @@ export function monthlyRecap(
   const totalExpense = M.sum(months.map((row) => row.expense))
 
   return {
-    book,
     months,
     totalIncome,
     totalExpense,

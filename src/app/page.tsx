@@ -3,49 +3,47 @@
 import { useEffect } from 'react'
 import { useLiveQuery } from 'dexie-react-hooks'
 import { db, type LocalCashEntry } from '@/lib/db/local'
-import { setActiveBook, useApp } from '@/lib/useApp'
-import { summarizeFlow, filterByBook, totalBalance } from '@/lib/domain/cash'
+import { useApp } from '@/lib/useApp'
+import { summarizeFlow, totalBalance } from '@/lib/domain/cash'
 import { monthOf, monthlyRecap, formatMonth } from '@/lib/domain/recap'
 import { summarizeDebts } from '@/lib/domain/debt'
 import { dayRange, today } from '@/lib/domain/dates'
 import { fromDb, ZERO } from '@/lib/money'
 import { Uang } from '@/components/Uang'
 import {
-  BOOK_LABELS,
-  type Book,
+  isBarang,
   type CashEntry,
   type Category,
   type Debt,
   type Wallet,
 } from '@/lib/domain/types'
+import { toItem } from '@/lib/useApp'
 
 /**
  * Beranda.
  *
- * Dua aturan yang membentuknya:
+ * Tiga aturan yang membentuknya:
  *
- * **1. Setiap kali pengguna memasukkan sesuatu, dia harus langsung
+ * **1. Jalan tercepat ke kasir ada di paling atas.** Aplikasi ini dipakai
+ * saat ada pembeli berdiri di depan meja. Apa pun yang berdiri di antara
+ * membuka aplikasi dan menerima uang adalah beban.
+ *
+ * **2. Setiap kali pengguna memasukkan sesuatu, dia harus langsung
  * menerima sesuatu.** Percobaan sebelumnya — bot WhatsApp — gagal justru
  * di sini: ia bisa menerima catatan tapi cuma menjawab "sudah disimpan".
  * Untuk tahu pemasukan sebulan, penggunanya tetap harus membuka
  * spreadsheet, dan akhirnya berhenti. Jadi rekap bulan ini ada di layar
  * pertama, bukan di balik menu laporan.
  *
- * **2. Dua buku, dipilih di atas, bukan ditebak dari dompet.** Mayoritas
- * usaha mikro cuma punya satu tempat uang. Kalau bukunya ditentukan
- * dompet, mereka tidak bisa memisahkan apa pun.
+ * **3. Yang butuh tindakan muncul sendiri.** Stok menipis dan pembeli
+ * yang belum bayar tidak menunggu dicari — keduanya baru berguna kalau
+ * terlihat sebelum terlambat.
  */
-
-const AKSI = [
-  { href: '/catat/masuk', ikon: '↓', judul: 'Uang Masuk', warna: 'bg-emerald-100 text-emerald-900' },
-  { href: '/catat/keluar', ikon: '↑', judul: 'Uang Keluar', warna: 'bg-red-100 text-red-900' },
-] as const
 
 function toEntry(row: LocalCashEntry): CashEntry {
   return {
     id: row.id,
     walletId: row.wallet_id,
-    book: row.book,
     occurredAt: row.occurred_at,
     direction: row.direction,
     amount: fromDb(row.amount),
@@ -58,14 +56,7 @@ function toEntry(row: LocalCashEntry): CashEntry {
 }
 
 export default function Beranda() {
-  const { tenantId, householdBook, activeBook, ready } = useApp()
-
-  // Sumber kebenarannya di IndexedDB, bukan di state komponen — pilihan
-  // buku harus bertahan saat pengguna pergi mencatat lalu kembali.
-  const buku: Book = activeBook
-  const setBuku = (pilihan: Book) => {
-    void setActiveBook(pilihan)
-  }
+  const { tenantId, businessName, ready } = useApp()
 
   useEffect(() => {
     if ('serviceWorker' in navigator) {
@@ -85,7 +76,6 @@ export default function Beranda() {
         id: row.id,
         name: row.name,
         kind: row.kind,
-        defaultBook: row.default_book,
         openingBalance: fromDb(row.opening_balance),
         isDefault: row.is_default,
         archivedAt: row.archived_at,
@@ -95,11 +85,11 @@ export default function Beranda() {
     const utang = (await db().debts.toArray()).map(
       (row): Debt => ({
         id: row.id,
-        book: row.book,
         side: row.side,
         person: row.person,
         amount: fromDb(row.amount),
         paidAmount: fromDb(row.paid_amount),
+        saleId: row.sale_id,
         occurredAt: row.occurred_at,
         note: row.note,
         settledAt: row.settled_at,
@@ -107,22 +97,36 @@ export default function Beranda() {
       }),
     )
 
-    const hariIniEntries = semua.filter(
-      (entry) => entry.occurredAt >= from && entry.occurredAt < to,
-    )
+    // Stok menipis dihitung di sini, bukan di layar katalog, supaya
+    // peringatannya sampai ke orang yang belum membuka katalog hari ini.
+    const menipis = (await db().items.toArray())
+      .filter((row) => !row.archived_at)
+      .map(toItem)
+      .filter(
+        (item) =>
+          isBarang(item) &&
+          (item.stockQty <= 0 ||
+            (item.minStock > 0 && item.stockQty <= item.minStock)),
+      )
+
+    const strukHariIni = (await db().sales.toArray()).filter(
+      (row) => !row.voided_at && row.occurred_at >= from && row.occurred_at < to,
+    ).length
 
     return {
       semua,
-      hariIniEntries,
+      hariIniEntries: semua.filter(
+        (entry) => entry.occurredAt >= from && entry.occurredAt < to,
+      ),
       saldo: totalBalance(wallets, semua),
       piutang: summarizeDebts(utang, 'receivable', hariIni),
+      menipis,
+      strukHariIni,
     }
   }, [hariIni])
 
-  const hariIniBuku = summarizeFlow(
-    filterByBook(data?.hariIniEntries ?? [], buku),
-  )
-  const rekap = monthlyRecap(data?.semua ?? [], buku)
+  const arus = summarizeFlow(data?.hariIniEntries ?? [])
+  const rekap = monthlyRecap(data?.semua ?? [])
   const bulan = rekap.months.find((row) => row.month === bulanIni)
   const piutang = data?.piutang
 
@@ -134,9 +138,10 @@ export default function Beranda() {
     return (
       <main className="flex flex-1 flex-col justify-center gap-5 p-4">
         <div>
-          <h1 className="text-xl font-bold">Catatan Usaha</h1>
+          <h1 className="text-xl font-bold">Kasir Usaha</h1>
           <p className="mt-1 text-slate-600">
-            Catat uang masuk dan keluar, tanpa tercampur uang rumah.
+            Jual barang dan jasa, cetak struk, stok dan catatannya ikut
+            terisi sendiri.
           </p>
         </div>
         <a href="/mulai" className="btn-aksi justify-center bg-slate-900 text-white">
@@ -148,60 +153,48 @@ export default function Beranda() {
 
   return (
     <main className="flex flex-1 flex-col gap-4 p-4 pb-8">
-      {/* Buku dipilih di sini, bukan ditebak dari dompet — supaya pengguna
-          berdompet tunggal tetap bisa memisahkan uang usaha dari uang
-          rumah tangga. Disembunyikan kalau buku rumah dimatikan: pemilih
-          dengan satu pilihan cuma menambah ruang tanpa menambah apa pun. */}
-      <div
-        role="tablist"
-        hidden={!householdBook}
-        className="flex gap-2 rounded-2xl bg-slate-200 p-1"
-      >
-        {(['usaha', 'rumah'] as const).map((pilihan) => (
-          <button
-            key={pilihan}
-            role="tab"
-            aria-selected={buku === pilihan}
-            onClick={() => setBuku(pilihan)}
-            className={`min-h-touch flex-1 rounded-xl font-semibold transition ${
-              buku === pilihan ? 'bg-white shadow-sm' : 'text-slate-600'
-            }`}
-          >
-            {BOOK_LABELS[pilihan]}
-          </button>
-        ))}
-      </div>
-
       <header className="kartu">
-        <p className="text-sm text-slate-500">
-          {buku === 'usaha' ? 'Masuk hari ini' : 'Keluar hari ini'}
-        </p>
-        <p
-          className={`text-money ${buku === 'usaha' ? 'text-masuk' : 'text-keluar'}`}
-        >
-          <Uang
-            nilai={buku === 'usaha' ? hariIniBuku.income : hariIniBuku.expense}
-          />
+        <p className="text-sm text-slate-500">{businessName} · hari ini</p>
+        <p className="text-money text-masuk">
+          <Uang nilai={arus.income} />
         </p>
         <p className="mt-1 text-slate-600">
-          Uang di tangan{' '}
+          {data?.strukHariIni ?? 0} struk · uang di tangan{' '}
           <Uang nilai={data?.saldo ?? ZERO} className="font-semibold" />
         </p>
       </header>
 
-      <nav className="flex flex-col gap-3">
-        {AKSI.map((aksi) => (
-          <a
-            key={aksi.href}
-            href={`${aksi.href}?buku=${buku}`}
-            className={`btn-aksi ${aksi.warna}`}
-          >
-            <span aria-hidden className="text-3xl">
-              {aksi.ikon}
-            </span>
-            {aksi.judul}
-          </a>
-        ))}
+      {/* Tombol terbesar di layar, dan yang pertama dijangkau ibu jari. */}
+      <a href="/kasir" className="btn-aksi bg-slate-900 text-white">
+        <span aria-hidden className="text-3xl">
+          🧾
+        </span>
+        Kasir
+      </a>
+
+      <nav className="grid grid-cols-2 gap-3">
+        <a
+          href="/katalog"
+          className="flex min-h-touch-lg flex-col justify-center rounded-2xl bg-white
+                     p-4 shadow-sm active:bg-slate-100"
+        >
+          <span aria-hidden className="text-2xl">
+            📦
+          </span>
+          <span className="mt-1 font-semibold">Katalog</span>
+          <span className="text-sm text-slate-500">Barang & jasa</span>
+        </a>
+        <a
+          href="/keluar"
+          className="flex min-h-touch-lg flex-col justify-center rounded-2xl bg-white
+                     p-4 shadow-sm active:bg-slate-100"
+        >
+          <span aria-hidden className="text-2xl">
+            ↑
+          </span>
+          <span className="mt-1 font-semibold">Uang Keluar</span>
+          <span className="text-sm text-slate-500">Belanja & biaya</span>
+        </a>
       </nav>
 
       {/* Yang hilang dari percobaan sebelumnya, dan yang selama ini
@@ -231,13 +224,27 @@ export default function Beranda() {
         </div>
       </section>
 
+      {data && data.menipis.length > 0 && (
+        <a href="/katalog" className="kartu flex items-start gap-3 bg-tunggu-soft text-tunggu">
+          <span aria-hidden>⚠</span>
+          <span className="font-semibold">
+            {data.menipis.length} barang menipis:{' '}
+            {data.menipis
+              .slice(0, 3)
+              .map((item) => item.name)
+              .join(', ')}
+            {data.menipis.length > 3 ? ', …' : ''}
+          </span>
+        </a>
+      )}
+
       {piutang && piutang.count > 0 && (
-        <a href="/utang" className="kartu flex items-center gap-3">
+        <div className="kartu flex items-center gap-3">
           <span aria-hidden>📒</span>
           <span className="font-semibold">
             {piutang.count} orang belum bayar · <Uang nilai={piutang.total} />
           </span>
-        </a>
+        </div>
       )}
     </main>
   )

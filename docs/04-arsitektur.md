@@ -165,6 +165,8 @@ Ibu memeriksa, membetulkan, menyimpan
 
 Alasan ini yang dipilih: pekerjaan setup katalog adalah **penghalang adopsi terbesar** — mengetik 40 produk di HP adalah tempat orang berhenti, sebelum aplikasi sempat memberi manfaat apa pun. AI yang memangkas itu dari satu jam menjadi lima menit mengubah hasil akhirnya. AI yang menulis ide promo tidak.
 
+> Bagian ini sempat dicoret saat produknya berbelok jadi aplikasi pencatat keuangan — tanpa katalog, tidak ada yang bisa dikenali dari foto. Sekarang katalog kembali jadi inti produk, dan bersamanya penghalang adopsi terbesarnya. Tetap **bukan** untuk MVP: gerbang katalog diuji dulu apa adanya di Fase 6, karena kalau ternyata pengguna berhenti bukan karena mengetiknya lama, memangkas waktu mengetik tidak menyelamatkan apa-apa.
+
 Aturan yang menyertainya:
 
 - AI **tidak pernah** menulis langsung ke tabel. Keluarannya masuk ke `ai_jobs`, ditampilkan sebagai usulan, dan ibu yang mengonfirmasi.
@@ -216,27 +218,29 @@ Sumber: [uibakery.io](https://uibakery.io/blog/supabase-pricing), [automationatl
 ```
 src/
   app/
-    (app)/
-      page.tsx                 # beranda: 3 tombol + ringkasan
-      jual/                    # layar jual
-      jahit/                   # order jahit
-      keluar/                  # catat pengeluaran
-      utang/                   # piutang
-      stok/
-      laporan/
-      pengaturan/
-    api/
-      ai/catalog/route.ts
+    page.tsx                   # beranda: masuk hari ini, Kasir, rekap, peringatan
+    mulai/                     # pengaturan awal
+    katalog/                   # daftar barang & jasa
+      baru/                    # tambah / ubah / arsip
+    kasir/                     # grid → keranjang → bayar
+    struk/[id]/                # struk: lihat, kirim WhatsApp, (cetak)
+    keluar/                    # uang keluar manual
   lib/
-    db/                        # skema Dexie + query lokal
+    db/local.ts                # skema Dexie + query lokal
     sync/                      # antrean, pemutaran ulang, tarik inkremental
     supabase/                  # klien + pembungkus RPC
+    actions/pos.ts             # jalur tulis klien: tulis lokal + antre
     money.ts                   # bigint rupiah, format, parse
+    photo.ts                   # pengecilan foto di perangkat
     domain/                    # aturan bisnis murni, tanpa I/O
+      types.ts                 #   Item = Barang | Jasa
+      cart.ts                  #   keranjang, diskon, peringatan stok
+      receipt.ts               #   struk lebar-tetap
+      cash.ts recap.ts debt.ts dates.ts
   components/
 supabase/
   migrations/
-  functions/
+  tests/                       # harness + pengujian SQL tanpa Docker
 ```
 
 `lib/domain/` sengaja dipisah dan bebas I/O: perhitungan untung, saldo, dan sisa bayar adalah tempat kesalahan paling mahal, dan fungsi murni bisa diuji tanpa database.

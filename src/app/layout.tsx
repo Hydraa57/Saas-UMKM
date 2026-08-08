@@ -2,10 +2,10 @@ import type { Metadata, Viewport } from 'next'
 import './globals.css'
 
 export const metadata: Metadata = {
-  title: 'Catatan Usaha',
-  description: 'Catat jualan, jasa, dan uang usaha dalam satu buku.',
+  title: 'Kasir Usaha',
+  description: 'Layani pembeli, cetak struk — pembukuan dan stok terisi sendiri.',
   manifest: '/manifest.webmanifest',
-  appleWebApp: { capable: true, title: 'Catatan Usaha' },
+  appleWebApp: { capable: true, title: 'Kasir Usaha' },
 }
 
 export const viewport: Viewport = {

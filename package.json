@@ -2,7 +2,7 @@
   "name": "nexausaha",
   "version": "0.1.0",
   "private": true,
-  "description": "Aplikasi pencatatan usaha untuk UMKM mikro Indonesia",
+  "description": "Aplikasi kasir untuk UMKM mikro Indonesia yang menjual barang sekaligus menerima jasa",
   "scripts": {
     "dev": "next dev",
     "build": "next build",

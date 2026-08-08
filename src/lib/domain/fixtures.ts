@@ -1,5 +1,15 @@
 import { rupiah } from '@/lib/money'
-import type { Book, CashEntry, Category, Debt, Wallet } from './types'
+import type {
+  Barang,
+  CartLine,
+  CashEntry,
+  Category,
+  Debt,
+  Item,
+  Jasa,
+  Sale,
+  Wallet,
+} from './types'
 
 /**
  * Pembangun data uji. Hanya dipakai berkas `.test.ts`, tapi disimpan
@@ -10,19 +20,14 @@ import type { Book, CashEntry, Category, Debt, Wallet } from './types'
 let counter = 0
 const nextId = (prefix: string): string => `${prefix}-${++counter}`
 
-/**
- * Bawaannya satu dompet, karena itu keadaan mayoritas usaha mikro:
- * satu tempat uang untuk usaha sekaligus rumah tangga.
- */
-export const DOMPET_UTAMA = 'wallet-utama'
+export const KAS = 'wallet-kas'
 export const REKENING = 'wallet-rekening'
 
 export function makeWallet(overrides: Partial<Wallet> = {}): Wallet {
   return {
-    id: DOMPET_UTAMA,
-    name: 'Dompet Utama',
+    id: KAS,
+    name: 'Kas Utama',
     kind: 'tunai',
-    defaultBook: null,
     openingBalance: rupiah(0),
     isDefault: true,
     archivedAt: null,
@@ -30,8 +35,80 @@ export function makeWallet(overrides: Partial<Wallet> = {}): Wallet {
   }
 }
 
+export function makeBarang(overrides: Partial<Barang> = {}): Barang {
+  return {
+    id: nextId('item'),
+    kind: 'barang',
+    name: 'Biskuit Roma',
+    photoPath: null,
+    price: rupiah(5_000),
+    costPrice: rupiah(3_500),
+    unit: 'pcs',
+    barcode: null,
+    soldCount: 0,
+    archivedAt: null,
+    stockQty: 100,
+    minStock: 10,
+    ...overrides,
+  }
+}
+
+export function makeJasa(overrides: Partial<Jasa> = {}): Jasa {
+  return {
+    id: nextId('item'),
+    kind: 'jasa',
+    name: 'Potong celana',
+    photoPath: null,
+    price: rupiah(30_000),
+    costPrice: rupiah(0),
+    unit: 'pcs',
+    barcode: null,
+    soldCount: 0,
+    archivedAt: null,
+    ...overrides,
+  }
+}
+
+export function makeLine(overrides: Partial<CartLine> = {}): CartLine {
+  return {
+    itemId: nextId('item'),
+    itemKind: 'barang',
+    itemName: 'Biskuit Roma',
+    qty: 1,
+    unitPrice: rupiah(5_000),
+    unitCost: rupiah(3_500),
+    ...overrides,
+  }
+}
+
+export function lineOf(item: Item, qty = 1): CartLine {
+  return {
+    itemId: item.id,
+    itemKind: item.kind,
+    itemName: item.name,
+    qty,
+    unitPrice: item.price,
+    unitCost: item.costPrice,
+  }
+}
+
+export function makeSale(overrides: Partial<Sale> = {}): Sale {
+  return {
+    id: nextId('sale'),
+    invoiceNo: '2026-0001',
+    occurredAt: '2026-08-06T03:00:00.000Z',
+    lines: [makeLine()],
+    discount: rupiah(0),
+    paid: rupiah(5_000),
+    paymentMethod: 'tunai',
+    customerName: null,
+    note: null,
+    voidedAt: null,
+    ...overrides,
+  }
+}
+
 interface EntryOptions {
-  readonly book?: Book
   readonly walletId?: string
   readonly occurredAt?: string
   readonly note?: string | null
@@ -45,8 +122,7 @@ export function income(
 ): CashEntry {
   return {
     id: nextId('entry'),
-    walletId: options.walletId ?? DOMPET_UTAMA,
-    book: options.book ?? 'usaha',
+    walletId: options.walletId ?? KAS,
     occurredAt: options.occurredAt ?? '2026-08-06T03:00:00.000Z',
     direction: 'in',
     amount: rupiah(amount),
@@ -60,13 +136,12 @@ export function income(
 
 export function expense(
   amount: number,
-  category: Category = 'belanja',
+  category: Category = 'modal',
   options: EntryOptions = {},
 ): CashEntry {
   return {
     id: nextId('entry'),
-    walletId: options.walletId ?? DOMPET_UTAMA,
-    book: options.book ?? 'rumah',
+    walletId: options.walletId ?? KAS,
     occurredAt: options.occurredAt ?? '2026-08-06T03:00:00.000Z',
     direction: 'out',
     amount: rupiah(amount),
@@ -78,11 +153,7 @@ export function expense(
   }
 }
 
-/**
- * Sepasang entri pemindahan, seperti yang dibuat `record_transfer`.
- * Tanpa buku — memindahkan uang antar dompet bukan kegiatan usaha
- * maupun rumah tangga.
- */
+/** Sepasang entri pemindahan, seperti yang dibuat `record_transfer`. */
 export function transfer(
   amount: number,
   fromWalletId: string,
@@ -91,7 +162,6 @@ export function transfer(
 ): [CashEntry, CashEntry] {
   const group = nextId('transfer')
   const base = {
-    book: null,
     kind: 'transfer' as const,
     category: 'pindah' as const,
     amount: rupiah(amount),
@@ -109,11 +179,11 @@ export function transfer(
 export function makeDebt(overrides: Partial<Debt> = {}): Debt {
   return {
     id: nextId('debt'),
-    book: 'usaha',
     side: 'receivable',
     person: 'Bu Ani',
     amount: rupiah(25_000),
     paidAmount: rupiah(0),
+    saleId: null,
     occurredAt: '2026-08-01T03:00:00.000Z',
     note: null,
     settledAt: null,

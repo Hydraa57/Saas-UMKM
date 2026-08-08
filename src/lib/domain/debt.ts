@@ -6,12 +6,9 @@ import type { Debt, DebtSide, LocalDate } from './types'
 /**
  * Utang dan piutang.
  *
- * Sengaja kecil.
- *
- * Ibu tidak mencatat utang secara rapi — di buku belanja, "hutang" cuma
- * muncul sebagai salah satu kata dalam keterangan sebuah baris. Tapi
- * berutang memang terjadi, dan lupa menagih adalah kerugian nyata. Jadi
- * modulnya ada, tapi tidak jadi pusat apa pun.
+ * Sengaja kecil, tapi wajib ada: di usaha mikro, pembeli yang ambil dulu
+ * bayar belakangan adalah keseharian, dan lupa menagih adalah kerugian
+ * yang nyata.
  *
  * Aturan yang menentukan bentuknya: **sebuah utang tidak menyentuh buku
  * kas sampai uangnya benar-benar berpindah.** Mencatatnya lebih awal akan

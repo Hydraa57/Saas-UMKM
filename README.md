@@ -1,16 +1,25 @@
 # NexaUsaha
 
-Aplikasi pencatatan yang **melakukan** pemisahan uang usaha dan uang rumah tangga — bukan yang menuntut penggunanya memisahkan lebih dulu.
+**Aplikasi kasir untuk usaha yang menjual barang sekaligus menerima jasa.**
+Layani pembeli, cetak struk — pembukuan dan stok terisi sendiri.
 
-Untuk usaha mikro apa pun: warung, katering, laundry, jahit, servis, toko online. Dibuktikan pada satu pengguna nyata lebih dulu — ibu saya, yang sampai hari ini mencatat semuanya di buku tulis.
+Untuk usaha mikro apa pun: warung, katering, laundry, jahit, servis, bengkel, salon. Dibuktikan pada satu pengguna nyata lebih dulu — ibu saya, yang menjual snack sekaligus menerima jahitan, dan sampai hari ini mencatat semuanya di buku tulis.
 
-## Masalah yang dikejar
+## Celah yang dituju
 
-[73% UMKM Indonesia tidak memisahkan keuangan usaha dan pribadi](https://journal.unespadang.ac.id/jaaip/article/view/596), dan mayoritas usaha mikro cuma punya satu rekening untuk keduanya. Akibatnya mereka tidak tahu usahanya untung atau tidak — uang belanja rumah ikut terhitung sebagai biaya usaha.
+Semua aplikasi kasir dibangun untuk barang. Jasa ditempelkan belakangan — biasanya sebagai "produk dengan stok tak terbatas", yang berarti pengguna harus mengarang angka stok untuk sesuatu yang tidak punya stok, lalu menunggu sampai suatu hari "Potong celana" dilaporkan habis.
 
-Semua aplikasi pembukuan UMKM yang ada **mengasumsikan pemisahan itu sudah terjadi.** Untuk tiga perempat pasarnya, asumsi itu salah.
+Padahal usaha mikro Indonesia jarang murni satu jenis: tukang jahit menjual kancing, bengkel menjual oli, salon menjual sampo, warung snack menerima jahitan.
 
-Kuncinya satu keputusan: **buku melekat pada tiap catatan, bukan pada dompet.** Belanja dapur yang dibayar pakai uang dagangan cukup dicatat berbuku rumah, dari dompet yang sama. Pemisahannya terjadi tepat saat uangnya keluar, dengan satu ketukan — bukan menuntut rekening kedua yang tidak akan pernah dibuka.
+Di sini bedanya ditegakkan di lapisan data, bukan diserahkan ke kedisiplinan kode:
+
+```sql
+constraint stock_only_for_goods check (
+  (kind = 'barang') = (stock_qty is not null)
+)
+```
+
+Jasa **tidak punya kolom stok yang terisi** — bukan nol, bukan tak terbatas. Tiga lapis menjaganya: tipe TypeScript (`stockQty` hanya ada pada `Barang`), fungsi RPC, dan constraint tabel. Di layar, kolom stok **hilang** dari formulir jasa, bukan dinonaktifkan.
 
 Uraian lengkapnya di [`docs/08-posisi-produk.md`](docs/08-posisi-produk.md).
 
@@ -24,19 +33,15 @@ Kosakata aplikasinya umum; pembuktiannya spesifik. Target keberhasilan tahap per
 
 Satu pengguna yang bertahan sebulan lebih membuktikan daripada seratus pendaftar yang berhenti di minggu pertama.
 
-## Apa yang dipelajari dari catatan nyata
+## Tiga arah yang sudah dicoba dan dibuang
 
-Lima halaman buku tulis membentuk ulang seluruh rancangan produk ini:
+Arah produknya berbelok dua kali, dan keduanya tercatat karena alasannya masih berlaku:
 
-- **Dua buku terpisah, memang sudah ada di kepala penggunanya.** Rekap bulanannya tegas *di luar* uang pemberian suami.
-- **Rekap bulanan dijumlah tangan.** Januari 2025 – Juni 2026, total 2025 `9.195.500`. Ini yang paling diinginkan.
-- **Sebagian pemasukan tidak pernah dicatat** — uangnya dipisahkan ke dompet lain tapi tidak masuk hitungan mana pun, jadi rekapnya di bawah yang sebenarnya.
-- **Jasa dicatat sangat sederhana.** Tanggal + jenis + harga. Tidak ada ukuran, DP, atau tenggat.
-- **Tidak ada katalog, stok, atau harga modal.** Tidak satu pun dilacak.
+1. **"POS universal untuk semua UMKM"** — cabang, RBAC, stock opname, WhatsApp API, add-on AI. Dirancang tanpa satu pun pengguna nyata. Daftar fitur yang cocok untuk semua orang dan tidak dipakai siapa pun.
+2. **Aplikasi pencatat pemasukan/pengeluaran dua buku** (usaha & rumah tangga). Alurnya jalan, tesnya lengkap, dan tetap salah jenis: saya **sudah punya** [NayyiraAI](https://nayyiraai.online) untuk itu. Membangunnya berarti bersaing dengan produk sendiri.
+3. **Sekarang: aplikasi kasir.** Pencatatan bukan fiturnya — pencatatan adalah akibat dari melayani pembeli.
 
-Bukti lengkapnya, termasuk aritmetika yang membuktikan tiap kesimpulan: [`docs/07-temuan-catatan-ibu.md`](docs/07-temuan-catatan-ibu.md).
-
-Satu catatan penting: pengguna pertama ini justru ada di **27% yang sudah memisahkan** uangnya, pakai dompet fisik. Kebiasaannya sempat diambil sebagai kebiasaan umum — dan itu membuat rancangan mengikat buku ke dompet, yang membuat mayoritas pasar tidak terlayani. Sudah diperbaiki.
+Kesalahan kedua punya akar yang bisa ditunjuk. Buku tulis ibu tidak memuat stok, harga modal, maupun daftar barang, dan itu dibaca sebagai *"stok tidak dibutuhkan"*. Yang benar: **buku tulis memang tidak bisa melacak stok.** Ketiadaan di kertas adalah batas kertasnya, bukan batas kebutuhannya.
 
 ## Pelajaran dari percobaan sebelumnya
 
@@ -46,32 +51,37 @@ Diagnosisnya bukan soal AI. Yang dibangun cuma separuh: pencatatannya jalan, pem
 
 > **Setiap kali pengguna memasukkan sesuatu, dia harus langsung menerima sesuatu.**
 
-Percobaan itu juga meninggalkan bukti berharga: ibu bersedia mencatat lewat aplikasi. Yang gagal bukan kesediaannya.
+Di kasir, yang diterima berwujud: **struk.** Bisa dilihat, dikirim ke WhatsApp pembeli, dan nanti dicetak ke printer termal — teks lebar-tetap yang sama persis untuk ketiganya, supaya struk yang dilihat, dibagikan, dan dicetak tidak pernah berbeda.
+
+Percobaan itu juga meninggalkan bukti berharga: ibu bersedia memakai aplikasi. Yang gagal bukan kesediaannya.
 
 ## Status
 
-Alur pokoknya sudah jalan: pengaturan awal → catat → lihat rekap. Diuji di peramban sungguhan, bukan cuma di tes unit.
+Alur pokoknya sudah jalan dari ujung ke ujung: pengaturan awal → isi katalog → kasir → struk → stok berkurang → pembukuan terisi. Diuji di peramban sungguhan, bukan cuma di tes unit.
 
 | Selesai | Tes |
 |---|---|
 | Perhitungan uang (rupiah `bigint`, pembulatan eksplisit) | 43 |
 | Tanggal & zona waktu (WIB, bukan UTC) | 18 |
-| Buku kas, dua buku, saldo dompet, cocokkan | 23 |
+| Keranjang, diskon, peringatan stok | 29 |
+| Struk lebar-tetap (layar = WhatsApp = printer) | 19 |
+| Buku kas, saldo dompet, cocokkan | 21 |
 | Rekap bulanan & total tahunan | 14 |
 | Utang & piutang | 17 |
+| Foto: pengecilan sebelum disimpan | 5 |
 | Antrean kirim luring + penggolongan kegagalan | 30 |
-| Aksi tulis (tulis lokal + antre, tanpa menunggu jaringan) | 27 |
-| Skema, RLS, jalur tulis (PostgreSQL sungguhan) | 53 |
+| Aksi tulis (tulis lokal + antre, tanpa menunggu jaringan) | 24 |
+| Skema, RLS, jalur tulis (PostgreSQL sungguhan) | 62 penegasan |
 
-Layar yang sudah ada: pengaturan awal, beranda (pemilih buku + rekap bulan berjalan), catat pemasukan, catat pengeluaran.
+Layar yang sudah ada: pengaturan awal, beranda, katalog (daftar, tambah, ubah, arsip), kasir, struk, uang keluar.
 
-Belum ada: autentikasi, penarikan data dari peladen, layar rekap bulanan penuh, dompet & pemindahan, utang.
+Belum ada: printer termal, kulakan, koreksi stok, riwayat struk, autentikasi, penarikan data dari peladen, laporan bulanan penuh.
 
 ## Dokumen
 
 | Dokumen | Isi |
 |---|---|
-| [`docs/08-posisi-produk.md`](docs/08-posisi-produk.md) | **Mulai di sini.** Untuk siapa, kenapa dipilih, dan riset yang mendasarinya |
+| [`docs/08-posisi-produk.md`](docs/08-posisi-produk.md) | **Mulai di sini.** Untuk siapa, kenapa dipilih, dan tiga arah yang dibuang |
 | [`docs/07-temuan-catatan-ibu.md`](docs/07-temuan-catatan-ibu.md) | Bukti dari catatan asli, dan asumsi mana yang gugur |
 | [`docs/02-prd.md`](docs/02-prd.md) | Scope, alur, keputusan UX |
 | [`docs/03-data-model.md`](docs/03-data-model.md) | Skema, RLS, jalur tulis |
@@ -91,15 +101,17 @@ npm run dev
 ### Pengujian
 
 ```bash
-npm test          # 172 tes unit
+npm test          # 220 tes unit
 npm run typecheck
-npm run db:test   # 53 penegasan: migrasi, RLS, jalur tulis
+npm run db:test   # 62 penegasan: migrasi, RLS, jalur tulis
 
 npm run build && npx next start -p 3311 &
 npm run smoke     # alur nyata di peramban sungguhan
 ```
 
-`npm run smoke` menangkap hal yang tidak bisa ditangkap tes unit. Dua bug UX pertama — pilihan buku yang hilang saat kembali dari mencatat, dan ikon PWA yang tidak ada — lolos dari seluruh tes unit dan baru ketahuan di sana.
+`npm run smoke` menjalankan satu hari kerja lengkap di Chromium: buka usaha, isi katalog dengan satu barang dan satu jasa, jual keduanya dalam satu struk, lalu periksa tiga hal — strukya keluar, stok barang berkurang, dan **stok jasa tidak pernah berkurang.**
+
+Ia menangkap hal yang tidak bisa ditangkap tes unit. Dua bug UX pertama — pilihan yang hilang saat kembali dari layar lain, dan ikon PWA yang tidak ada — lolos dari seluruh tes unit dan baru ketahuan di sana.
 
 `db:test` butuh cluster PostgreSQL lokal, sekali siapkan:
 
@@ -115,4 +127,4 @@ Pengujian isolasi tenant dijalankan sebagai peran `authenticated`, bukan superus
 
 ## Catatan nama
 
-`NexaUsaha` masih nama sementara. Nama kerja awal "NexaPOS" diganti karena "POS" salah menggambarkan produknya — dan salah menarik pembanding. Kalau namanya POS, orang membandingkannya dengan Majoo dan Kasir Pintar, dan kita kalah di semua kolom fitur. Kalau namanya aplikasi pencatatan, pembandingnya buku tulis.
+`NexaUsaha` masih nama sementara. Nama kerja awal "NexaPOS" diganti, dan sekarang produknya memang aplikasi kasir — tapi "POS" tetap salah menarik pembanding. Kalau namanya POS, orang membandingkannya dengan Majoo dan Kasir Pintar, dan kita kalah di setiap kolom fitur kecuali satu. Yang ingin dibandingkan adalah buku tulis, dan celahnya: jasa yang tidak pernah bisa habis.

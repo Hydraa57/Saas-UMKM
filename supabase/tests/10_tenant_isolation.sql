@@ -17,116 +17,65 @@ on conflict (id) do nothing;
 select login_as('11111111-1111-1111-1111-111111111111');
 set role authenticated;
 
-select create_tenant(
-  'aaaaaaaa-0000-0000-0000-000000000001', 'Usaha Satu', 'campuran'
-);
-
-select assert_eq(
-  (select count(*)::int from tenants), 1,
-  'pemilik A melihat tenantnya sendiri'
-);
-
--- Satu dompet saja secara bawaan. Mayoritas usaha mikro memang cuma
--- punya satu tempat uang, dan membuatkan beberapa dompet di awal memaksa
--- pengguna memilih sesuatu yang belum dia butuhkan.
-select assert_eq(
-  (select count(*)::int from wallets
-   where tenant_id = 'aaaaaaaa-0000-0000-0000-000000000001'),
-  1,
-  'satu dompet bawaan, bukan beberapa'
-);
-
-select assert_eq(
-  (select bool_and(default_book is null) from wallets
-   where tenant_id = 'aaaaaaaa-0000-0000-0000-000000000001'),
-  true,
-  'dompet bawaan tidak terikat buku mana pun'
-);
-
 -- ID dompet dikirim perangkat, bukan dibuat peladen. Kalau berbeda,
--- entri pertama yang menyusul akan menunjuk dompet yang tidak ada di
+-- penjualan pertama yang menyusul akan menunjuk dompet yang tidak ada di
 -- sini dan gagal karena kunci asing — tepat setelah pengguna mengira
 -- catatannya sudah aman.
 select create_tenant(
-  'aaaaaaaa-0000-0000-0000-000000000002', 'Usaha Dengan Dompet Kiriman',
-  'jasa', true, 'aaaaaaaa-dddd-0000-0000-000000000001'
+  'aaaaaaaa-0000-0000-0000-000000000001', 'Usaha Satu', 'dagang',
+  'aaaaaaaa-ffff-0000-0000-000000000001'
+);
+
+select assert_eq(
+  (select count(*)::int from tenants), 1, 'pemilik A melihat tenantnya sendiri'
 );
 
 select assert_eq(
   (select count(*)::int from wallets
-   where id = 'aaaaaaaa-dddd-0000-0000-000000000001'),
-  1,
-  'peladen memakai ID dompet yang dikirim perangkat'
+   where id = 'aaaaaaaa-ffff-0000-0000-000000000001'),
+  1, 'peladen memakai ID dompet yang dikirim perangkat'
 );
 
--- Dan entri yang menyusul benar-benar bisa memakainya.
-select record_entry(
-  gen_random_uuid(), 'aaaaaaaa-0000-0000-0000-000000000002',
-  'aaaaaaaa-dddd-0000-0000-000000000001', 'usaha', 'income', 15000, 'jasa'
+select upsert_item(
+  'aaaaaaaa-1111-0000-0000-000000000001',
+  'aaaaaaaa-0000-0000-0000-000000000001',
+  'barang', 'Rahasia Dagang A', 9999, 1, 'pcs', 50, 5
+);
+
+-- Penjualan pertama dari perangkat langsung diterima.
+select record_sale(
+  'aaaaaaaa-2222-0000-0000-000000000001',
+  'aaaaaaaa-0000-0000-0000-000000000001',
+  '[{"item_id":"aaaaaaaa-1111-0000-0000-000000000001","item_kind":"barang",
+     "item_name":"Rahasia Dagang A","qty":1,"unit_price":9999,"unit_cost":1}]'::jsonb,
+  'aaaaaaaa-ffff-0000-0000-000000000001', 9999
 );
 
 select assert_eq(
-  (select count(*)::int from cash_entries
-   where wallet_id = 'aaaaaaaa-dddd-0000-0000-000000000001'),
-  1,
-  'entri pertama dari perangkat langsung diterima peladen'
+  (select count(*)::int from sales), 1,
+  'penjualan pertama dari perangkat langsung diterima peladen'
 );
 
 select assert_denied($$
   insert into wallets (id, tenant_id, name, is_default)
   values (gen_random_uuid(), 'aaaaaaaa-0000-0000-0000-000000000001',
-          'Dompet Kedua', true)
+          'Kas Kedua', true)
 $$, 'tidak boleh ada dua dompet bawaan');
-
--- Pintasan awal disemai sesuai jenis usaha supaya hari pertama tidak
--- kosong sama sekali.
-select assert_eq(
-  (select count(*)::int from quick_entries
-   where book = 'usaha' and tenant_id = 'aaaaaaaa-0000-0000-0000-000000000001'),
-  3,
-  'jenis usaha campuran disemai pintasan barang sekaligus jasa'
-);
-
-select assert_eq(
-  (select count(*)::int from quick_entries
-   where book = 'rumah' and tenant_id = 'aaaaaaaa-0000-0000-0000-000000000001'),
-  2,
-  'buku rumah disemai pintasan belanja dan transportasi'
-);
 
 reset role;
 
--- ── Tenant B: buku rumah dimatikan ───────────────────────────────────────
+-- ── Tenant B ─────────────────────────────────────────────────────────────
 
 select login_as('22222222-2222-2222-2222-222222222222');
 set role authenticated;
 
-select create_tenant(
-  'bbbbbbbb-0000-0000-0000-000000000001', 'Usaha Dua', 'dagang', false
-);
+select create_tenant('bbbbbbbb-0000-0000-0000-000000000001', 'Usaha Dua', 'jasa');
 
-select assert_eq(
-  (select count(*)::int from quick_entries where book = 'rumah'), 0,
-  'buku rumah yang dimatikan tidak disemai pintasan'
-);
-
-select assert_eq(
-  (select household_book from tenants), false,
-  'usaha yang keuangannya sudah terpisah bisa mematikan buku rumah'
-);
-
--- ── Yang harus tidak terlihat ────────────────────────────────────────────
-
-select assert_eq(
-  (select count(*)::int from tenants), 1, 'B tidak melihat tenant A'
-);
-select assert_eq(
-  (select count(*)::int from wallets), 1, 'B hanya melihat dompetnya sendiri'
-);
-select assert_eq(
-  (select count(*)::int from quick_entries), 2,
-  'B hanya melihat pintasannya sendiri'
-);
+select assert_eq((select count(*)::int from tenants), 1, 'B tidak melihat tenant A');
+select assert_eq((select count(*)::int from wallets), 1, 'B hanya melihat dompetnya sendiri');
+select assert_eq((select count(*)::int from items), 0, 'B tidak melihat katalog A');
+select assert_eq((select count(*)::int from sales), 0, 'B tidak melihat penjualan A');
+select assert_eq((select count(*)::int from stock_movements), 0, 'B tidak melihat mutasi stok A');
 select assert_eq(
   (select count(*)::int from memberships), 1,
   'B tidak melihat keanggotaan orang lain'
@@ -135,13 +84,22 @@ select assert_eq(
 -- ── Yang harus ditolak ───────────────────────────────────────────────────
 
 select assert_denied($$
-  insert into cash_entries (id, tenant_id, wallet_id, book, direction,
-                            amount, kind, category)
-  select gen_random_uuid(), 'aaaaaaaa-0000-0000-0000-000000000001',
-         w.id, 'usaha', 'in', 50000, 'income', 'penjualan'
-  from wallets w limit 1
-$$, 'B tidak bisa menyisipkan entri ke tenant A');
+  insert into items (id, tenant_id, kind, name, price, stock_qty, min_stock)
+  values (gen_random_uuid(), 'aaaaaaaa-0000-0000-0000-000000000001',
+          'barang', 'Sisipan', 1, 0, 0)
+$$, 'B tidak bisa menyisipkan barang ke katalog A');
 
+select assert_denied($$
+  insert into sale_items (id, tenant_id, sale_id, item_kind, item_name,
+                          qty, unit_price, subtotal)
+  values (gen_random_uuid(), 'aaaaaaaa-0000-0000-0000-000000000001',
+          'aaaaaaaa-2222-0000-0000-000000000001', 'barang', 'Sisipan',
+          1, 1, 1)
+$$, 'B tidak bisa menyisipkan baris ke struk A');
+
+-- Memindahkan baris sendiri ke tenant lain — cara paling halus
+-- menyelundupkan data, karena barisnya memang milik sendiri saat
+-- diperiksa. Yang menahannya adalah pemeriksaan atas baris hasil.
 select assert_denied($$
   update wallets set tenant_id = 'aaaaaaaa-0000-0000-0000-000000000001'
   where tenant_id = 'bbbbbbbb-0000-0000-0000-000000000001'
@@ -154,14 +112,9 @@ reset role;
 select login_as(null);
 set role authenticated;
 
-select assert_eq(
-  (select count(*)::int from cash_entries), 0,
-  'tanpa login tidak ada entri yang terlihat'
-);
-select assert_eq(
-  (select count(*)::int from wallets), 0,
-  'tanpa login tidak ada dompet yang terlihat'
-);
+select assert_eq((select count(*)::int from items), 0, 'tanpa login katalog tidak terlihat');
+select assert_eq((select count(*)::int from sales), 0, 'tanpa login penjualan tidak terlihat');
+select assert_eq((select count(*)::int from cash_entries), 0, 'tanpa login buku kas tidak terlihat');
 
 reset role;
 
@@ -169,33 +122,25 @@ reset role;
 
 select assert_eq(
   (select coalesce(string_agg(c.relname, ', ' order by c.relname), '')
-   from pg_class c
-   join pg_namespace n on n.oid = c.relnamespace
+   from pg_class c join pg_namespace n on n.oid = c.relnamespace
    where n.nspname = 'public' and c.relkind = 'r' and not c.relrowsecurity),
-  '',
-  'setiap tabel di skema public punya RLS aktif'
+  '', 'setiap tabel di skema public punya RLS aktif'
 );
 
 select assert_eq(
   (select coalesce(string_agg(c.relname, ', ' order by c.relname), '')
-   from pg_class c
-   join pg_namespace n on n.oid = c.relnamespace
+   from pg_class c join pg_namespace n on n.oid = c.relnamespace
    where n.nspname = 'public' and c.relkind = 'r'
      and not exists (select 1 from pg_policy p where p.polrelid = c.oid)),
-  '',
-  'setiap tabel punya minimal satu policy'
+  '', 'setiap tabel punya minimal satu policy'
 );
 
 select assert_eq(
   (select coalesce(string_agg(c.relname, ', ' order by c.relname), '')
-   from pg_class c
-   join pg_namespace n on n.oid = c.relnamespace
+   from pg_class c join pg_namespace n on n.oid = c.relnamespace
    join pg_attribute a on a.attrelid = c.oid and a.attname = 'tenant_id'
    where n.nspname = 'public' and c.relkind = 'r'
-     and not exists (
-       select 1 from pg_index i
-       where i.indrelid = c.oid and a.attnum = i.indkey[0]
-     )),
-  '',
-  'setiap tabel ber-tenant_id punya indeks yang diawali tenant_id'
+     and not exists (select 1 from pg_index i
+                     where i.indrelid = c.oid and a.attnum = i.indkey[0])),
+  '', 'setiap tabel ber-tenant_id punya indeks yang diawali tenant_id'
 );

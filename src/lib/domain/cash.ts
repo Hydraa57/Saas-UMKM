@@ -1,20 +1,17 @@
 import * as M from '@/lib/money'
 import type { Rupiah } from '@/lib/money'
-import type { Book, CashEntry, Category, Wallet } from './types'
+import type { CashEntry, Category, Wallet } from './types'
 
 /**
- * Buku kas.
+ * Buku kas — buku besar di bawah kasir.
  *
  * Satu aturan menjelaskan hampir seluruh berkas ini:
  *
  * > **Pemindahan antar dompet bukan penghasilan dan bukan biaya.**
  *
- * Uang jahit yang dipindahkan untuk belanja dapur bukan pemasukan rumah
- * tangga — itu uang yang sama, berpindah tempat. Menghitungnya sebagai
- * pemasukan berarti rekap bulanan menghitungnya dua kali, dan rekap
- * bulanan adalah satu-satunya angka yang selama ini ibu hitung sendiri.
- * Kalau angka aplikasi berbeda dari angka yang biasa dia dapat, yang
- * dia percayai adalah bukunya.
+ * Uang yang dipindahkan dari laci ke rekening bukan pemasukan baru — itu
+ * uang yang sama, berpindah tempat. Menghitungnya sebagai pemasukan
+ * berarti laporan menghitungnya dua kali.
  *
  * Saldo dompet tetap bergerak, karena uangnya memang benar-benar pindah.
  */
@@ -79,21 +76,7 @@ export function summarizeFlow(entries: readonly CashEntry[]): FlowSummary {
   }
 }
 
-export function filterByBook(
-  entries: readonly CashEntry[],
-  book: Book,
-): CashEntry[] {
-  return entries.filter((entry) => entry.book === book)
-}
-
-/**
- * Seluruh uang yang dipegang, di semua dompet.
- *
- * Ini pasangan dari `filterByBook`, dan bedanya penting: uang punya
- * tempat (dompet), sedangkan buku cuma menggolongkan arusnya. Satu dompet
- * bisa menampung uang usaha dan uang rumah sekaligus — itu keadaan
- * mayoritas usaha mikro — jadi tidak ada yang namanya "saldo buku".
- */
+/** Seluruh uang yang dipegang, di semua dompet. */
 export function totalBalance(
   wallets: readonly Wallet[],
   entries: readonly CashEntry[],

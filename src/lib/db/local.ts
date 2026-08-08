@@ -7,15 +7,13 @@ import Dexie, { type EntityTable } from 'dexie'
  * Setiap pembacaan di layar mengambil dari sini, dan setiap penulisan
  * mendarat di sini lebih dulu — jaringan menyusul belakangan.
  *
- * Alasannya bukan kenyamanan. Pesaing aplikasi ini adalah buku tulis,
- * dan buku tulis terbuka dalam nol detik tanpa sinyal. Aplikasi yang
- * menampilkan lingkaran berputar saat penggunanya ingin mencatat
- * pemasukan Rp5.000 sudah kalah sebelum fiturnya sempat dinilai.
+ * Untuk aplikasi kasir ini bukan kemewahan melainkan syarat: kasir yang
+ * menunggu sinyal saat pembeli antre di depan tidak akan dipakai dua
+ * kali. Sinyal di warung, pasar, dan pinggir jalan memang begitu.
  *
- * Bentuk barisnya dibuat sama persis dengan tabel di peladen
- * (`snake_case`, uang sebagai bilangan bulat rupiah), supaya hasil
- * tarikan bisa disimpan apa adanya tanpa lapisan penerjemah yang harus
- * dijaga sepadan di dua tempat.
+ * Bentuk barisnya sama persis dengan tabel di peladen (`snake_case`, uang
+ * sebagai bilangan bulat rupiah), supaya hasil tarikan bisa disimpan apa
+ * adanya tanpa lapisan penerjemah yang harus dijaga sepadan di dua tempat.
  */
 
 export interface LocalRow {
@@ -27,46 +25,108 @@ export interface LocalRow {
 export interface LocalWallet extends LocalRow {
   name: string
   kind: 'tunai' | 'bank' | 'ewallet'
-  /** Usulan untuk mengisi layar catat, bukan aturan. Boleh kosong. */
-  default_book: 'usaha' | 'rumah' | null
   opening_balance: number
   is_default: boolean
   sort_order: number
   archived_at: string | null
 }
 
+/**
+ * Barang dan jasa dalam satu tabel.
+ *
+ * `stock_qty` kosong untuk jasa — dan itu bukan kelalaian melainkan
+ * intinya. "Potong celana" tidak pernah habis.
+ */
+export interface LocalItem extends LocalRow {
+  kind: 'barang' | 'jasa'
+  name: string
+  photo_path: string | null
+  price: number
+  cost_price: number
+  unit: string
+  stock_qty: number | null
+  min_stock: number | null
+  barcode: string | null
+  sold_count: number
+  sort_order: number
+  archived_at: string | null
+}
+
+/**
+ * Foto barang, disimpan sebagai blob di perangkat.
+ *
+ * Terpisah dari `items` supaya memuat daftar katalog tidak ikut menarik
+ * seluruh gambarnya ke memori. Unggahannya menyusul lewat antrean, jadi
+ * memotret barang tetap bisa dilakukan tanpa sinyal.
+ */
+export interface LocalPhoto {
+  item_id: string
+  tenant_id: string
+  blob: Blob
+  uploaded_at: string | null
+}
+
+export interface LocalSale extends LocalRow {
+  invoice_no: string
+  occurred_at: string
+  subtotal: number
+  discount: number
+  total: number
+  paid: number
+  payment_method: string | null
+  wallet_id: string | null
+  customer_name: string | null
+  note: string | null
+  voided_at: string | null
+}
+
+export interface LocalSaleItem {
+  id: string
+  tenant_id: string
+  sale_id: string
+  item_id: string | null
+  item_kind: 'barang' | 'jasa'
+  item_name: string
+  qty: number
+  unit_price: number
+  unit_cost: number
+  subtotal: number
+  /** Urutan baris di keranjang; struk dibaca menurut kolom ini. */
+  line_no: number
+}
+
+export interface LocalStockMovement {
+  id: string
+  tenant_id: string
+  item_id: string
+  occurred_at: string
+  qty_change: number
+  reason: string
+  source_type: string | null
+  source_id: string | null
+  note: string | null
+}
+
 export interface LocalCashEntry extends LocalRow {
   wallet_id: string
-  /** Kosong untuk pemindahan antar dompet. */
-  book: 'usaha' | 'rumah' | null
   occurred_at: string
   direction: 'in' | 'out'
   amount: number
   kind: 'income' | 'expense' | 'transfer'
   category: string
   note: string | null
+  source_type: string | null
+  source_id: string | null
   transfer_group_id: string | null
   deleted_at: string | null
 }
 
-/** Pintasan yang tumbuh sendiri dari pemakaian. Menggantikan katalog produk. */
-export interface LocalQuickEntry extends LocalRow {
-  book: 'usaha' | 'rumah'
-  kind: 'income' | 'expense'
-  category: string
-  label: string
-  default_amount: number
-  use_count: number
-  last_used_at: string | null
-  archived_at: string | null
-}
-
 export interface LocalDebt extends LocalRow {
-  book: 'usaha' | 'rumah'
   side: 'receivable' | 'payable'
   person: string
   amount: number
   paid_amount: number
+  sale_id: string | null
   occurred_at: string
   note: string | null
   settled_at: string | null
@@ -76,9 +136,10 @@ export interface LocalDebt extends LocalRow {
 /**
  * Panggilan RPC yang menunggu giliran dikirim.
  *
- * Isinya bukan baris data, melainkan **maksud** — nama fungsi beserta
- * argumennya — sehingga peladen tetap yang menentukan buku, arah, dan
- * pintasan, persis seperti kalau perangkat sedang daring.
+ * Isinya bukan baris data melainkan **maksud** — nama fungsi beserta
+ * argumennya — sehingga peladen tetap yang menghitung total, memberi
+ * nomor struk, dan mengurangi stok, persis seperti kalau perangkat
+ * sedang daring.
  */
 export interface OutboxItem {
   /** UUID dari perangkat. Sekaligus kunci idempotensi di peladen. */
@@ -88,35 +149,28 @@ export interface OutboxItem {
   args: Record<string, unknown>
   created_at: string
   attempts: number
-  /** Kapan boleh dicoba lagi. Mundur bertahap setiap kegagalan. */
   next_attempt_at: string
   status: 'pending' | 'failed'
   last_error: string | null
 }
 
-/** Penanda posisi sinkronisasi dan pengaturan yang bertahan. */
 export interface MetaRow {
   key: string
   value: unknown
 }
 
 export const TENANT_KEY = 'tenant_id'
-export const HOUSEHOLD_KEY = 'household_book'
-
-/**
- * Buku yang terakhir dipilih.
- *
- * Disimpan supaya pilihannya bertahan saat pengguna pergi mencatat lalu
- * kembali. Kalau tidak, dia memilih "Rumah Tangga", mencatat belanja,
- * kembali ke beranda, dan melihat buku usaha — catatannya tidak ada di
- * situ, dan yang paling wajar disimpulkan adalah catatannya hilang.
- */
-export const ACTIVE_BOOK_KEY = 'active_book'
+export const BUSINESS_NAME_KEY = 'business_name'
+export const BUSINESS_PHONE_KEY = 'business_phone'
 
 export class LocalDatabase extends Dexie {
   wallets!: EntityTable<LocalWallet, 'id'>
+  items!: EntityTable<LocalItem, 'id'>
+  photos!: EntityTable<LocalPhoto, 'item_id'>
+  sales!: EntityTable<LocalSale, 'id'>
+  saleItems!: EntityTable<LocalSaleItem, 'id'>
+  stockMovements!: EntityTable<LocalStockMovement, 'id'>
   cashEntries!: EntityTable<LocalCashEntry, 'id'>
-  quickEntries!: EntityTable<LocalQuickEntry, 'id'>
   debts!: EntityTable<LocalDebt, 'id'>
   outbox!: EntityTable<OutboxItem, 'id'>
   meta!: EntityTable<MetaRow, 'key'>
@@ -124,14 +178,18 @@ export class LocalDatabase extends Dexie {
   constructor(name = 'nexausaha') {
     super(name)
 
-    // Indeks dipilih dari query yang benar-benar dipakai layar, bukan
-    // dari semua kolom yang mungkin. Indeks berlebih memperlambat
-    // penulisan, dan penulisan ada di jalur yang harus paling cepat.
+    // Indeks dipilih dari query yang benar-benar dipakai layar. Indeks
+    // berlebih memperlambat penulisan, dan penulisan ada di jalur yang
+    // harus paling cepat: menyimpan penjualan di depan pembeli.
     this.version(1).stores({
       wallets: 'id, tenant_id',
-      cashEntries: 'id, tenant_id, occurred_at, [book+occurred_at], wallet_id, category',
-      quickEntries: 'id, tenant_id, [book+kind], use_count',
-      debts: 'id, tenant_id, [side+settled_at], person',
+      items: 'id, tenant_id, kind, sold_count, name, barcode',
+      photos: 'item_id, tenant_id, uploaded_at',
+      sales: 'id, tenant_id, occurred_at, invoice_no',
+      saleItems: 'id, sale_id, item_id',
+      stockMovements: 'id, item_id, occurred_at',
+      cashEntries: 'id, tenant_id, occurred_at, kind, wallet_id',
+      debts: 'id, tenant_id, [side+settled_at], person, sale_id',
       outbox: 'id, status, next_attempt_at, created_at',
       meta: 'key',
     })

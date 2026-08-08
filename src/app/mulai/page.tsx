@@ -2,7 +2,7 @@
 
 import { useState } from 'react'
 import { db } from '@/lib/db/local'
-import { setupTenant } from '@/lib/actions/setup'
+import { setupTenant } from '@/lib/actions/pos'
 import {
   BUSINESS_TYPE_HINTS,
   BUSINESS_TYPE_LABELS,
@@ -12,14 +12,18 @@ import {
 /**
  * Pengaturan awal.
  *
- * Satu layar, tiga pertanyaan, dan hanya yang pertama yang wajib
- * dijawab. Tiap pertanyaan tambahan di sini adalah gerbang sebelum
- * manfaat pertama terasa — dan di situlah orang berhenti.
+ * Satu layar, dan hanya nama usaha yang wajib. Tiap pertanyaan tambahan
+ * di sini adalah gerbang sebelum manfaat pertama terasa — dan di situlah
+ * orang berhenti.
  *
- * Yang sengaja **tidak** ditanyakan: daftar produk, harga, stok, modal
- * awal, dompet. Semuanya bisa tumbuh dari pemakaian, dan menanyakannya
- * di awal berarti meminta pengguna menyiapkan sesuatu sebelum dia tahu
- * aplikasinya berguna atau tidak.
+ * Yang sengaja **tidak** ditanyakan: daftar barang, harga, stok, modal
+ * awal, dompet. Katalog memang inti aplikasinya, tapi mengisinya di
+ * layar pembuka berarti meminta orang mengetik dua puluh barang sebelum
+ * dia tahu kasirnya berguna atau tidak. Katalog tumbuh dari layar
+ * katalog, dan barang pertama bisa ditambahkan dari dalam kasir.
+ *
+ * Nomor WhatsApp diminta di sini karena dia muncul di kepala struk. Boleh
+ * dikosongkan — struk tanpa nomor tetap sah.
  */
 
 const JENIS: readonly BusinessType[] = [
@@ -33,7 +37,7 @@ const JENIS: readonly BusinessType[] = [
 export default function Mulai() {
   const [nama, setNama] = useState('')
   const [jenis, setJenis] = useState<BusinessType>('dagang')
-  const [bukuRumah, setBukuRumah] = useState(true)
+  const [telepon, setTelepon] = useState('')
   const [menyimpan, setMenyimpan] = useState(false)
 
   const bisaLanjut = nama.trim().length > 0 && !menyimpan
@@ -44,9 +48,11 @@ export default function Mulai() {
     try {
       await setupTenant(
         { db: db() },
-        { name: nama, businessType: jenis, householdBook: bukuRumah },
+        { name: nama, businessType: jenis, phone: telepon || null },
       )
-      window.location.href = '/'
+      // Langsung ke katalog, bukan ke beranda: tanpa satu pun barang,
+      // kasirnya kosong dan beranda cuma menampilkan angka nol.
+      window.location.href = '/katalog?awal=1'
     } catch {
       setMenyimpan(false)
     }
@@ -57,7 +63,7 @@ export default function Mulai() {
       <header>
         <h1 className="text-xl font-bold">Selamat datang</h1>
         <p className="text-slate-600">
-          Tiga pertanyaan, lalu langsung bisa mencatat.
+          Isi nama usaha, lalu langsung bisa jualan.
         </p>
       </header>
 
@@ -103,36 +109,19 @@ export default function Mulai() {
         </div>
       </section>
 
-      {/* Menyala secara bawaan: mayoritas usaha mikro belum memisahkan
-          uang usaha dari uang rumah tangga, dan bagi merekalah buku ini
-          paling berguna. Yang keuangannya sudah terpisah bisa
-          mematikannya. */}
-      <button
-        type="button"
-        role="switch"
-        aria-checked={bukuRumah}
-        onClick={() => setBukuRumah((nyala) => !nyala)}
-        className="kartu flex items-center gap-4 text-left"
-      >
-        <span
-          aria-hidden
-          className={`flex h-8 w-14 shrink-0 items-center rounded-full p-1 transition ${
-            bukuRumah ? 'bg-slate-900' : 'bg-slate-300'
-          }`}
-        >
-          <span
-            className={`h-6 w-6 rounded-full bg-white transition ${
-              bukuRumah ? 'translate-x-6' : ''
-            }`}
-          />
+      <label className="kartu block">
+        <span className="text-sm text-slate-500">
+          Nomor WhatsApp untuk struk (boleh kosong)
         </span>
-        <span>
-          <span className="block font-semibold">Catat belanja rumah juga</span>
-          <span className="block text-sm text-slate-500">
-            Supaya uang usaha tidak tercampur dengan uang belanja
-          </span>
-        </span>
-      </button>
+        <input
+          type="tel"
+          inputMode="tel"
+          value={telepon}
+          onChange={(event) => setTelepon(event.target.value)}
+          placeholder="08xxxxxxxxxx"
+          className="mt-1 w-full bg-transparent text-lg outline-none"
+        />
+      </label>
 
       <button
         type="button"

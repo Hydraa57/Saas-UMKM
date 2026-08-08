@@ -12,25 +12,126 @@ export type LocalDate = string
 export type LocalMonth = string
 
 /**
- * Dua buku.
+ * Barang atau jasa.
  *
- * Buku menjawab "kegiatan mana yang menghasilkan atau menghabiskan uang
- * ini" — dan sengaja **tidak** terikat pada dompet, yang menjawab
- * pertanyaan berbeda ("uangnya ada di mana").
+ * Satu tipe untuk keduanya, karena di layar kasir keduanya adalah hal
+ * yang sama: sesuatu yang dijual, punya nama dan harga, diketuk untuk
+ * masuk keranjang.
  *
- * Penelitian menemukan 73% UMKM Indonesia belum memisahkan keuangan usaha
- * dan pribadi, dan mayoritas usaha mikro cuma punya satu rekening untuk
- * keduanya. Kalau buku ditentukan oleh dompet, kelompok itu harus
- * mengarang dompet palsu sebelum bisa memakai fiturnya sama sekali.
- *
- * Dengan buku melekat pada tiap entri, pengguna berdompet tunggal tetap
- * bisa memisahkan: belanja dapur yang dibayar dari uang dagangan cukup
- * dicatat berbuku rumah, dari dompet yang sama.
+ * Satu-satunya bedanya: **barang punya stok, jasa tidak.** "Potong
+ * celana" tidak pernah habis. Perbedaan itu ada di tipe (`stockQty`
+ * hanya ada pada barang) dan ditegakkan constraint di basis data, bukan
+ * diserahkan ke kedisiplinan kode.
  */
-export type Book = 'usaha' | 'rumah'
+export type ItemKind = 'barang' | 'jasa'
+
+export const ITEM_KIND_LABELS: Readonly<Record<ItemKind, string>> = {
+  barang: 'Barang',
+  jasa: 'Jasa',
+}
+
+interface ItemBase {
+  readonly id: string
+  readonly name: string
+  readonly photoPath?: string | null
+  readonly price: Rupiah
+  readonly costPrice: Rupiah
+  readonly unit: string
+  readonly barcode?: string | null
+  /** Menentukan urutan grid kasir; yang sering dijual naik sendiri. */
+  readonly soldCount: number
+  readonly archivedAt?: string | null
+}
+
+export interface Barang extends ItemBase {
+  readonly kind: 'barang'
+  readonly stockQty: number
+  readonly minStock: number
+}
+
+export interface Jasa extends ItemBase {
+  readonly kind: 'jasa'
+  /** Sengaja tidak ada `stockQty`. Jasa tidak pernah habis. */
+}
+
+export type Item = Barang | Jasa
+
+/** Penyempit tipe, supaya stok tidak pernah diakses pada jasa. */
+export function isBarang(item: Item): item is Barang {
+  return item.kind === 'barang'
+}
+
+/** Baris di keranjang kasir. */
+export interface CartLine {
+  /** Kosong untuk barang di luar katalog (tombol "lainnya"). */
+  readonly itemId: string | null
+  readonly itemKind: ItemKind
+  /** Salinan nama saat transaksi — katalog boleh berubah nanti. */
+  readonly itemName: string
+  readonly qty: number
+  readonly unitPrice: Rupiah
+  readonly unitCost: Rupiah
+}
+
+export type PaymentMethod = 'tunai' | 'qris' | 'transfer' | 'utang'
+
+export const PAYMENT_LABELS: Readonly<Record<PaymentMethod, string>> = {
+  tunai: 'Tunai',
+  qris: 'QRIS',
+  transfer: 'Transfer',
+  utang: 'Utang',
+}
+
+export interface Sale {
+  readonly id: string
+  readonly invoiceNo: string
+  readonly occurredAt: string
+  readonly lines: readonly CartLine[]
+  readonly discount: Rupiah
+  readonly paid: Rupiah
+  readonly paymentMethod?: PaymentMethod | null
+  readonly customerName?: string | null
+  readonly note?: string | null
+  readonly voidedAt?: string | null
+}
 
 export type EntryKind = 'income' | 'expense' | 'transfer'
 export type Direction = 'in' | 'out'
+
+export type Category =
+  | 'penjualan'
+  | 'jasa'
+  | 'modal'
+  | 'operasional'
+  | 'upah'
+  | 'sewa'
+  | 'lainnya'
+  | 'pindah'
+
+/**
+ * Kategori yang boleh dipilih saat mencatat biaya secara manual.
+ *
+ * `penjualan`, `jasa`, dan `modal` sengaja tidak ada di sini: ketiganya
+ * lahir dari kasir dan kulakan. Kalau bisa dibuat manual, buku kas akan
+ * punya baris kulakan yang tidak berpasangan dengan kulakan mana pun.
+ */
+export const EXPENSE_CATEGORIES: readonly Category[] = [
+  'operasional',
+  'upah',
+  'sewa',
+  'lainnya',
+]
+
+export const CATEGORY_LABELS: Readonly<Record<Category, string>> = {
+  penjualan: 'Penjualan',
+  jasa: 'Jasa',
+  modal: 'Modal & Bahan',
+  operasional: 'Operasional',
+  upah: 'Upah',
+  sewa: 'Sewa',
+  lainnya: 'Lainnya',
+  pindah: 'Pindah Kas',
+}
 
 export type BusinessType =
   | 'dagang'
@@ -55,106 +156,6 @@ export const BUSINESS_TYPE_HINTS: Readonly<Record<BusinessType, string>> = {
   lainnya: 'Belum masuk pilihan di atas',
 }
 
-/**
- * Kategori.
- *
- * Daftar tertutup, memakai kata baku, dan dipilih supaya cukup umum untuk
- * usaha apa pun — warung, kuliner, laundry, jahit, bengkel. Kategori bebas
- * akan berkembang jadi puluhan ejaan untuk hal yang sama, dan laporan yang
- * menjumlahkannya berhenti bisa dipercaya.
- */
-export type Category =
-  // pemasukan usaha
-  | 'penjualan'
-  | 'jasa'
-  // pengeluaran usaha
-  | 'modal'
-  | 'operasional'
-  | 'upah'
-  | 'sewa'
-  // pemasukan rumah
-  | 'gaji'
-  | 'pemberian'
-  // pengeluaran rumah
-  | 'belanja'
-  | 'transportasi'
-  | 'utilitas'
-  | 'komunikasi'
-  | 'pendidikan'
-  | 'kesehatan'
-  | 'sosial'
-  | 'angsuran'
-  // di mana saja
-  | 'lainnya'
-  | 'pindah'
-
-/**
- * Kategori yang sah untuk tiap pasangan buku dan jenis.
- *
- * Sepadan dengan fungsi `category_fits` di peladen. Keduanya sengaja ada:
- * peladen menjaga kebenaran data, dan daftar ini menyusun pilihan di
- * layar — supaya kategori yang tidak mungkin tidak pernah sempat
- * ditawarkan.
- *
- * `lainnya` ada di setiap daftar. Selalu ada hal yang tidak masuk kategori
- * mana pun, dan pengguna yang terjebak tanpa pilihan akan berhenti
- * mencatat sama sekali.
- */
-export const CATEGORIES: Readonly<
-  Record<Book, Readonly<Record<'income' | 'expense', readonly Category[]>>>
-> = {
-  usaha: {
-    income: ['penjualan', 'jasa', 'lainnya'],
-    expense: ['modal', 'operasional', 'upah', 'sewa', 'lainnya'],
-  },
-  rumah: {
-    income: ['gaji', 'pemberian', 'lainnya'],
-    expense: [
-      'belanja',
-      'transportasi',
-      'utilitas',
-      'komunikasi',
-      'pendidikan',
-      'kesehatan',
-      'sosial',
-      'angsuran',
-      'lainnya',
-    ],
-  },
-}
-
-/**
- * Sebutan yang dipakai di layar.
- *
- * Kata baku, bukan singkatan atau istilah akuntansi. Semuanya dikumpulkan
- * di satu tempat supaya bisa diganti tanpa menyentuh sisa aplikasi.
- */
-export const CATEGORY_LABELS: Readonly<Record<Category, string>> = {
-  penjualan: 'Penjualan',
-  jasa: 'Jasa',
-  modal: 'Modal & Bahan',
-  operasional: 'Operasional',
-  upah: 'Upah',
-  sewa: 'Sewa',
-  gaji: 'Gaji',
-  pemberian: 'Pemberian',
-  belanja: 'Belanja',
-  transportasi: 'Transportasi',
-  utilitas: 'Listrik, Air & Gas',
-  komunikasi: 'Komunikasi',
-  pendidikan: 'Pendidikan',
-  kesehatan: 'Kesehatan',
-  sosial: 'Sosial',
-  angsuran: 'Angsuran',
-  lainnya: 'Lainnya',
-  pindah: 'Pindah Dompet',
-}
-
-export const BOOK_LABELS: Readonly<Record<Book, string>> = {
-  usaha: 'Usaha',
-  rumah: 'Rumah Tangga',
-}
-
 export type WalletKind = 'tunai' | 'bank' | 'ewallet'
 
 export const WALLET_KIND_LABELS: Readonly<Record<WalletKind, string>> = {
@@ -167,8 +168,6 @@ export interface Wallet {
   readonly id: string
   readonly name: string
   readonly kind: WalletKind
-  /** Sekadar usulan untuk mengisi layar catat, bukan aturan. Boleh kosong. */
-  readonly defaultBook?: Book | null
   readonly openingBalance: Rupiah
   readonly isDefault: boolean
   readonly archivedAt?: string | null
@@ -176,10 +175,7 @@ export interface Wallet {
 
 export interface CashEntry {
   readonly id: string
-  /** Di mana uangnya berpindah. */
   readonly walletId: string
-  /** Kegiatan mana. Kosong untuk pemindahan antar dompet. */
-  readonly book: Book | null
   readonly occurredAt: string
   readonly direction: Direction
   readonly amount: Rupiah
@@ -190,29 +186,41 @@ export interface CashEntry {
   readonly deletedAt?: string | null
 }
 
-/** Pintasan yang tumbuh sendiri dari pemakaian. Menggantikan katalog produk. */
-export interface QuickEntry {
-  readonly id: string
-  readonly book: Book
-  readonly kind: 'income' | 'expense'
-  readonly category: Category
-  readonly label: string
-  readonly defaultAmount: Rupiah
-  readonly useCount: number
-  readonly lastUsedAt?: string | null
-}
-
 export type DebtSide = 'receivable' | 'payable'
 
 export interface Debt {
   readonly id: string
-  readonly book: Book
   readonly side: DebtSide
   readonly person: string
   readonly amount: Rupiah
   readonly paidAmount: Rupiah
+  readonly saleId?: string | null
   readonly occurredAt: string
   readonly note?: string | null
   readonly settledAt?: string | null
   readonly deletedAt?: string | null
+}
+
+export type StockReason =
+  | 'penjualan'
+  | 'kulakan'
+  | 'koreksi'
+  | 'retur'
+  | 'rusak'
+
+export const STOCK_REASON_LABELS: Readonly<Record<StockReason, string>> = {
+  penjualan: 'Terjual',
+  kulakan: 'Kulakan',
+  koreksi: 'Koreksi',
+  retur: 'Retur',
+  rusak: 'Rusak',
+}
+
+export interface StockMovement {
+  readonly id: string
+  readonly itemId: string
+  readonly occurredAt: string
+  readonly qtyChange: number
+  readonly reason: StockReason
+  readonly note?: string | null
 }

@@ -2,7 +2,6 @@ import { describe, expect, it } from 'vitest'
 import { rupiah } from '@/lib/money'
 import {
   countsAsFlow,
-  filterByBook,
   isLive,
   pairTransfer,
   reconcile,
@@ -11,14 +10,7 @@ import {
   totalBalance,
   walletBalance,
 } from './cash'
-import {
-  DOMPET_UTAMA,
-  REKENING,
-  expense,
-  income,
-  makeWallet,
-  transfer,
-} from './fixtures'
+import { KAS, REKENING, expense, income, makeWallet, transfer } from './fixtures'
 
 describe('penyaringan entri', () => {
   it('entri yang dibatalkan tidak ikut dihitung', () => {
@@ -29,7 +21,7 @@ describe('penyaringan entri', () => {
   })
 
   it('pemindahan tidak ikut laporan penghasilan/biaya', () => {
-    const [out, into] = transfer(50_000, DOMPET_UTAMA, REKENING)
+    const [out, into] = transfer(50_000, KAS, REKENING)
     expect(countsAsFlow(out)).toBe(false)
     expect(countsAsFlow(into)).toBe(false)
     expect(countsAsFlow(income(30_000))).toBe(true)
@@ -41,40 +33,12 @@ describe('penyaringan entri', () => {
   })
 })
 
-describe('satu dompet, dua buku', () => {
-  // Kasus yang paling menentukan bagi produk: 73% UMKM Indonesia belum
-  // memisahkan keuangan usaha dan pribadi, dan mayoritas usaha mikro cuma
-  // punya satu tempat uang. Pemisahannya harus tetap bisa terjadi.
-  const entries = [
-    income(85_000, 'penjualan', { book: 'usaha', walletId: DOMPET_UTAMA }),
-    expense(42_000, 'belanja', { book: 'rumah', walletId: DOMPET_UTAMA }),
-    expense(20_000, 'modal', { book: 'usaha', walletId: DOMPET_UTAMA }),
-  ]
-
-  it('belanja dapur tidak mengurangi untung usaha walau sedompet', () => {
-    const usaha = summarizeFlow(filterByBook(entries, 'usaha'))
-    expect(usaha.income).toBe(85_000)
-    expect(usaha.expense).toBe(20_000)
-    expect(usaha.net).toBe(65_000)
-  })
-
-  it('belanja dapur masuk buku rumah', () => {
-    const rumah = summarizeFlow(filterByBook(entries, 'rumah'))
-    expect(rumah.expense).toBe(42_000)
-    expect(rumah.income).toBe(0)
-  })
-
-  it('saldo dompet tetap satu angka — uangnya memang di satu tempat', () => {
-    expect(walletBalance(makeWallet(), entries)).toBe(23_000)
-  })
-})
-
 describe('ringkasan arus', () => {
   it('memisahkan pemasukan dan pengeluaran', () => {
     const summary = summarizeFlow([
       income(30_000, 'jasa'),
       income(5_000, 'penjualan'),
-      expense(42_000, 'belanja'),
+      expense(42_000, 'operasional'),
     ])
 
     expect(summary.income).toBe(35_000)
@@ -84,6 +48,8 @@ describe('ringkasan arus', () => {
   })
 
   it('merinci per kategori', () => {
+    // Beda penjualan barang dan pemasukan jasa harus tetap terbaca:
+    // itu yang menjawab "sebenarnya yang menghidupi usaha ini apa".
     const summary = summarizeFlow([
       income(30_000, 'jasa'),
       income(35_000, 'jasa'),
@@ -92,7 +58,7 @@ describe('ringkasan arus', () => {
 
     expect(summary.byCategory.get('jasa')).toBe(65_000)
     expect(summary.byCategory.get('penjualan')).toBe(5_000)
-    expect(summary.byCategory.get('belanja')).toBeUndefined()
+    expect(summary.byCategory.get('operasional')).toBeUndefined()
   })
 
   it('daftar kosong menghasilkan nol, bukan NaN', () => {
@@ -110,25 +76,35 @@ describe('ringkasan arus', () => {
   })
 
   it('pemindahan tidak menambah pemasukan maupun pengeluaran', () => {
-    const [out, into] = transfer(50_000, DOMPET_UTAMA, REKENING)
+    const [out, into] = transfer(50_000, KAS, REKENING)
     const summary = summarizeFlow([income(30_000), out, into])
 
     expect(summary.income).toBe(30_000)
     expect(summary.expense).toBe(0)
     expect(summary.entryCount).toBe(1)
   })
+
+  it('kulakan mengurangi sisa bulan ini, bukan cuma menambah stok', () => {
+    // Kulakan menulis satu entri kas berkategori `modal`. Kalau ia hanya
+    // menambah stok tanpa mengurangi kas, "sisa" di beranda akan selalu
+    // terlihat lebih besar daripada isi laci — dan angka yang selalu
+    // terlalu bagus lebih cepat ditinggalkan daripada tidak ada angka.
+    const summary = summarizeFlow([
+      income(85_000, 'penjualan'),
+      expense(60_000, 'modal'),
+    ])
+    expect(summary.net).toBe(25_000)
+  })
 })
 
 describe('saldo dompet', () => {
   it('saldo awal ditambah seluruh mutasi', () => {
     const wallet = makeWallet({ openingBalance: rupiah(100_000) })
-    expect(
-      walletBalance(wallet, [income(30_000), income(35_000)]),
-    ).toBe(165_000)
+    expect(walletBalance(wallet, [income(30_000), income(35_000)])).toBe(165_000)
   })
 
   it('pemindahan menggerakkan saldo — uangnya memang berpindah', () => {
-    const [out, into] = transfer(50_000, DOMPET_UTAMA, REKENING)
+    const [out, into] = transfer(50_000, KAS, REKENING)
     const entries = [income(65_000), out, into]
 
     expect(walletBalance(makeWallet(), entries)).toBe(15_000)
@@ -139,7 +115,7 @@ describe('saldo dompet', () => {
 
   it('mengabaikan entri dompet lain', () => {
     const entries = [
-      income(30_000, 'penjualan', { walletId: DOMPET_UTAMA }),
+      income(30_000, 'penjualan', { walletId: KAS }),
       income(5_000, 'penjualan', { walletId: REKENING }),
     ]
     expect(walletBalance(makeWallet(), entries)).toBe(30_000)
@@ -154,9 +130,7 @@ describe('saldo dompet', () => {
   })
 
   it('boleh negatif — dompet bisa minus kalau ada yang belum tercatat', () => {
-    expect(
-      walletBalance(makeWallet(), [expense(50_000, 'modal', { book: 'usaha' })]),
-    ).toBe(-50_000)
+    expect(walletBalance(makeWallet(), [expense(50_000, 'modal')])).toBe(-50_000)
   })
 })
 
@@ -167,18 +141,15 @@ describe('total seluruh dompet', () => {
       makeWallet({ id: REKENING, name: 'Rekening', kind: 'bank', isDefault: false }),
     ]
     const entries = [
-      income(30_000, 'penjualan', { walletId: DOMPET_UTAMA }),
+      income(30_000, 'penjualan', { walletId: KAS }),
       income(5_000, 'penjualan', { walletId: REKENING }),
     ]
     expect(totalBalance(wallets, entries)).toBe(35_000)
   })
 
   it('pemindahan antar dompet tidak mengubah totalnya', () => {
-    const wallets = [
-      makeWallet(),
-      makeWallet({ id: REKENING, isDefault: false }),
-    ]
-    const [out, into] = transfer(50_000, DOMPET_UTAMA, REKENING)
+    const wallets = [makeWallet(), makeWallet({ id: REKENING, isDefault: false })]
+    const [out, into] = transfer(50_000, KAS, REKENING)
 
     expect(totalBalance(wallets, [income(80_000)])).toBe(80_000)
     expect(totalBalance(wallets, [income(80_000), out, into])).toBe(80_000)
@@ -194,7 +165,7 @@ describe('total seluruh dompet', () => {
       }),
     ]
     const entries = [
-      income(30_000, 'penjualan', { walletId: DOMPET_UTAMA }),
+      income(30_000, 'penjualan', { walletId: KAS }),
       income(5_000, 'penjualan', { walletId: REKENING }),
     ]
     expect(totalBalance(wallets, entries)).toBe(30_000)
@@ -219,10 +190,10 @@ describe('cocokkan dompet', () => {
 
 describe('pasangan pemindahan', () => {
   it('menemukan kedua sisinya untuk ditampilkan sebagai satu baris', () => {
-    const [out, into] = transfer(50_000, DOMPET_UTAMA, REKENING)
+    const [out, into] = transfer(50_000, KAS, REKENING)
     const pair = pairTransfer([income(30_000), out, into], out.transferGroupId!)
 
-    expect(pair.out?.walletId).toBe(DOMPET_UTAMA)
+    expect(pair.out?.walletId).toBe(KAS)
     expect(pair.in?.walletId).toBe(REKENING)
   })
 })

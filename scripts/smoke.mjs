@@ -3,19 +3,25 @@
  *
  * Tes unit membuktikan perhitungannya benar; berkas ini membuktikan
  * aplikasinya benar-benar jalan. Keduanya menangkap hal yang berbeda —
- * dua bug UX pertama (pilihan buku hilang saat kembali dari mencatat,
+ * dua bug UX pertama (pilihan yang hilang saat kembali dari layar lain,
  * dan ikon PWA yang tidak ada) lolos dari seluruh tes unit dan baru
  * ketahuan di sini.
  *
- * Yang diperiksa terakhir adalah yang paling penting bagi produk:
- * belanja rumah yang dibayar dari dompet yang sama **tidak** boleh
- * mengurangi untung usaha.
+ * Yang dijalankan adalah satu hari kerja yang lengkap: buka usaha, isi
+ * katalog dengan satu barang dan satu jasa, jual keduanya dalam satu
+ * struk, lalu periksa tiga hal yang menentukan produk ini dipercaya atau
+ * tidak:
+ *
+ *   1. struknya keluar,
+ *   2. stok barang berkurang,
+ *   3. **stok jasa tidak pernah berkurang.**
  *
  * Pakai:
  *   npm run build && npx next start -p 3311 &
  *   node scripts/smoke.mjs
  */
 import { chromium } from '@playwright/test'
+
 const BASE = 'http://localhost:3311'
 const browser = await chromium.launch({ executablePath: '/opt/pw-browsers/chromium' })
 const page = await browser.newPage({ viewport: { width: 390, height: 844 } })
@@ -28,49 +34,129 @@ const step = async (label, fn) => {
   catch (e) { console.log('  GAGAL  ' + label + ' — ' + String(e).split('\n')[0]); throw e }
 }
 
+const ketik = async (angka) => {
+  for (const d of String(angka)) {
+    await page.getByRole('button', { name: d, exact: true }).click()
+  }
+}
+
 await step('buka beranda', async () => {
-  await page.goto(BASE, { waitUntil: 'networkidle' }); await page.waitForTimeout(700)
+  await page.goto(BASE, { waitUntil: 'networkidle' })
+  await page.waitForTimeout(700)
 })
+
 await step('menuju pengaturan awal', async () => {
   await page.getByRole('link', { name: 'Mulai' }).click()
   await page.waitForURL('**/mulai')
 })
-await step('isi nama usaha', async () => {
+
+await step('isi nama usaha dan mulai', async () => {
   await page.getByPlaceholder('Warung Bu Ani').fill('Warung Uji')
   await page.waitForTimeout(300)
-})
-await step('tombol Mulai aktif', async () => {
   const b = page.getByRole('button', { name: 'Mulai', exact: true })
   if (await b.isDisabled()) throw new Error('tombol Mulai masih nonaktif')
   await b.click()
-  await page.waitForURL(BASE + '/', { timeout: 15000 })
-  await page.waitForTimeout(900)
-})
-await step('catat masuk 50.000', async () => {
-  await page.goto(BASE + '/catat/masuk?buku=usaha'); await page.waitForTimeout(700)
-  for (const d of ['5','0','0','0','0']) await page.getByRole('button', { name: d, exact: true }).click()
-  const b = page.getByRole('button', { name: 'Simpan' })
-  if (await b.isDisabled()) throw new Error('tombol Simpan nonaktif — nominal atau tenant belum siap')
-  await b.click(); await page.waitForTimeout(800)
-})
-await step('catat belanja rumah 42.000', async () => {
-  await page.goto(BASE + '/catat/keluar?buku=rumah'); await page.waitForTimeout(700)
-  for (const d of ['4','2','0','0','0']) await page.getByRole('button', { name: d, exact: true }).click()
-  await page.getByRole('button', { name: 'Belanja', exact: true }).click()
-  await page.getByRole('button', { name: 'Simpan' }).click(); await page.waitForTimeout(800)
+  // Langsung ke katalog: tanpa isi katalog, kasirnya kosong.
+  await page.waitForURL('**/katalog**', { timeout: 15000 })
+  await page.waitForTimeout(700)
 })
 
-await page.goto(BASE + '/'); await page.waitForTimeout(900)
-const kartu = async () => (await page.locator('section.kartu').first().innerText()).replace(/\n+/g, ' | ')
-console.log('\nTAB awal :', await page.getByRole('tab', { selected: true }).textContent())
-console.log('USAHA    :', await kartu())
-await page.getByRole('tab', { name: 'Rumah Tangga' }).click(); await page.waitForTimeout(600)
-console.log('RUMAH    :', await kartu())
+await step('tambah barang: Biskuit 5.000, stok 10', async () => {
+  await page.getByRole('link', { name: '+ Barang' }).click()
+  await page.waitForURL('**/katalog/baru**')
+  await page.waitForTimeout(600)
+  await page.getByPlaceholder('Biskuit Roma').fill('Biskuit Uji')
+  await ketik(5000)
+  await page.getByLabel('Stok sekarang').fill('10')
+  const b = page.getByRole('button', { name: 'Simpan', exact: true })
+  if (await b.isDisabled()) throw new Error('tombol Simpan nonaktif')
+  await b.click()
+  await page.waitForURL('**/katalog', { timeout: 15000 })
+  await page.waitForTimeout(700)
+})
 
-await page.getByRole('link', { name: /Uang Keluar/ }).click(); await page.waitForTimeout(600)
-const url = page.url()
-await page.goto(BASE + '/'); await page.waitForTimeout(900)
-console.log('\nURL catat dari tab rumah:', url.replace(BASE, ''))
-console.log('TAB setelah kembali    :', await page.getByRole('tab', { selected: true }).textContent())
+await step('tambah jasa: Potong celana 30.000', async () => {
+  await page.getByRole('link', { name: '+ Jasa' }).click()
+  await page.waitForURL('**/katalog/baru**')
+  await page.waitForTimeout(600)
+  await page.getByPlaceholder('Potong celana').fill('Potong celana')
+  await ketik(30000)
+  await page.getByRole('button', { name: 'Simpan', exact: true }).click()
+  await page.waitForURL('**/katalog', { timeout: 15000 })
+  await page.waitForTimeout(700)
+})
+
+await step('kolom stok memang tidak ada untuk jasa', async () => {
+  await page.goto(BASE + '/katalog/baru?jenis=jasa')
+  await page.waitForTimeout(600)
+  if (await page.getByLabel('Stok sekarang').count() !== 0) {
+    throw new Error('kolom stok muncul di formulir jasa')
+  }
+})
+
+await step('kasir: jual 2 biskuit + 1 potong celana', async () => {
+  await page.goto(BASE + '/kasir')
+  await page.waitForTimeout(800)
+  // Petak grid, bukan tombol +/− di keranjang: yang diuji di sini adalah
+  // ketukan pertama pada barangnya.
+  const petak = page.locator('.grid button', { hasText: 'Biskuit Uji' })
+  await petak.click()
+  await petak.click()
+  await page.locator('.grid button', { hasText: 'Potong celana' }).click()
+  await page.waitForTimeout(400)
+  await page.getByRole('button', { name: /^Bayar/ }).click()
+  await page.waitForTimeout(500)
+})
+
+await step('bayar uang pas lalu cetak struk', async () => {
+  await page.getByRole('button', { name: 'Uang pas' }).click()
+  await page.waitForTimeout(300)
+  await page.getByRole('button', { name: /Selesai & cetak struk/ }).click()
+  await page.waitForURL('**/struk/**', { timeout: 15000 })
+  await page.waitForTimeout(800)
+})
+
+const struk = await page.locator('pre').innerText()
+const punyaWa = await page.getByRole('link', { name: 'Kirim ke WhatsApp' }).count()
+
+await step('struk memuat kedua baris dan totalnya', async () => {
+  for (const potongan of ['Biskuit Uji', 'Potong celana', '40.000']) {
+    if (!struk.includes(potongan)) throw new Error('struk tanpa "' + potongan + '"')
+  }
+  if (punyaWa !== 1) throw new Error('tautan WhatsApp tidak ada')
+  // Urutannya sama dengan urutan diketuk di kasir. Sebelum `line_no` ada,
+  // struk yang sama bisa tampil dengan urutan berbeda tiap kali dibuka.
+  if (struk.indexOf('Biskuit Uji') > struk.indexOf('Potong celana')) {
+    throw new Error('urutan baris struk tidak mengikuti urutan keranjang')
+  }
+})
+
+await page.goto(BASE + '/katalog')
+await page.waitForTimeout(900)
+const daftar = (await page.locator('ul').first().innerText()).replace(/\n+/g, ' | ')
+
+await step('stok barang berkurang, jasa tidak punya sisa sama sekali', async () => {
+  // Dua biskuit terjual dari sepuluh.
+  if (!daftar.includes('Sisa 8')) throw new Error('stok biskuit tidak berkurang: ' + daftar)
+  // Pembeda utama produk: jasa tidak pernah habis, jadi barisnya memang
+  // tidak ada — bukan nol, bukan tanda hubung.
+  if (/Potong celana[^|]*\|\s*Rp 30\.000\s*\|\s*Sisa/.test(daftar)) {
+    throw new Error('jasa punya baris sisa stok: ' + daftar)
+  }
+})
+
+await page.goto(BASE + '/')
+await page.waitForTimeout(900)
+const beranda = (await page.locator('main').innerText()).replace(/\n+/g, ' | ')
+
+await step('penjualan langsung masuk pembukuan tanpa dicatat ulang', async () => {
+  if (!beranda.includes('40.000')) throw new Error('beranda tanpa total hari ini: ' + beranda)
+  if (!beranda.includes('1 struk')) throw new Error('beranda tanpa hitungan struk: ' + beranda)
+})
+
+console.log('\nSTRUK:\n' + struk.split('\n').map((l) => '  ' + l).join('\n'))
+console.log('\nKATALOG :', daftar)
+console.log('BERANDA :', beranda)
 console.log('\ngalat/404:', errs.length ? JSON.stringify([...new Set(errs)], null, 2) : 'tidak ada')
+
 await browser.close()
