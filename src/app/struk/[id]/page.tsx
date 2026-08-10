@@ -1,9 +1,10 @@
 'use client'
 
-import { use } from 'react'
+import { use, useState } from 'react'
 import { useLiveQuery } from 'dexie-react-hooks'
 import { db } from '@/lib/db/local'
-import { useApp } from '@/lib/useApp'
+import { actionContext, useApp } from '@/lib/useApp'
+import { voidSale } from '@/lib/actions/pos'
 import { fromDb } from '@/lib/money'
 import * as M from '@/lib/money'
 import {
@@ -13,6 +14,7 @@ import {
   whatsappShareUrl,
 } from '@/lib/domain/receipt'
 import { Uang } from '@/components/Uang'
+import { bluetoothTersedia, cetakStruk, PrinterError } from '@/lib/print/bluetooth'
 import type { CartLine, PaymentMethod, Sale } from '@/lib/domain/types'
 
 /**
@@ -34,7 +36,12 @@ export default function LayarStruk({
   readonly params: Promise<{ readonly id: string }>
 }) {
   const { id } = use(params)
-  const { businessName, businessPhone, ready } = useApp()
+  const { businessName, businessPhone, tenantId, ready } = useApp()
+
+  const [mencetak, setMencetak] = useState(false)
+  const [pesanCetak, setPesanCetak] = useState<string | null>(null)
+  const [konfirmasiBatal, setKonfirmasiBatal] = useState(false)
+  const [membatalkan, setMembatalkan] = useState(false)
 
   const sale = useLiveQuery(async () => {
     const row = await db().sales.get(id)
@@ -92,14 +99,48 @@ export default function LayarStruk({
   const ringkas = summarizeReceipt(sale)
   const shareUrl = whatsappShareUrl(receiptForWhatsapp(sale, header))
 
+  async function cetak() {
+    setMencetak(true)
+    setPesanCetak(null)
+    try {
+      // Teks yang sama persis dengan yang tampil di atas dan yang dikirim
+      // ke WhatsApp. Tidak ada penyusunan kedua.
+      const { namaPrinter } = await cetakStruk(teks)
+      setPesanCetak(`Tercetak di ${namaPrinter}.`)
+    } catch (e) {
+      // Gagal mencetak bukan gagal menyimpan: penjualannya sudah tercatat
+      // jauh sebelum tombol ini disentuh.
+      setPesanCetak(
+        e instanceof PrinterError ? e.message : 'Gagal mencetak. Coba lagi.',
+      )
+    } finally {
+      setMencetak(false)
+    }
+  }
+
+  async function batalkan() {
+    if (!tenantId || membatalkan) return
+    setMembatalkan(true)
+    try {
+      await voidSale(actionContext(tenantId), id)
+      setKonfirmasiBatal(false)
+    } finally {
+      setMembatalkan(false)
+    }
+  }
+
+  const dibatalkan = Boolean(sale.voidedAt)
+
   return (
     <main className="flex flex-1 flex-col gap-4 p-4 pb-8">
       <div className="kartu text-center">
         <p className="text-4xl" aria-hidden>
-          ✓
+          {dibatalkan ? '✕' : '✓'}
         </p>
-        <p className="mt-2 text-slate-600">Transaksi tersimpan</p>
-        <p className="text-money text-masuk">
+        <p className="mt-2 text-slate-600">
+          {dibatalkan ? 'Struk dibatalkan' : 'Transaksi tersimpan'}
+        </p>
+        <p className={`text-money ${dibatalkan ? 'text-slate-400 line-through' : 'text-masuk'}`}>
           <Uang nilai={ringkas.total} />
         </p>
         {M.isPositive(ringkas.change) && (
@@ -132,6 +173,69 @@ export default function LayarStruk({
         Kirim ke WhatsApp
       </a>
 
+      {/* Tombol cetak hanya muncul kalau perambannya memang bisa. Tombol
+          yang selalu ada lalu selalu gagal membuat orang mengira
+          printernya rusak. */}
+      {bluetoothTersedia() && (
+        <button
+          type="button"
+          disabled={mencetak}
+          onClick={cetak}
+          className="btn-aksi justify-center bg-slate-200 text-slate-900
+                     disabled:text-slate-400"
+        >
+          {mencetak ? 'Mencetak…' : 'Cetak ke printer'}
+        </button>
+      )}
+
+      {pesanCetak && (
+        <p role="status" className="kartu text-slate-700">
+          {pesanCetak}
+        </p>
+      )}
+
+      {/* Pembatalan diletakkan paling bawah dan butuh dua ketukan.
+          Ia mengembalikan stok dan menarik uang dari buku kas sekaligus,
+          dan tidak ada yang lebih mahal daripada pembatalan yang tidak
+          disengaja saat pembeli masih di depan meja. */}
+      {!dibatalkan &&
+        (konfirmasiBatal ? (
+          <div className="kartu flex flex-col gap-3">
+            <p className="font-semibold">Batalkan struk ini?</p>
+            <p className="text-slate-600">
+              Stoknya kembali dan uangnya ditarik dari buku kas. Struknya
+              tetap tersimpan sebagai riwayat, tidak dihapus.
+            </p>
+            <div className="flex gap-3">
+              <button
+                type="button"
+                disabled={membatalkan}
+                onClick={batalkan}
+                className="min-h-touch flex-1 rounded-xl bg-red-600 font-semibold
+                           text-white disabled:bg-slate-300"
+              >
+                Ya, batalkan
+              </button>
+              <button
+                type="button"
+                onClick={() => setKonfirmasiBatal(false)}
+                className="min-h-touch flex-1 rounded-xl bg-slate-200 font-semibold
+                           text-slate-800"
+              >
+                Tidak
+              </button>
+            </div>
+          </div>
+        ) : (
+          <button
+            type="button"
+            onClick={() => setKonfirmasiBatal(true)}
+            className="min-h-touch rounded-xl text-keluar"
+          >
+            Batalkan struk
+          </button>
+        ))}
+
       <div className="flex gap-3">
         <a
           href="/kasir"
@@ -141,17 +245,14 @@ export default function LayarStruk({
           Transaksi baru
         </a>
         <a
-          href="/"
+          href="/riwayat"
           className="flex min-h-touch flex-1 items-center justify-center rounded-xl
                      bg-slate-200 font-semibold text-slate-800"
         >
-          Selesai
+          Riwayat
         </a>
       </div>
 
-      {/* Printer termal menyusul: Web Bluetooth + ESC/POS, memakai teks
-          yang sama persis. Belum dipasang supaya alur utamanya bisa diuji
-          lebih dulu tanpa alat tambahan. */}
     </main>
   )
 }

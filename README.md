@@ -66,27 +66,32 @@ Alur pokoknya sudah jalan dari ujung ke ujung: pengaturan awal → isi katalog �
 | Keranjang, diskon, peringatan stok | 29 |
 | Aturan stok: status, urutan, saran kulakan, susun ulang | 19 |
 | Struk lebar-tetap (layar = WhatsApp = printer) | 19 |
+| Penyandi ESC/POS printer termal | 18 |
 | Buku kas, saldo dompet, cocokkan | 21 |
 | Rekap bulanan & total tahunan | 14 |
 | Utang & piutang | 17 |
 | Foto: pengecilan sebelum disimpan | 5 |
 | Antrean kirim luring + penggolongan kegagalan | 30 |
-| Aksi tulis (tulis lokal + antre, tanpa menunggu jaringan) | 28 |
-| Skema, RLS, jalur tulis (PostgreSQL sungguhan) | 73 penegasan |
+| Aksi tulis (tulis lokal + antre, tanpa menunggu jaringan) | 40 |
+| Skema, RLS, jalur tulis (PostgreSQL sungguhan) | 82 penegasan |
 
-Layar yang sudah ada: pengaturan awal, beranda, katalog (daftar, tambah, ubah, arsip), kasir, struk, stok, kulakan, koreksi hitung fisik, uang keluar.
+Layar yang sudah ada: pengaturan awal, beranda, katalog (daftar, tambah, ubah, arsip), kasir, struk, riwayat struk, stok, kulakan, koreksi hitung fisik, piutang, uang keluar.
 
-Belum ada: printer termal, riwayat struk, autentikasi, penarikan data dari peladen, laporan bulanan penuh.
+Struk bisa dicetak ke printer termal Bluetooth (Web Bluetooth + ESC/POS) — **teks yang sama persis** dengan yang tampil di layar dan yang dikirim ke WhatsApp. Penyandinya menerima string, bukan `Sale`, jadi tidak ada tempat kedua yang bisa melenceng. Kodenya sudah lengkap dan teruji; yang belum adalah pengujian dengan printer sungguhan.
+
+Belum ada: autentikasi, penarikan data dari peladen, laporan bulanan penuh.
 
 ### Supabase
 
-Proyeknya sudah berdiri dan keempat migrasi sudah terpasang — 12 tabel, RLS aktif di semuanya, 14 fungsi jalur tulis. Advisor Supabase dijalankan setelahnya dan menemukan satu hal yang benar-benar berbahaya:
+Proyeknya sudah berdiri dan keenam migrasi sudah terpasang — 12 tabel, RLS aktif di semuanya, 14 fungsi jalur tulis. Advisor Supabase dijalankan setelahnya dan menemukan satu hal yang benar-benar berbahaya:
 
 > **`anon` bisa memanggil setiap fungsi dan membaca setiap tabel di skema `public`.**
 
 Bukan karena migrasinya salah, tapi karena Supabase memberi `anon` hak itu lewat *default privileges* untuk tiap objek baru — dan `revoke ... from public` tidak mencabutnya, karena ia grant eksplisit, bukan warisan `public`. Hari itu tidak ada yang bocor (RLS aktif dan tidak satu pun policy menyebut `anon`), tapi sifatnya buruk: satu tabel baru yang lupa RLS langsung terbuka tanpa login.
 
 Ditutup di `20260810120000_harden.sql` dan `20260810120100_harden_anon_tables.sql`, lalu diuji: harness lokal sekarang **meniru pemberian hak itu** supaya penegasannya benar-benar menguji pencabutannya. Kontrol negatif membuktikan tesnya sensitif — dengan `revoke`-nya dimatikan, tes menyebutkan ke-18 fungsi dan ke-12 tabel yang terbuka.
+
+Lubang yang sama sempat terbuka lagi: bentuk `alter default privileges **in schema public** revoke execute on functions from public` diterima tanpa galat, tersimpan rapi di `pg_default_acl`, dan tidak mengubah apa pun — bawaan PostgreSQL hanya bisa ditekan lewat default privileges tingkat peran, tanpa `in schema`. Fungsi berikutnya yang dibuat kembali bisa dipanggil tanpa login, dan lagi-lagi yang menangkapnya adalah tesnya.
 
 Dua peringatan yang tersisa dibiarkan sadar: `create_tenant` dan `current_tenant_ids` memang harus bisa dipanggil pengguna yang login. Alasannya ditulis di migrasinya.
 
@@ -114,15 +119,15 @@ npm run dev
 ### Pengujian
 
 ```bash
-npm test          # 243 tes unit
+npm test          # 273 tes unit
 npm run typecheck
-npm run db:test   # 73 penegasan: migrasi, RLS, jalur tulis
+npm run db:test   # 82 penegasan: migrasi, RLS, jalur tulis
 
 npm run build && npx next start -p 3311 &
 npm run smoke     # alur nyata di peramban sungguhan
 ```
 
-`npm run smoke` menjalankan satu hari kerja lengkap di Chromium: buka usaha, isi katalog dengan satu barang dan satu jasa, jual keduanya dalam satu struk, kulakan, lalu koreksi hitung fisik — memeriksa strukya keluar, stok bergerak benar, kulakan **ikut mengurangi kas**, riwayatnya menjelaskan tiap selisih, dan **stok jasa tidak pernah berkurang.**
+`npm run smoke` menjalankan satu hari kerja lengkap di Chromium — 29 langkah: buka usaha, isi katalog dengan satu barang dan satu jasa, jual keduanya dalam satu struk, kulakan, koreksi hitung fisik, jual berutang, terima pelunasan, lalu batalkan satu struk. Yang diperiksa bukan "layarnya muncul" melainkan angkanya: kulakan **ikut mengurangi kas**, pembatalan **menarik uangnya kembali** dan mengembalikan stok lewat retur, penjumlahan riwayat stok tetap cocok setelah semuanya, dan **stok jasa tidak pernah berkurang.**
 
 Ia menangkap hal yang tidak bisa ditangkap tes unit. Tiga bug lolos dari seluruh tes unit dan baru ketahuan di sana: pilihan yang hilang saat kembali dari layar lain, ikon PWA yang tidak ada, dan — yang paling serius — **stok awal yang tidak pernah tercatat sebagai mutasi**, sehingga penjumlahan riwayat selamanya meleset sebesar stok awal tiap barang.
 

@@ -568,6 +568,202 @@ export async function adjustStock(
   return { delta }
 }
 
+// ── Pembatalan struk ─────────────────────────────────────────────────────
+
+/**
+ * Membatalkan penjualan.
+ *
+ * Tiga hal yang membentuknya, dan ketiganya sama persis dengan yang
+ * dilakukan `void_sale` di peladen:
+ *
+ * **Penjualannya ditandai, bukan dihapus.** Riwayat yang hilang tidak
+ * bisa diperiksa, dan pembatalan justru yang paling perlu bisa diperiksa
+ * — itu satu-satunya jalan uang keluar dari kasir tanpa ada barang yang
+ * berpindah.
+ *
+ * **Stok kembali lewat mutasi baru berjenis `retur`,** bukan dengan
+ * menghapus mutasi penjualannya. Buku stok hanya boleh bertambah
+ * barisnya.
+ *
+ * **Uangnya ditarik lewat entri kas keluar,** bukan dengan menghapus
+ * entri masuknya. Alasan yang sama.
+ */
+export async function voidSale(
+  context: ActionContext,
+  saleId: string,
+  reason?: string,
+): Promise<{ readonly refunded: Rupiah }> {
+  const { db, tenantId } = context
+  const now = nowFrom(context)
+  const stamp = now.toISOString()
+
+  const sale = await db.sales.get(saleId)
+  if (!sale) throw new Error('Struk tidak ditemukan')
+  if (sale.voided_at) return { refunded: M.ZERO }
+
+  const lines = (await db.saleItems.toArray()).filter((r) => r.sale_id === saleId)
+  const refundId = idFrom(context)
+  const movements: LocalStockMovement[] = lines
+    .filter((line) => line.item_id && line.item_kind === 'barang')
+    .map((line) => ({
+      id: idFrom(context),
+      tenant_id: tenantId,
+      item_id: line.item_id!,
+      occurred_at: stamp,
+      qty_change: line.qty,
+      reason: 'retur',
+      source_type: 'sale',
+      source_id: saleId,
+      note: reason ?? null,
+    }))
+
+  await db.transaction(
+    'rw',
+    [db.sales, db.saleItems, db.stockMovements, db.items, db.cashEntries, db.debts],
+    async () => {
+      await db.stockMovements.bulkPut(movements)
+
+      for (const line of lines) {
+        if (!line.item_id || line.item_kind !== 'barang') continue
+        const item = await db.items.get(line.item_id)
+        if (!item || item.stock_qty === null) continue
+        await db.items.update(line.item_id, {
+          stock_qty: item.stock_qty + line.qty,
+          updated_at: stamp,
+        })
+      }
+
+      // Sama seperti di peladen: hanya kalau uangnya memang pernah masuk
+      // dan ada dompet yang menerimanya.
+      if (sale.paid > 0 && sale.wallet_id) {
+        await db.cashEntries.put({
+          id: refundId,
+          tenant_id: tenantId,
+          wallet_id: sale.wallet_id,
+          occurred_at: stamp,
+          direction: 'out',
+          amount: M.fromDb(sale.paid),
+          kind: 'expense',
+          category: 'lainnya',
+          note: reason ?? `Pembatalan struk ${sale.invoice_no}`,
+          source_type: 'sale',
+          source_id: saleId,
+          transfer_group_id: null,
+          deleted_at: null,
+          updated_at: stamp,
+        })
+      }
+
+      for (const debt of await db.debts.toArray()) {
+        if (debt.sale_id === saleId && !debt.deleted_at) {
+          await db.debts.update(debt.id, { deleted_at: stamp, updated_at: stamp })
+        }
+      }
+
+      await db.sales.update(saleId, { voided_at: stamp, updated_at: stamp })
+    },
+  )
+
+  await enqueue(db, {
+    id: `void:${saleId}`,
+    tenantId,
+    rpc: 'void_sale',
+    args: {
+      p_sale_id: saleId,
+      p_tenant_id: tenantId,
+      p_reason: reason ?? null,
+    },
+    now,
+  })
+
+  return { refunded: M.fromDb(sale.paid) }
+}
+
+// ── Piutang ──────────────────────────────────────────────────────────────
+
+/**
+ * Menerima pembayaran utang.
+ *
+ * Kategorinya `lainnya`, **bukan** `penjualan`. Penghasilannya sudah
+ * diakui saat struknya keluar; menghitungnya sebagai penjualan baru
+ * berarti laporan bulanan menghitung uang yang sama dua kali, dan
+ * angkanya jadi lebih besar daripada yang benar-benar masuk.
+ *
+ * Yang dibayarkan tidak pernah melebihi sisanya — kelebihannya bukan
+ * pelunasan, dan mencatatnya sebagai pelunasan membuat piutangnya
+ * terlihat lunas berlebih.
+ */
+export async function payDebt(
+  context: ActionContext,
+  input: {
+    readonly debtId: string
+    readonly amount: Rupiah
+    readonly walletId: string
+    readonly occurredAt?: Date
+  },
+): Promise<{ readonly applied: Rupiah; readonly settled: boolean }> {
+  const { db, tenantId } = context
+  const id = idFrom(context)
+  const now = nowFrom(context)
+  const occurredAt = (input.occurredAt ?? now).toISOString()
+  const stamp = now.toISOString()
+
+  const debt = await db.debts.get(input.debtId)
+  if (!debt || debt.deleted_at) throw new Error('Utang tidak ditemukan')
+
+  const sisa = M.subtract(M.fromDb(debt.amount), M.fromDb(debt.paid_amount))
+  const applied = M.min(M.max(input.amount, M.ZERO), sisa)
+  if (M.isZero(applied)) return { applied: M.ZERO, settled: sisa === M.ZERO }
+
+  const dibayar = M.add(M.fromDb(debt.paid_amount), applied)
+  const settled = dibayar >= M.fromDb(debt.amount)
+  const masuk = debt.side === 'receivable'
+
+  await db.transaction('rw', [db.cashEntries, db.debts], async () => {
+    await db.cashEntries.put({
+      id,
+      tenant_id: tenantId,
+      wallet_id: input.walletId,
+      occurred_at: occurredAt,
+      direction: masuk ? 'in' : 'out',
+      amount: applied,
+      kind: masuk ? 'income' : 'expense',
+      category: 'lainnya',
+      note: masuk
+        ? `Bayar utang: ${debt.person}`
+        : `Lunasi utang kepada: ${debt.person}`,
+      source_type: 'debt',
+      source_id: input.debtId,
+      transfer_group_id: null,
+      deleted_at: null,
+      updated_at: stamp,
+    })
+
+    await db.debts.update(input.debtId, {
+      paid_amount: dibayar,
+      settled_at: settled ? stamp : debt.settled_at,
+      updated_at: stamp,
+    })
+  })
+
+  await enqueue(db, {
+    id,
+    tenantId,
+    rpc: 'pay_debt',
+    args: {
+      p_payment_id: id,
+      p_tenant_id: tenantId,
+      p_debt_id: input.debtId,
+      p_amount: applied,
+      p_wallet_id: input.walletId,
+      p_occurred_at: occurredAt,
+    },
+    now,
+  })
+
+  return { applied, settled }
+}
+
 // ── Biaya lain ───────────────────────────────────────────────────────────
 
 export async function recordExpense(

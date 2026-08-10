@@ -6,11 +6,13 @@ import { pendingCount } from '@/lib/sync/outbox'
 import {
   adjustStock,
   archiveItem,
+  payDebt,
   recordExpense,
   recordPurchase,
   recordSale,
   saveItem,
   setupTenant,
+  voidSale,
   type ActionContext,
 } from './pos'
 
@@ -443,5 +445,169 @@ describe('apa pun yang tercatat pasti terkirim', () => {
     })
 
     expect(await pendingCount(db)).toBe(5)
+  })
+})
+
+describe('pembatalan struk', () => {
+  async function jual() {
+    const { barang, jasa } = await seedKatalog()
+    const hasil = await recordSale(context, {
+      walletId: KAS,
+      paid: rupiah(45_000),
+      lines: [
+        { itemId: barang, itemKind: 'barang', itemName: 'Biskuit Roma',
+          qty: 3, unitPrice: rupiah(5_000), unitCost: rupiah(3_500) },
+        { itemId: jasa, itemKind: 'jasa', itemName: 'Potong celana',
+          qty: 1, unitPrice: rupiah(30_000), unitCost: rupiah(0) },
+      ],
+    })
+    return { ...hasil, barang, jasa }
+  }
+
+  it('menandai batal, tidak menghapus struknya', async () => {
+    const { id } = await jual()
+    await voidSale(context, id, 'Salah input')
+
+    // Riwayat yang hilang tidak bisa diperiksa, dan pembatalan justru yang
+    // paling perlu bisa diperiksa: itu satu-satunya jalan uang keluar dari
+    // kasir tanpa ada barang yang berpindah.
+    const struk = await db.sales.get(id)
+    expect(struk).toBeDefined()
+    expect(struk?.voided_at).toBe(NOW.toISOString())
+    expect(await db.saleItems.count()).toBe(2)
+  })
+
+  it('stok kembali lewat mutasi retur, bukan dengan menghapus mutasi jualnya', async () => {
+    const { id, barang } = await jual()
+    await voidSale(context, id)
+
+    expect((await db.items.get(barang))?.stock_qty).toBe(100)
+
+    const mutasi = (await db.stockMovements.toArray()).filter(
+      (m) => m.item_id === barang,
+    )
+    // awal +100, penjualan −3, retur +3. Buku stok hanya bertambah barisnya.
+    expect(mutasi.map((m) => m.reason).sort()).toEqual(['awal', 'penjualan', 'retur'])
+    expect(mutasi.reduce((s, m) => s + m.qty_change, 0)).toBe(100)
+  })
+
+  it('jasa tidak menghasilkan retur — tidak ada yang perlu dikembalikan', async () => {
+    const { id, jasa } = await jual()
+    await voidSale(context, id)
+
+    expect(
+      (await db.stockMovements.toArray()).filter((m) => m.item_id === jasa),
+    ).toHaveLength(0)
+  })
+
+  it('uang ditarik lewat entri keluar, bukan dengan menghapus entri masuknya', async () => {
+    const { id } = await jual()
+    await voidSale(context, id, 'Salah input')
+
+    const entri = (await db.cashEntries.toArray()).filter((e) => e.source_id === id)
+    expect(entri).toHaveLength(2)
+    expect(entri.filter((e) => e.direction === 'in')[0]?.amount).toBe(45_000)
+    expect(entri.filter((e) => e.direction === 'out')[0]?.amount).toBe(45_000)
+    // Netonya nol: uangnya kembali, dan kedua sisinya tetap bisa dibaca.
+    expect(entri.reduce((s, e) => s + (e.direction === 'in' ? e.amount : -e.amount), 0)).toBe(0)
+  })
+
+  it('piutang dari struk yang dibatalkan ikut batal', async () => {
+    const { barang } = await seedKatalog()
+    const { id } = await recordSale(context, {
+      walletId: KAS, paid: rupiah(0), customerName: 'Bu Tetangga',
+      lines: [{ itemId: barang, itemKind: 'barang', itemName: 'Biskuit Roma',
+                qty: 2, unitPrice: rupiah(5_000), unitCost: rupiah(3_500) }],
+    })
+
+    await voidSale(context, id)
+
+    const utang = (await db.debts.toArray()).find((d) => d.sale_id === id)
+    expect(utang?.deleted_at).toBe(NOW.toISOString())
+    // Tidak ada uang yang perlu ditarik: uangnya memang belum pernah masuk.
+    expect(await db.cashEntries.count()).toBe(0)
+  })
+
+  it('membatalkan dua kali tidak mengembalikan stok dua kali', async () => {
+    const { id, barang } = await jual()
+    await voidSale(context, id)
+    await voidSale(context, id)
+
+    expect((await db.items.get(barang))?.stock_qty).toBe(100)
+    expect(
+      (await db.stockMovements.toArray()).filter((m) => m.reason === 'retur'),
+    ).toHaveLength(1)
+  })
+})
+
+describe('pembayaran piutang', () => {
+  async function berutang(jumlah = 10_000) {
+    const { barang } = await seedKatalog()
+    await recordSale(context, {
+      walletId: KAS, paid: rupiah(0), customerName: 'Bu Tetangga',
+      lines: [{ itemId: barang, itemKind: 'barang', itemName: 'Biskuit Roma',
+                qty: jumlah / 5_000, unitPrice: rupiah(5_000), unitCost: rupiah(3_500) }],
+    })
+    const utang = (await db.debts.toArray())[0]!
+    return utang.id
+  }
+
+  it('cicilan mengurangi sisa tanpa melunasi', async () => {
+    const debtId = await berutang(10_000)
+    const hasil = await payDebt(context, { debtId, amount: rupiah(4_000), walletId: KAS })
+
+    expect(hasil.applied).toBe(4_000)
+    expect(hasil.settled).toBe(false)
+    const utang = await db.debts.get(debtId)
+    expect(utang?.paid_amount).toBe(4_000)
+    expect(utang?.settled_at).toBeNull()
+  })
+
+  it('pelunasan menandai lunas', async () => {
+    const debtId = await berutang(10_000)
+    const hasil = await payDebt(context, { debtId, amount: rupiah(10_000), walletId: KAS })
+
+    expect(hasil.settled).toBe(true)
+    expect((await db.debts.get(debtId))?.settled_at).toBe(NOW.toISOString())
+  })
+
+  it('kelebihan bayar tidak dicatat sebagai pelunasan berlebih', async () => {
+    const debtId = await berutang(10_000)
+    const hasil = await payDebt(context, { debtId, amount: rupiah(50_000), walletId: KAS })
+
+    expect(hasil.applied).toBe(10_000)
+    expect((await db.debts.get(debtId))?.paid_amount).toBe(10_000)
+    expect((await db.cashEntries.toArray())[0]?.amount).toBe(10_000)
+  })
+
+  it('masuk buku kas sebagai lainnya, bukan penjualan', async () => {
+    // Penghasilannya sudah diakui saat struknya keluar. Menghitungnya
+    // sebagai penjualan baru berarti laporan bulanan menghitung uang yang
+    // sama dua kali.
+    const debtId = await berutang(10_000)
+    await payDebt(context, { debtId, amount: rupiah(10_000), walletId: KAS })
+
+    const entri = (await db.cashEntries.toArray())[0]
+    expect(entri?.category).toBe('lainnya')
+    expect(entri?.direction).toBe('in')
+    expect(entri?.kind).toBe('income')
+  })
+
+  it('membayar utang yang sudah lunas tidak menambah entri kas', async () => {
+    const debtId = await berutang(10_000)
+    await payDebt(context, { debtId, amount: rupiah(10_000), walletId: KAS })
+    const hasil = await payDebt(context, { debtId, amount: rupiah(5_000), walletId: KAS })
+
+    expect(hasil.applied).toBe(0)
+    expect(await db.cashEntries.count()).toBe(1)
+  })
+
+  it('utang yang dibatalkan tidak bisa dibayar', async () => {
+    const debtId = await berutang(10_000)
+    await db.debts.update(debtId, { deleted_at: NOW.toISOString() })
+
+    await expect(
+      payDebt(context, { debtId, amount: rupiah(5_000), walletId: KAS }),
+    ).rejects.toThrow('tidak ditemukan')
   })
 })

@@ -149,7 +149,9 @@ export default function Beranda() {
 
   return (
     <main className="flex flex-1 flex-col gap-4 p-4 pb-8">
-      <header className="kartu">
+      {/* Kartunya sekaligus tautan ke riwayat: pertanyaan berikutnya
+          setelah melihat "3 struk" hampir selalu "struk yang mana". */}
+      <a href="/riwayat" className="kartu block">
         <p className="text-sm text-slate-500">{businessName} · hari ini</p>
         <p className="text-money text-masuk">
           <Uang nilai={arus.income} />
@@ -158,7 +160,7 @@ export default function Beranda() {
           {data?.strukHariIni ?? 0} struk · uang di tangan{' '}
           <Uang nilai={data?.saldo ?? ZERO} className="font-semibold" />
         </p>
-      </header>
+      </a>
 
       {/* Tombol terbesar di layar, dan yang pertama dijangkau ibu jari. */}
       <a href="/kasir" className="btn-aksi bg-slate-900 text-white">
@@ -246,12 +248,15 @@ export default function Beranda() {
       )}
 
       {piutang && piutang.count > 0 && (
-        <div className="kartu flex items-center gap-3">
+        <a href="/utang" className="kartu flex items-center gap-3">
           <span aria-hidden>📒</span>
-          <span className="font-semibold">
+          <span className="flex-1 font-semibold">
             {piutang.count} orang belum bayar · <Uang nilai={piutang.total} />
           </span>
-        </div>
+          <span aria-hidden className="text-xl text-slate-400">
+            ›
+          </span>
+        </a>
       )}
     </main>
   )

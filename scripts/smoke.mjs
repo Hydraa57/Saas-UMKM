@@ -223,9 +223,126 @@ await step('riwayat menjelaskan selisihnya, bukan cuma memperbaiki angkanya', as
   }
 })
 
+// ── Piutang: struk kurang bayar → tagih → lunas ─────────────────────────
+
+await step('jual berutang atas nama Bu Tetangga', async () => {
+  await page.goto(BASE + '/kasir')
+  await page.waitForTimeout(800)
+  await page.locator('.grid button', { hasText: 'Biskuit Uji' }).click()
+  await page.waitForTimeout(300)
+  await page.getByRole('button', { name: /^Bayar/ }).click()
+  await page.waitForTimeout(400)
+  // Nol dibayar: seluruhnya jadi piutang. Nominalnya sudah terisi penuh
+  // (5.000), jadi perlu empat kali hapus untuk sampai ke nol.
+  for (let i = 0; i < 4; i++) {
+    await page.getByRole('button', { name: 'Hapus satu angka' }).click()
+  }
+  await page.waitForTimeout(300)
+  await page.getByPlaceholder('Bu Tetangga').fill('Bu Tetangga')
+  await page.waitForTimeout(200)
+  await page.getByRole('button', { name: /Simpan sebagai utang/ }).click()
+  await page.waitForURL('**/struk/**', { timeout: 15000 })
+  await page.waitForTimeout(800)
+})
+
+await page.goto(BASE + '/utang')
+await page.waitForTimeout(900)
+const utang = (await page.locator('main').innerText()).replace(/\n+/g, ' | ')
+
+await step('piutang lahir sendiri dari struk, tanpa dicatat terpisah', async () => {
+  if (!utang.includes('Bu Tetangga')) throw new Error('piutang tidak muncul: ' + utang)
+  if (!utang.includes('Rp 5.000')) throw new Error('sisa piutang salah: ' + utang)
+})
+
+await step('terima pelunasan', async () => {
+  await page.getByRole('button', { name: /Bu Tetangga/ }).click()
+  await page.waitForTimeout(600)
+  await page.getByRole('button', { name: 'Terima pembayaran' }).click()
+  await page.waitForTimeout(900)
+})
+
+const utangSetelah = (await page.locator('main').innerText()).replace(/\n+/g, ' | ')
+
+await step('yang lunas hilang dari daftar tagihan', async () => {
+  if (!utangSetelah.includes('Tidak ada yang berutang')) {
+    throw new Error('piutang tidak lunas: ' + utangSetelah)
+  }
+})
+
+// ── Pembatalan struk: stok kembali, uang ditarik ────────────────────────
+
+await page.goto(BASE + '/riwayat')
+await page.waitForTimeout(900)
+const riwayat = (await page.locator('main').innerText()).replace(/\n+/g, ' | ')
+
+await step('riwayat memuat kedua struk', async () => {
+  for (const potongan of ['2026-0001', '2026-0002', 'Bu Tetangga']) {
+    if (!riwayat.includes(potongan)) {
+      throw new Error('riwayat tanpa "' + potongan + '": ' + riwayat)
+    }
+  }
+})
+
+await step('batalkan struk pertama', async () => {
+  await page.locator('a', { hasText: '2026-0001' }).first().click()
+  await page.waitForURL('**/struk/**', { timeout: 15000 })
+  await page.waitForTimeout(800)
+  await page.getByRole('button', { name: 'Batalkan struk' }).click()
+  await page.waitForTimeout(300)
+  await page.getByRole('button', { name: 'Ya, batalkan' }).click()
+  await page.waitForTimeout(900)
+})
+
+const strukBatal = (await page.locator('main').innerText()).replace(/\n+/g, ' | ')
+
+await step('struk ditandai batal, bukan hilang', async () => {
+  if (!strukBatal.includes('Struk dibatalkan')) {
+    throw new Error('struk tidak ditandai batal: ' + strukBatal)
+  }
+  // Barisnya harus tetap terbaca: riwayat yang hilang tidak bisa diperiksa.
+  if (!strukBatal.includes('Biskuit Uji')) {
+    throw new Error('isi struk hilang setelah dibatalkan: ' + strukBatal)
+  }
+})
+
+await page.goto(BASE + '/stok')
+await page.waitForTimeout(900)
+await page.locator('a', { hasText: 'Biskuit Uji' }).first().click()
+await page.waitForURL('**/stok/**', { timeout: 15000 })
+await page.waitForTimeout(800)
+const stokSetelahBatal = (await page.locator('main').innerText()).replace(/\n+/g, ' | ')
+
+await step('pembatalan mengembalikan stok lewat retur, dan riwayat tetap cocok', async () => {
+  // 25 setelah koreksi, −1 struk berutang, +2 retur dari struk yang dibatalkan.
+  if (!stokSetelahBatal.includes('26 pcs')) {
+    throw new Error('stok tidak kembali setelah pembatalan: ' + stokSetelahBatal)
+  }
+  if (!stokSetelahBatal.includes('Retur')) {
+    throw new Error('pembatalan tidak meninggalkan mutasi retur: ' + stokSetelahBatal)
+  }
+  if (stokSetelahBatal.includes('berbeda dari angka di atas')) {
+    throw new Error('penjumlahan riwayat meleset setelah pembatalan: ' + stokSetelahBatal)
+  }
+})
+
+await page.goto(BASE + '/')
+await page.waitForTimeout(900)
+const berandaAkhir = (await page.locator('main').innerText()).replace(/\n+/g, ' | ')
+
+await step('uang dari struk yang dibatalkan ditarik dari buku kas', async () => {
+  // 40.000 masuk + 5.000 pelunasan − 60.000 kulakan − 40.000 pembatalan
+  // = −55.000. Kalau pembatalan cuma menandai struknya, angkanya tetap
+  // −15.000 dan laci tidak akan pernah cocok lagi.
+  if (!berandaAkhir.includes('-Rp 55.000')) {
+    throw new Error('pembatalan tidak menarik uangnya: ' + berandaAkhir)
+  }
+})
+
 console.log('\nSTRUK:\n' + struk.split('\n').map((l) => '  ' + l).join('\n'))
 console.log('\nKATALOG :', daftar)
 console.log('BERANDA :', beranda)
+console.log('UTANG   :', utang)
+console.log('AKHIR   :', berandaAkhir)
 console.log('\ngalat/404:', errs.length ? JSON.stringify([...new Set(errs)], null, 2) : 'tidak ada')
 
 await browser.close()

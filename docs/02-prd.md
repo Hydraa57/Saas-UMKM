@@ -73,7 +73,9 @@ Tiga hal yang mengalir dari sini:
 
 **Kasir** — grid foto diurutkan menurut frekuensi terjual, bukan kotak pencarian. Ketuk = masuk keranjang. Bayar tunai/QRIS/transfer, uang pas sekali tap, kembalian dihitung.
 
-**Struk** — teks lebar-tetap yang sama persis untuk yang dilihat di layar, yang dikirim ke WhatsApp, dan yang nanti dicetak ke printer termal.
+**Struk** — teks lebar-tetap yang sama persis untuk yang dilihat di layar, yang dikirim ke WhatsApp, dan yang dicetak ke printer termal Bluetooth. Bisa dibuka ulang dari riwayat, dicetak ulang, dan dibatalkan.
+
+**Pembatalan struk** — stok kembali lewat mutasi `retur`, uang ditarik lewat entri kas keluar, piutangnya ikut batal. Struknya ditandai, bukan dihapus: pembatalan justru yang paling perlu bisa diperiksa.
 
 **Stok otomatis** — berkurang saat terjual, bertambah saat kulakan, bisa dikoreksi lewat hitung fisik. Tiap perubahan meninggalkan satu baris mutasi, jadi angkanya selalu bisa dijelaskan.
 
@@ -85,7 +87,7 @@ Tiga hal yang mengalir dari sini:
 
 **Rekap bulanan** — masuk, keluar, sisa; plus total tahunan, persis seperti di buku tulisnya.
 
-**Piutang** — dibuat otomatis dari struk yang kurang bayar, dan hanya kalau nama pembelinya diketahui. Piutang tanpa nama tidak bisa ditagih.
+**Piutang** — dibuat otomatis dari struk yang kurang bayar, dan hanya kalau nama pembelinya diketahui. Piutang tanpa nama tidak bisa ditagih. Daftarnya diurutkan dari yang paling lama, bukan yang paling besar: yang lama itu yang paling mungkin terlupakan. Menerima cicilan maupun pelunasan.
 
 **Jalan penuh tanpa internet**, PWA bisa dipasang.
 
@@ -98,6 +100,7 @@ Tiga hal yang mengalir dari sini:
 | Order berjangka: DP, tenggat, status | Yang dicatat cuma tanggal + jenis + harga |
 | Varian, satuan bertingkat, diskon per item | Beban input di depan pembeli, untuk kasus yang belum terbukti ada |
 | Barcode scanner | Menyusul; grid foto lebih cepat untuk katalog puluhan item |
+| Logo usaha di struk | Printer termal mencetaknya sebagai bitmap, dan bitmap adalah satu-satunya bagian struk yang tidak bisa dibagikan sebagai teks — ia akan membuat yang dicetak berbeda dari yang dikirim |
 | Multi-cabang, RBAC | Satu orang yang melayani |
 | WhatsApp Business API | Berbayar per pesan, perlu verifikasi Meta. Tautan `wa.me` sudah cukup untuk mengirim struk |
 | Redis, BullMQ, WebSocket | Tidak dibutuhkan untuk skala ini |

@@ -21,15 +21,16 @@ Dan satu urutan yang tidak boleh dibalik: **struk sebelum laporan.** Laporan ada
 | Keranjang, diskon, peringatan stok | 29 |
 | Aturan stok: status, urutan, saran kulakan, susun ulang | 19 |
 | Struk lebar-tetap (layar = WhatsApp = printer) | 19 |
+| Penyandi ESC/POS printer termal | 18 |
 | Buku kas, saldo dompet, cocokkan | 21 |
 | Rekap bulanan & total tahunan | 14 |
 | Utang & piutang | 17 |
 | Foto: pengecilan sebelum disimpan | 5 |
 | Antrean kirim luring + penggolongan kegagalan | 30 |
-| Aksi tulis (tulis lokal + antre, tanpa menunggu jaringan) | 28 |
-| Skema, RLS, jalur tulis (PostgreSQL sungguhan) | 73 penegasan |
+| Aksi tulis (tulis lokal + antre, tanpa menunggu jaringan) | 40 |
+| Skema, RLS, jalur tulis (PostgreSQL sungguhan) | 82 penegasan |
 
-Layar: pengaturan awal, beranda, katalog (daftar + tambah/ubah/arsip), kasir, struk, stok, kulakan, koreksi hitung fisik, uang keluar. Alur lengkapnya diuji di peramban sungguhan lewat `npm run smoke`.
+Layar: pengaturan awal, beranda, katalog (daftar + tambah/ubah/arsip), kasir, struk, riwayat struk, stok, kulakan, koreksi hitung fisik, piutang, uang keluar. Alur lengkapnya diuji di peramban sungguhan lewat `npm run smoke` — 29 langkah.
 
 ---
 
@@ -59,20 +60,22 @@ Yang terakhir itu bug nyata, ditemukan uji asap dan bukan oleh pembacaan ulang. 
 
 ---
 
-## Fase 3 — Printer termal & piutang (perkiraan 4 hari)
+## Fase 3 — Printer termal & piutang ✅
 
-- [ ] Cetak ke printer termal Bluetooth (Web Bluetooth + ESC/POS), memakai `renderReceipt` yang sama
-- [ ] Riwayat struk: buka ulang, cetak ulang, batalkan
-- [ ] Daftar siapa belum bayar, diurutkan dari yang paling lama
-- [ ] Terima cicilan pembayaran utang
+- [x] Cetak ke printer termal Bluetooth (Web Bluetooth + ESC/POS), memakai `renderReceipt` yang sama
+- [x] Riwayat struk: buka ulang, cetak ulang, batalkan
+- [x] Daftar siapa belum bayar, diurutkan dari yang paling lama
+- [x] Terima cicilan pembayaran utang
 
-**Selesai kalau:** struk yang dicetak sama persis dengan yang dilihat dan yang dikirim ke WhatsApp.
+Penyandi ESC/POS menerima **string**, bukan `Sale`. Kalau ia menyusun sendiri barisnya, akan ada dua tempat yang harus dijaga tetap sepadan — dan struk yang berbeda antara yang dibagikan dan yang dicetak adalah persis jenis selisih yang membuat pembeli curiga. Salah satu tesnya membandingkan tiap baris keluaran `renderReceipt` dengan bita yang dikirim.
+
+**Tersisa satu hal yang tidak bisa diselesaikan tanpa alat:** mencoba dengan printer termal sungguhan. Semua yang bisa diuji tanpa printer sudah diuji; yang belum adalah apakah UUID layanan yang dipilih cocok dengan printer yang nanti dibeli.
 
 ---
 
 ## Fase 4 — Laporan & sinkronisasi (perkiraan 4 hari)
 
-- [x] Proyek Supabase berdiri, keempat migrasi terpasang, advisor bersih dari temuan yang tidak disengaja
+- [x] Proyek Supabase berdiri, keenam migrasi terpasang, advisor bersih dari temuan yang tidak disengaja
 - [ ] Login satu akun, tanpa alur pendaftaran publik
 - [ ] Sambungkan antrean kirim ke Supabase sungguhan + penarikan data dari peladen
 - [ ] Unggah foto katalog ke Storage
@@ -126,12 +129,12 @@ Posisi lengkapnya di [`08-posisi-produk.md`](08-posisi-produk.md). Ringkasnya: a
 | Fase | Perkiraan | Hasil |
 |---|---|---|
 | 0 | selesai | Paham cara ibu mencatat, dari bukunya sendiri |
-| — | selesai | Fondasi, skema, logika, 243 tes + 73 penegasan DB |
+| — | selesai | Fondasi, skema, logika, 273 tes + 82 penegasan DB |
 | 1 | selesai | **Kasir, katalog, dan struk jalan** |
 | 2 | selesai | **Stok yang lingkarannya tertutup** |
-| 3 | 4 hari | Printer termal & piutang |
+| 3 | selesai | **Printer termal, riwayat struk, piutang** |
 | 4 | 4 hari | Laporan & sinkronisasi peladen |
 | 5 | 4 hari | Layak dipercaya jangka panjang |
 | 6 | 30 hari | Bukti, bukan asumsi |
 
-Sekitar 12 hari kerja sampai lengkap.
+Sekitar 8 hari kerja sampai lengkap, plus satu percobaan dengan printer sungguhan.

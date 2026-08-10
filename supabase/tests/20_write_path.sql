@@ -232,6 +232,85 @@ select assert_eq(
   0, 'kurang bayar tanpa nama tidak jadi piutang'
 );
 
+-- ── Pembayaran piutang ───────────────────────────────────────────────────
+--
+-- Yang paling menentukan di sini bukan angkanya, tapi **kategorinya**.
+-- Penghasilannya sudah diakui saat struknya keluar; kalau pembayaran
+-- utang masuk sebagai `penjualan`, rekap bulanan menghitung uang yang
+-- sama dua kali dan angkanya jadi lebih besar daripada yang benar-benar
+-- diterima — salah tanpa memunculkan galat apa pun.
+
+create temp table d as
+  select id from debts where sale_id = 'cccccccc-2222-0000-0000-000000000002';
+
+select pay_debt(
+  'cccccccc-6666-0000-0000-000000000001',
+  'cccccccc-0000-0000-0000-000000000001',
+  (select id from d), 4000, (select kas from w)
+);
+
+select assert_eq(
+  (select category from cash_entries where id = 'cccccccc-6666-0000-0000-000000000001'),
+  'lainnya', 'pembayaran utang bukan penjualan baru — uangnya tidak dihitung dua kali'
+);
+select assert_eq(
+  (select direction from cash_entries where id = 'cccccccc-6666-0000-0000-000000000001'),
+  'in', 'piutang yang dibayar adalah uang masuk'
+);
+select assert_eq(
+  (select paid_amount from debts where id = (select id from d)),
+  4000::bigint, 'cicilan mengurangi sisa utang'
+);
+select assert_eq(
+  (select settled_at is null from debts where id = (select id from d)),
+  true, 'cicilan belum melunasi'
+);
+
+-- Kelebihan bayar dipotong ke sisanya. Mencatatnya utuh membuat piutang
+-- terlihat lunas berlebih, dan buku kas menerima uang yang tidak ada.
+select pay_debt(
+  'cccccccc-6666-0000-0000-000000000002',
+  'cccccccc-0000-0000-0000-000000000001',
+  (select id from d), 99000, (select kas from w)
+);
+
+select assert_eq(
+  (select amount from cash_entries where id = 'cccccccc-6666-0000-0000-000000000002'),
+  6000::bigint, 'kelebihan bayar dipotong ke sisa utangnya'
+);
+select assert_eq(
+  (select paid_amount from debts where id = (select id from d)),
+  10000::bigint, 'utang tidak pernah terbayar melebihi jumlahnya'
+);
+select assert_eq(
+  (select settled_at is not null from debts where id = (select id from d)),
+  true, 'pelunasan menandai lunas'
+);
+
+-- Pemutaran ulang antrean luring tidak boleh menerima uang dua kali.
+do $$
+declare i int;
+begin
+  for i in 1..5 loop
+    perform pay_debt(
+      'cccccccc-6666-0000-0000-000000000002',
+      'cccccccc-0000-0000-0000-000000000001',
+      (select id from d), 99000, (select kas from w)
+    );
+  end loop;
+end;
+$$;
+
+select assert_eq(
+  (select count(*)::int from cash_entries
+   where id = 'cccccccc-6666-0000-0000-000000000002'),
+  1, 'pemutaran ulang pembayaran tetap satu entri kas'
+);
+select assert_eq(
+  (select paid_amount from debts where id = (select id from d)),
+  10000::bigint, 'pemutaran ulang tidak menambah pembayaran'
+);
+
 -- ── Kembalian ────────────────────────────────────────────────────────────
 
 select record_sale(
