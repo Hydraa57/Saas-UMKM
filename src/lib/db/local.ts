@@ -175,7 +175,11 @@ export class LocalDatabase extends Dexie {
   outbox!: EntityTable<OutboxItem, 'id'>
   meta!: EntityTable<MetaRow, 'key'>
 
-  constructor(name = 'nexausaha') {
+  // Nama basis data IndexedDB. Setelah ada pengguna sungguhan, nama ini
+  // **tidak boleh diganti**: mengganti nama tidak memindahkan datanya, ia
+  // membuat basis data baru yang kosong — dan pengguna melihat seluruh
+  // katalog dan riwayat penjualannya lenyap tanpa pesan apa pun.
+  constructor(name = 'ezura') {
     super(name)
 
     // Indeks dipilih dari query yang benar-benar dipakai layar. Indeks

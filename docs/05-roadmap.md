@@ -26,7 +26,7 @@ Dan satu urutan yang tidak boleh dibalik: **struk sebelum laporan.** Laporan ada
 | Foto: pengecilan sebelum disimpan | 5 |
 | Antrean kirim luring + penggolongan kegagalan | 30 |
 | Aksi tulis (tulis lokal + antre, tanpa menunggu jaringan) | 24 |
-| Skema, RLS, jalur tulis (PostgreSQL sungguhan) | 62 penegasan |
+| Skema, RLS, jalur tulis (PostgreSQL sungguhan) | 68 penegasan |
 
 Layar: pengaturan awal, beranda, katalog (daftar + tambah/ubah/arsip), kasir, struk, uang keluar. Alur lengkapnya diuji di peramban sungguhan lewat `npm run smoke`.
 
@@ -70,6 +70,7 @@ Stok yang hanya berkurang akan habis, lalu angkanya berhenti berarti.
 
 ## Fase 4 — Laporan & sinkronisasi (perkiraan 4 hari)
 
+- [x] Proyek Supabase berdiri, keempat migrasi terpasang, advisor bersih dari temuan yang tidak disengaja
 - [ ] Login satu akun, tanpa alur pendaftaran publik
 - [ ] Sambungkan antrean kirim ke Supabase sungguhan + penarikan data dari peladen
 - [ ] Unggah foto katalog ke Storage
@@ -123,7 +124,7 @@ Posisi lengkapnya di [`08-posisi-produk.md`](08-posisi-produk.md). Ringkasnya: a
 | Fase | Perkiraan | Hasil |
 |---|---|---|
 | 0 | selesai | Paham cara ibu mencatat, dari bukunya sendiri |
-| — | selesai | Fondasi, skema, logika, 220 tes + 62 penegasan DB |
+| — | selesai | Fondasi, skema, logika, 220 tes + 68 penegasan DB |
 | 1 | selesai | **Kasir, katalog, dan struk jalan** |
 | 2 | 3 hari | Stok yang lingkarannya tertutup |
 | 3 | 4 hari | Printer termal & piutang |

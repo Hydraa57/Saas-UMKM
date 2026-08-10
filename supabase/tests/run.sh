@@ -24,7 +24,7 @@ set -uo pipefail
 PGPORT="${PGPORT:-55432}"
 PGHOST="${PGHOST:-/tmp}"
 PGUSER="${PGUSER:-postgres}"
-DB="nexausaha_test"
+DB="ezura_test"
 
 export PGPORT PGHOST PGUSER
 

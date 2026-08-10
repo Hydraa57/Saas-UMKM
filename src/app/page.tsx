@@ -138,7 +138,7 @@ export default function Beranda() {
     return (
       <main className="flex flex-1 flex-col justify-center gap-5 p-4">
         <div>
-          <h1 className="text-xl font-bold">Kasir Usaha</h1>
+          <h1 className="text-xl font-bold">Ezura</h1>
           <p className="mt-1 text-slate-600">
             Jual barang dan jasa, cetak struk, stok dan catatannya ikut
             terisi sendiri.

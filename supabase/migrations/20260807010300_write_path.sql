@@ -10,6 +10,10 @@
 -- Semua idempoten terhadap `id` dari perangkat, supaya pemutaran ulang
 -- antrean luring aman. Semua `security invoker` supaya RLS tetap berlaku
 -- — kecuali `create_tenant`, yang berjalan saat keanggotaan belum ada.
+--
+-- Semua memakai `set search_path` tetap: tanpa itu, pemanggil bisa
+-- menyisipkan skema di depan `public` dan membuat fungsinya menulis ke
+-- tabel yang salah.
 
 -- Sepadan dengan `roundHalfUp` di src/lib/money.ts: setengah menjauh dari
 -- nol. `round()` PostgreSQL untuk `numeric` sudah begitu — berbeda dari
@@ -17,6 +21,7 @@
 create or replace function money_round(value numeric)
 returns bigint
 language sql immutable
+set search_path = public, pg_temp
 as $$ select round(value)::bigint $$;
 
 -- ── Pembuatan tenant ─────────────────────────────────────────────────────
@@ -84,6 +89,7 @@ create or replace function upsert_item(
 )
 returns jsonb
 language plpgsql
+set search_path = public, pg_temp
 as $$
 declare
   v_stock numeric;
@@ -137,6 +143,7 @@ $$;
 create or replace function archive_item(p_item_id uuid, p_archived boolean default true)
 returns jsonb
 language plpgsql
+set search_path = public, pg_temp
 as $$
 begin
   update items
@@ -153,6 +160,7 @@ $$;
 create or replace function next_invoice_no(p_tenant_id uuid, p_year integer)
 returns text
 language plpgsql
+set search_path = public, pg_temp
 as $$
 declare v_next integer;
 begin
@@ -195,6 +203,7 @@ create or replace function record_sale(
 )
 returns jsonb
 language plpgsql
+set search_path = public, pg_temp
 as $$
 declare
   v_item       jsonb;
@@ -352,6 +361,7 @@ create or replace function void_sale(
 )
 returns jsonb
 language plpgsql
+set search_path = public, pg_temp
 as $$
 declare
   v_sale sales%rowtype;
@@ -427,6 +437,7 @@ create or replace function record_purchase(
 )
 returns jsonb
 language plpgsql
+set search_path = public, pg_temp
 as $$
 declare
   v_item  jsonb;
@@ -525,6 +536,7 @@ create or replace function adjust_stock(
 )
 returns jsonb
 language plpgsql
+set search_path = public, pg_temp
 as $$
 declare
   v_kind    text;
@@ -573,6 +585,7 @@ create or replace function record_expense(
 )
 returns jsonb
 language plpgsql
+set search_path = public, pg_temp
 as $$
 begin
   if exists (select 1 from cash_entries where id = p_entry_id) then
@@ -616,6 +629,7 @@ create or replace function record_transfer(
 )
 returns jsonb
 language plpgsql
+set search_path = public, pg_temp
 as $$
 declare v_count integer;
 begin
@@ -665,6 +679,7 @@ create or replace function pay_debt(
 )
 returns jsonb
 language plpgsql
+set search_path = public, pg_temp
 as $$
 declare
   v_debt    debts%rowtype;

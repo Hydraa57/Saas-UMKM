@@ -144,3 +144,60 @@ select assert_eq(
                      where i.indrelid = c.oid and a.attnum = i.indkey[0])),
   '', 'setiap tabel ber-tenant_id punya indeks yang diawali tenant_id'
 );
+
+-- ── `anon` tidak boleh memanggil apa pun ─────────────────────────────────
+--
+-- Supabase memberi `anon` hak eksekusi pada tiap fungsi baru di `public`
+-- lewat default privileges, dan `revoke ... from public` tidak
+-- mencabutnya. Harness meniru pemberian itu, jadi penegasan di bawah
+-- benar-benar menguji pencabutannya — bukan lulus karena haknya memang
+-- tidak pernah ada.
+
+select assert_eq(
+  (select coalesce(string_agg(p.proname, ', ' order by p.proname), '')
+   from pg_proc p join pg_namespace n on n.oid = p.pronamespace
+   where n.nspname = 'public'
+     and has_function_privilege('anon', p.oid, 'execute')),
+  '', 'anon tidak bisa mengeksekusi satu pun fungsi di public'
+);
+
+-- Sisi sebaliknya, supaya pencabutan di atas tidak diam-diam ikut
+-- mematikan aplikasinya: pengguna yang login tetap bisa memanggil kasir.
+select assert(
+  has_function_privilege('authenticated', 'public.record_sale(uuid,uuid,jsonb,uuid,bigint,bigint,text,text,timestamptz,text,uuid,uuid)', 'execute'),
+  'pengguna yang login tetap bisa memanggil record_sale'
+);
+
+-- Hak tabel juga, dan ini yang paling menentukan: dengan haknya dicabut,
+-- tabel baru yang lupa `enable row level security` gagal tertutup —
+-- ditolak karena tidak berhak, bukan terbuka untuk siapa saja.
+select assert_eq(
+  (select coalesce(string_agg(c.relname, ', ' order by c.relname), '')
+   from pg_class c join pg_namespace n on n.oid = c.relnamespace
+   where n.nspname = 'public' and c.relkind = 'r'
+     and has_table_privilege('anon', c.oid, 'select')),
+  '', 'anon tidak bisa membaca satu pun tabel di public'
+);
+
+select assert_eq(
+  (select count(*)::int from pg_policy p
+   where 'anon' = any(select rolname from pg_roles where oid = any(p.polroles))),
+  0, 'tidak ada policy yang menyebut anon'
+);
+
+-- Sisi sebaliknya: pengguna yang login tetap bisa membaca katalognya.
+select assert(
+  has_table_privilege('authenticated', 'public.items', 'select'),
+  'pengguna yang login tetap bisa membaca katalog'
+);
+
+-- Fungsi dan tabel yang ditambahkan migrasi berikutnya tidak boleh
+-- membuka lubang yang sama lagi.
+select assert_eq(
+  (select coalesce(string_agg(defaclrole::regrole::text, ', '), '')
+   from pg_default_acl
+   where defaclnamespace = 'public'::regnamespace
+     and defaclobjtype = 'f'
+     and array_to_string(defaclacl, ',') like '%anon=X%'),
+  '', 'fungsi baru di public tidak otomatis bisa dieksekusi anon'
+);

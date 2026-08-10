@@ -1,4 +1,4 @@
-# NexaUsaha
+# Ezura
 
 **Aplikasi kasir untuk usaha yang menjual barang sekaligus menerima jasa.**
 Layani pembeli, cetak struk — pembukuan dan stok terisi sendiri.
@@ -71,11 +71,23 @@ Alur pokoknya sudah jalan dari ujung ke ujung: pengaturan awal → isi katalog �
 | Foto: pengecilan sebelum disimpan | 5 |
 | Antrean kirim luring + penggolongan kegagalan | 30 |
 | Aksi tulis (tulis lokal + antre, tanpa menunggu jaringan) | 24 |
-| Skema, RLS, jalur tulis (PostgreSQL sungguhan) | 62 penegasan |
+| Skema, RLS, jalur tulis (PostgreSQL sungguhan) | 68 penegasan |
 
 Layar yang sudah ada: pengaturan awal, beranda, katalog (daftar, tambah, ubah, arsip), kasir, struk, uang keluar.
 
 Belum ada: printer termal, kulakan, koreksi stok, riwayat struk, autentikasi, penarikan data dari peladen, laporan bulanan penuh.
+
+### Supabase
+
+Proyeknya sudah berdiri dan keempat migrasi sudah terpasang — 12 tabel, RLS aktif di semuanya, 14 fungsi jalur tulis. Advisor Supabase dijalankan setelahnya dan menemukan satu hal yang benar-benar berbahaya:
+
+> **`anon` bisa memanggil setiap fungsi dan membaca setiap tabel di skema `public`.**
+
+Bukan karena migrasinya salah, tapi karena Supabase memberi `anon` hak itu lewat *default privileges* untuk tiap objek baru — dan `revoke ... from public` tidak mencabutnya, karena ia grant eksplisit, bukan warisan `public`. Hari itu tidak ada yang bocor (RLS aktif dan tidak satu pun policy menyebut `anon`), tapi sifatnya buruk: satu tabel baru yang lupa RLS langsung terbuka tanpa login.
+
+Ditutup di `20260810120000_harden.sql` dan `20260810120100_harden_anon_tables.sql`, lalu diuji: harness lokal sekarang **meniru pemberian hak itu** supaya penegasannya benar-benar menguji pencabutannya. Kontrol negatif membuktikan tesnya sensitif — dengan `revoke`-nya dimatikan, tes menyebutkan ke-18 fungsi dan ke-12 tabel yang terbuka.
+
+Dua peringatan yang tersisa dibiarkan sadar: `create_tenant` dan `current_tenant_ids` memang harus bisa dipanggil pengguna yang login. Alasannya ditulis di migrasinya.
 
 ## Dokumen
 
@@ -103,7 +115,7 @@ npm run dev
 ```bash
 npm test          # 220 tes unit
 npm run typecheck
-npm run db:test   # 62 penegasan: migrasi, RLS, jalur tulis
+npm run db:test   # 68 penegasan: migrasi, RLS, jalur tulis
 
 npm run build && npx next start -p 3311 &
 npm run smoke     # alur nyata di peramban sungguhan
@@ -127,4 +139,6 @@ Pengujian isolasi tenant dijalankan sebagai peran `authenticated`, bukan superus
 
 ## Catatan nama
 
-`NexaUsaha` masih nama sementara. Nama kerja awal "NexaPOS" diganti, dan sekarang produknya memang aplikasi kasir — tapi "POS" tetap salah menarik pembanding. Kalau namanya POS, orang membandingkannya dengan Majoo dan Kasir Pintar, dan kita kalah di setiap kolom fitur kecuali satu. Yang ingin dibandingkan adalah buku tulis, dan celahnya: jasa yang tidak pernah bisa habis.
+Namanya **Ezura**. Dua nama kerja sebelumnya dibuang: "NexaPOS" karena "POS" salah menarik pembanding — kalau namanya POS, orang membandingkannya dengan Majoo dan Kasir Pintar, dan kita kalah di setiap kolom fitur kecuali satu; lalu "NexaUsaha" karena terdengar seperti aplikasi pembukuan, padahal yang dibangun adalah kasir.
+
+Nama basis data lokalnya juga `ezura`, dan itu **tidak boleh diganti lagi** setelah ada pengguna sungguhan: mengganti nama IndexedDB tidak memindahkan datanya, ia membuat basis data baru yang kosong.

@@ -47,6 +47,18 @@ grant usage on schema public to authenticated, anon;
 grant usage on schema auth to authenticated, anon;
 grant select on auth.users to authenticated;
 
+-- Supabase memberi `anon` hak eksekusi pada setiap fungsi baru di skema
+-- `public` lewat default privileges. Itu ditiru di sini, bukan
+-- dihilangkan: kalau harness-nya lebih aman daripada Supabase, pengujian
+-- yang menegaskan "anon tidak bisa memanggil apa pun" akan lulus di sini
+-- dan tetap bocor di produksi.
+alter default privileges in schema public
+  grant execute on functions to anon, authenticated;
+alter default privileges in schema public
+  grant select, insert, update, delete on tables to anon;
+alter default privileges in schema public
+  grant usage, select on sequences to anon;
+
 -- ── Penegasan ────────────────────────────────────────────────────────────
 
 create or replace function assert(condition boolean, label text)

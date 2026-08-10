@@ -353,6 +353,7 @@ create index debts_person_idx on debts (tenant_id, person);
 create or replace function set_updated_at()
 returns trigger
 language plpgsql
+set search_path = public, pg_temp
 as $$
 begin
   new.updated_at := now();
