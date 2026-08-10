@@ -91,6 +91,75 @@ describe('katalog', () => {
     expect(row?.uploaded_at).toBeNull()
   })
 
+  it('stok awal ikut tercatat sebagai mutasi', async () => {
+    const { barang, jasa } = await seedKatalog()
+
+    // Tanpa mutasi awal, penjumlahan seluruh mutasi tidak akan pernah
+    // cocok dengan `stock_qty` — selamanya meleset sebesar stok awalnya,
+    // dan selisih stok yang tidak bisa dijelaskan adalah awal dari
+    // berhenti memercayai angkanya.
+    const mutasi = (await db.stockMovements.toArray()).filter(
+      (m) => m.item_id === barang,
+    )
+    expect(mutasi).toHaveLength(1)
+    expect(mutasi[0]?.reason).toBe('awal')
+    expect(mutasi[0]?.qty_change).toBe(100)
+
+    // Jasa tidak punya stok awal, jadi tidak punya mutasi apa pun.
+    expect(
+      (await db.stockMovements.toArray()).filter((m) => m.item_id === jasa),
+    ).toHaveLength(0)
+  })
+
+  it('stok awal nol tidak menghasilkan mutasi kosong', async () => {
+    const { id } = await saveItem(context, {
+      kind: 'barang', name: 'Belum kulakan', price: rupiah(1_000), stockQty: 0,
+    })
+    expect(
+      (await db.stockMovements.toArray()).filter((m) => m.item_id === id),
+    ).toHaveLength(0)
+  })
+
+  it('menyunting katalog tidak melahirkan mutasi baru', async () => {
+    const { barang } = await seedKatalog()
+    await saveItem(context, {
+      id: barang, kind: 'barang', name: 'Biskuit Roma', price: rupiah(6_000),
+      stockQty: 999,
+    })
+
+    // Stoknya tidak berubah, jadi tidak ada yang perlu dijelaskan.
+    expect(
+      (await db.stockMovements.toArray()).filter((m) => m.item_id === barang),
+    ).toHaveLength(1)
+  })
+
+  it('stok tersimpan selalu sama dengan penjumlahan mutasinya', async () => {
+    // Inilah invarian yang membuat angka stok bisa diperiksa, dan
+    // satu-satunya alasan riwayat pergerakan ada. Diuji lewat satu hari
+    // kerja penuh: didaftarkan, terjual, dikulak, dikoreksi.
+    const { barang } = await seedKatalog()
+
+    await recordSale(context, {
+      walletId: KAS, paid: rupiah(10_000),
+      lines: [{ itemId: barang, itemKind: 'barang', itemName: 'Biskuit Roma',
+                qty: 2, unitPrice: rupiah(5_000), unitCost: rupiah(3_500) }],
+    })
+    await recordPurchase(context, {
+      walletId: KAS,
+      lines: [{ itemId: barang, itemName: 'Biskuit Roma',
+                qty: 20, unitCost: rupiah(3_000) }],
+    })
+    await adjustStock(context, barang, 100)
+
+    const tersimpan = (await db.items.get(barang))?.stock_qty
+    const dariMutasi = (await db.stockMovements.toArray())
+      .filter((m) => m.item_id === barang)
+      .reduce((sum, m) => sum + m.qty_change, 0)
+
+    expect(tersimpan).toBe(100)
+    expect(dariMutasi).toBe(tersimpan)
+  })
+
   it('mengarsipkan menandai, tidak menghapus barisnya', async () => {
     const { barang } = await seedKatalog()
     await archiveItem(context, barang)
@@ -158,8 +227,11 @@ describe('kasir', () => {
 
     expect((await db.items.get(barang))?.stock_qty).toBe(97)
     expect((await db.items.get(jasa))?.stock_qty).toBeNull()
-    // Hanya barang yang menghasilkan mutasi stok.
-    expect(await db.stockMovements.count()).toBe(1)
+    // Hanya barang yang menghasilkan mutasi penjualan. Mutasi `awal` dari
+    // pendaftaran katalog sengaja tidak ikut dihitung di sini.
+    expect(
+      (await db.stockMovements.toArray()).filter((m) => m.reason === 'penjualan'),
+    ).toHaveLength(1)
   })
 
   it('menjual jasa seratus kali tetap tidak menghabiskan apa pun', async () => {
@@ -172,7 +244,11 @@ describe('kasir', () => {
     })
 
     expect((await db.items.get(jasa))?.stock_qty).toBeNull()
-    expect(await db.stockMovements.count()).toBe(0)
+    // Nol mutasi **untuk jasa itu**, bukan nol mutasi di seluruh basis
+    // data: barang di katalog yang sama punya mutasi stok awalnya sendiri.
+    expect(
+      (await db.stockMovements.toArray()).filter((m) => m.item_id === jasa),
+    ).toHaveLength(0)
   })
 
   it('uang masuk buku kas sebesar yang dibayar', async () => {
@@ -297,14 +373,24 @@ describe('kulakan & stok', () => {
 
     expect(delta).toBe(-5)
     expect((await db.items.get(barang))?.stock_qty).toBe(95)
-    expect((await db.stockMovements.toArray())[0]?.qty_change).toBe(-5)
+
+    // Yang disimpan selisihnya, bukan hasil hitung fisiknya. Kalau yang
+    // disimpan angka akhirnya, penjumlahan mutasi berhenti bisa dipakai
+    // memeriksa `stock_qty` sama sekali.
+    const koreksi = (await db.stockMovements.toArray()).filter(
+      (m) => m.reason === 'koreksi',
+    )
+    expect(koreksi).toHaveLength(1)
+    expect(koreksi[0]?.qty_change).toBe(-5)
   })
 
   it('koreksi tanpa selisih tidak mencatat apa pun', async () => {
     const { barang } = await seedKatalog()
     const { delta } = await adjustStock(context, barang, 100)
     expect(delta).toBe(0)
-    expect(await db.stockMovements.count()).toBe(0)
+    expect(
+      (await db.stockMovements.toArray()).filter((m) => m.reason === 'koreksi'),
+    ).toHaveLength(0)
   })
 
   it('jasa tidak bisa dikoreksi stoknya', async () => {

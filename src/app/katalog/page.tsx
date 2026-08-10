@@ -6,6 +6,7 @@ import { useApp, useCatalog } from '@/lib/useApp'
 import { ItemThumb } from '@/components/ItemThumb'
 import * as M from '@/lib/money'
 import { ITEM_KIND_LABELS, isBarang, type Item } from '@/lib/domain/types'
+import { perluDitindak, statusStok } from '@/lib/domain/stock'
 
 /**
  * Katalog.
@@ -21,8 +22,12 @@ import { ITEM_KIND_LABELS, isBarang, type Item } from '@/lib/domain/types'
  * seolah jasanya bisa habis.
  */
 
+// Satu-satunya definisi "perlu ditindak" ada di `lib/domain/stock`.
+// Sebelumnya layar ini punya versinya sendiri yang melewatkan barang
+// habis tanpa ambang, dan beranda punya versi ketiga — tiga jawaban
+// berbeda untuk pertanyaan yang sama, di aplikasi yang sama.
 function stokKritis(item: Item): boolean {
-  return isBarang(item) && item.minStock > 0 && item.stockQty <= item.minStock
+  return isBarang(item) && perluDitindak(item)
 }
 
 function Isi() {
@@ -88,13 +93,16 @@ function Isi() {
       ) : (
         <>
           {menipis.length > 0 && (
-            <p className="kartu flex items-start gap-3 bg-tunggu-soft text-tunggu">
+            <a
+              href="/stok"
+              className="kartu flex items-start gap-3 bg-tunggu-soft text-tunggu"
+            >
               <span aria-hidden>⚠</span>
               <span className="font-semibold">
                 {menipis.length} barang menipis:{' '}
                 {menipis.map((i) => i.name).join(', ')}
               </span>
-            </p>
+            </a>
           )}
 
           <input
@@ -141,9 +149,11 @@ function Isi() {
                     {isBarang(item) ? (
                       <span
                         className={`block text-sm ${
-                          stokKritis(item) || item.stockQty <= 0
+                          statusStok(item) === 'habis'
                             ? 'text-keluar'
-                            : 'text-slate-500'
+                            : statusStok(item) === 'menipis'
+                              ? 'text-tunggu'
+                              : 'text-slate-500'
                         }`}
                       >
                         {item.stockQty <= 0

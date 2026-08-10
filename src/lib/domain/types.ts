@@ -202,6 +202,7 @@ export interface Debt {
 }
 
 export type StockReason =
+  | 'awal'
   | 'penjualan'
   | 'kulakan'
   | 'koreksi'
@@ -209,6 +210,7 @@ export type StockReason =
   | 'rusak'
 
 export const STOCK_REASON_LABELS: Readonly<Record<StockReason, string>> = {
+  awal: 'Stok awal',
   penjualan: 'Terjual',
   kulakan: 'Kulakan',
   koreksi: 'Koreksi',

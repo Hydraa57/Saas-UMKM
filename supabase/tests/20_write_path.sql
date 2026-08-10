@@ -336,12 +336,16 @@ $$, 'jasa tidak bisa dikoreksi stoknya');
 
 -- Stok bisa dihitung ulang dari mutasinya — kalau rollup-nya melenceng,
 -- kebenarannya ada di sini.
+--
+-- Dulu penegasan ini berbunyi `sum(qty_change) + 100`, dan angka 100 itu
+-- adalah stok awal yang tidak punya mutasi. Penegasan yang menambahkan
+-- selisihnya sendiri tidak menguji apa pun — ia mengkodekan bugnya
+-- sebagai bagian dari harapan. Sekarang kesetaraannya utuh.
 select assert_eq(
   (select coalesce(sum(qty_change), 0) from stock_movements
-   where item_id = 'cccccccc-1111-0000-0000-000000000001')
-  + 100,
-  185::numeric,
-  'stok = stok awal + jumlah seluruh mutasinya'
+   where item_id = 'cccccccc-1111-0000-0000-000000000001'),
+  (select stock_qty from items where id = 'cccccccc-1111-0000-0000-000000000001'),
+  'stok tersimpan sama dengan penjumlahan seluruh mutasinya'
 );
 
 -- ── Pembatalan struk ─────────────────────────────────────────────────────
@@ -384,6 +388,55 @@ select assert_denied($$
   select record_expense(gen_random_uuid(), 'cccccccc-0000-0000-0000-000000000001',
                         (select kas from w), 1000, 'modal')
 $$, 'kategori modal harus lewat kulakan, bukan biaya manual');
+
+-- ── Stok selalu bisa disusun ulang dari mutasinya ────────────────────────
+--
+-- Invarian yang membuat angka stok bisa diperiksa, dan satu-satunya
+-- alasan `stock_movements` ada. Diuji setelah satu hari kerja penuh:
+-- didaftarkan, terjual, dikulak, dikoreksi.
+--
+-- Bocornya ditemukan uji asap: `upsert_item` menulis stok awal langsung
+-- tanpa mutasi pasangannya, jadi penjumlahannya meleset selamanya sebesar
+-- stok awal barang itu.
+
+select assert_eq(
+  (select count(*)::bigint from stock_movements
+   where item_id = 'cccccccc-1111-0000-0000-000000000001' and reason = 'awal'),
+  1::bigint, 'stok awal punya mutasinya sendiri'
+);
+
+select assert_eq(
+  (select count(*)::bigint from stock_movements
+   where item_id = 'cccccccc-1111-0000-0000-000000000002'),
+  0::bigint, 'jasa tidak punya mutasi apa pun, termasuk mutasi awal'
+);
+
+select assert_eq(
+  (select coalesce(sum(qty_change), 0) from stock_movements
+   where item_id = 'cccccccc-1111-0000-0000-000000000001'),
+  (select stock_qty from items where id = 'cccccccc-1111-0000-0000-000000000001'),
+  'stok tersimpan sama dengan penjumlahan seluruh mutasinya'
+);
+
+-- Menyunting katalog tidak melahirkan mutasi kedua.
+select upsert_item(
+  'cccccccc-1111-0000-0000-000000000001',
+  'cccccccc-0000-0000-0000-000000000001',
+  'barang', 'Biskuit Roma', 5500, 3500, 'pcs', 999, 10
+);
+
+select assert_eq(
+  (select count(*)::bigint from stock_movements
+   where item_id = 'cccccccc-1111-0000-0000-000000000001' and reason = 'awal'),
+  1::bigint, 'menyunting katalog tidak melahirkan mutasi awal kedua'
+);
+
+select assert_eq(
+  (select coalesce(sum(qty_change), 0) from stock_movements
+   where item_id = 'cccccccc-1111-0000-0000-000000000001'),
+  (select stock_qty from items where id = 'cccccccc-1111-0000-0000-000000000001'),
+  'stok tetap cocok dengan mutasinya setelah katalog disunting'
+);
 
 -- ── Arsip katalog ────────────────────────────────────────────────────────
 --

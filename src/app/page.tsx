@@ -18,6 +18,7 @@ import {
   type Wallet,
 } from '@/lib/domain/types'
 import { toItem } from '@/lib/useApp'
+import { perluDitindak } from '@/lib/domain/stock'
 
 /**
  * Beranda.
@@ -102,12 +103,7 @@ export default function Beranda() {
     const menipis = (await db().items.toArray())
       .filter((row) => !row.archived_at)
       .map(toItem)
-      .filter(
-        (item) =>
-          isBarang(item) &&
-          (item.stockQty <= 0 ||
-            (item.minStock > 0 && item.stockQty <= item.minStock)),
-      )
+      .filter((item) => isBarang(item) && perluDitindak(item))
 
     const strukHariIni = (await db().sales.toArray()).filter(
       (row) => !row.voided_at && row.occurred_at >= from && row.occurred_at < to,
@@ -172,7 +168,7 @@ export default function Beranda() {
         Kasir
       </a>
 
-      <nav className="grid grid-cols-2 gap-3">
+      <nav className="grid grid-cols-3 gap-3">
         <a
           href="/katalog"
           className="flex min-h-touch-lg flex-col justify-center rounded-2xl bg-white
@@ -185,6 +181,17 @@ export default function Beranda() {
           <span className="text-sm text-slate-500">Barang & jasa</span>
         </a>
         <a
+          href="/stok"
+          className="flex min-h-touch-lg flex-col justify-center rounded-2xl bg-white
+                     p-4 shadow-sm active:bg-slate-100"
+        >
+          <span aria-hidden className="text-2xl">
+            📊
+          </span>
+          <span className="mt-1 font-semibold">Stok</span>
+          <span className="text-sm text-slate-500">Sisa & kulakan</span>
+        </a>
+        <a
           href="/keluar"
           className="flex min-h-touch-lg flex-col justify-center rounded-2xl bg-white
                      p-4 shadow-sm active:bg-slate-100"
@@ -192,8 +199,8 @@ export default function Beranda() {
           <span aria-hidden className="text-2xl">
             ↑
           </span>
-          <span className="mt-1 font-semibold">Uang Keluar</span>
-          <span className="text-sm text-slate-500">Belanja & biaya</span>
+          <span className="mt-1 font-semibold">Keluar</span>
+          <span className="text-sm text-slate-500">Biaya lain</span>
         </a>
       </nav>
 
@@ -225,7 +232,7 @@ export default function Beranda() {
       </section>
 
       {data && data.menipis.length > 0 && (
-        <a href="/katalog" className="kartu flex items-start gap-3 bg-tunggu-soft text-tunggu">
+        <a href="/stok" className="kartu flex items-start gap-3 bg-tunggu-soft text-tunggu">
           <span aria-hidden>⚠</span>
           <span className="font-semibold">
             {data.menipis.length} barang menipis:{' '}

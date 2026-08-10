@@ -154,6 +154,75 @@ await step('penjualan langsung masuk pembukuan tanpa dicatat ulang', async () =>
   if (!beranda.includes('1 struk')) throw new Error('beranda tanpa hitungan struk: ' + beranda)
 })
 
+// ── Lingkaran stok: kulakan menaikkan stok **dan** menurunkan kas ────────
+
+await step('kulakan 20 biskuit @ 3.000', async () => {
+  await page.goto(BASE + '/kulakan')
+  await page.waitForTimeout(800)
+  await page.locator('button', { hasText: 'Biskuit Uji' }).first().click()
+  await page.waitForTimeout(300)
+  await page.getByLabel('Jumlah').fill('20')
+  await page.getByLabel(/Harga modal/).fill('3000')
+  await page.waitForTimeout(200)
+  await page.getByRole('button', { name: /Simpan kulakan/ }).click()
+  await page.waitForURL('**/stok', { timeout: 15000 })
+  await page.waitForTimeout(900)
+})
+
+const stok = (await page.locator('main').innerText()).replace(/\n+/g, ' | ')
+
+await step('stok naik 8 → 28', async () => {
+  if (!stok.includes('28')) throw new Error('stok tidak naik setelah kulakan: ' + stok)
+})
+
+await page.goto(BASE + '/')
+await page.waitForTimeout(900)
+const berandaSetelahKulakan = (await page.locator('main').innerText()).replace(/\n+/g, ' | ')
+
+await step('kulakan juga mengurangi uang di tangan, bukan cuma menambah stok', async () => {
+  // 40.000 masuk − 60.000 kulakan = −20.000. Kalau kulakan hanya
+  // menambah stok, "sisa" akan tetap 40.000 dan selamanya terlihat lebih
+  // bagus daripada isi laci.
+  if (!berandaSetelahKulakan.includes('60.000')) {
+    throw new Error('kulakan tidak muncul sebagai uang keluar: ' + berandaSetelahKulakan)
+  }
+  // Tandanya di depan "Rp", bukan di depan angkanya: `-Rp 20.000`.
+  if (!berandaSetelahKulakan.includes('-Rp 20.000')) {
+    throw new Error('sisa bulan ini tidak ikut turun: ' + berandaSetelahKulakan)
+  }
+})
+
+// ── Koreksi hitung fisik ─────────────────────────────────────────────────
+
+await step('koreksi stok 28 → 25 setelah hitung fisik', async () => {
+  await page.goto(BASE + '/stok')
+  await page.waitForTimeout(800)
+  await page.locator('a', { hasText: 'Biskuit Uji' }).first().click()
+  await page.waitForURL('**/stok/**', { timeout: 15000 })
+  await page.waitForTimeout(700)
+  await page.getByLabel(/Jumlah sebenarnya/).fill('25')
+  await page.waitForTimeout(300)
+  await page.getByRole('button', { name: 'Simpan koreksi' }).click()
+  await page.waitForTimeout(900)
+})
+
+const detail = (await page.locator('main').innerText()).replace(/\n+/g, ' | ')
+
+await step('riwayat menjelaskan selisihnya, bukan cuma memperbaiki angkanya', async () => {
+  if (!detail.includes('25 pcs')) throw new Error('stok tidak terkoreksi: ' + detail)
+  // Tiga baris riwayat: terjual −2, kulakan +20, koreksi −3.
+  for (const potongan of ['Terjual', 'Kulakan', 'Koreksi', '-3']) {
+    if (!detail.includes(potongan)) {
+      throw new Error('riwayat tanpa "' + potongan + '": ' + detail)
+    }
+  }
+  // Yang disimpan adalah selisihnya, jadi penjumlahan riwayat harus tetap
+  // sama dengan angka yang tampil — kalau tidak, layar memperingatkan.
+  if (detail.includes('berbeda dari angka di atas')) {
+    throw new Error('penjumlahan riwayat tidak cocok dengan stok tersimpan: ' + detail)
+  }
+})
+
 console.log('\nSTRUK:\n' + struk.split('\n').map((l) => '  ' + l).join('\n'))
 console.log('\nKATALOG :', daftar)
 console.log('BERANDA :', beranda)

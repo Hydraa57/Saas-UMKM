@@ -19,16 +19,17 @@ Dan satu urutan yang tidak boleh dibalik: **struk sebelum laporan.** Laporan ada
 | Perhitungan uang (rupiah `bigint`, pembulatan eksplisit) | 43 |
 | Tanggal & zona waktu (WIB, bukan UTC) | 18 |
 | Keranjang, diskon, peringatan stok | 29 |
+| Aturan stok: status, urutan, saran kulakan, susun ulang | 19 |
 | Struk lebar-tetap (layar = WhatsApp = printer) | 19 |
 | Buku kas, saldo dompet, cocokkan | 21 |
 | Rekap bulanan & total tahunan | 14 |
 | Utang & piutang | 17 |
 | Foto: pengecilan sebelum disimpan | 5 |
 | Antrean kirim luring + penggolongan kegagalan | 30 |
-| Aksi tulis (tulis lokal + antre, tanpa menunggu jaringan) | 24 |
-| Skema, RLS, jalur tulis (PostgreSQL sungguhan) | 68 penegasan |
+| Aksi tulis (tulis lokal + antre, tanpa menunggu jaringan) | 28 |
+| Skema, RLS, jalur tulis (PostgreSQL sungguhan) | 73 penegasan |
 
-Layar: pengaturan awal, beranda, katalog (daftar + tambah/ubah/arsip), kasir, struk, uang keluar. Alur lengkapnya diuji di peramban sungguhan lewat `npm run smoke`.
+Layar: pengaturan awal, beranda, katalog (daftar + tambah/ubah/arsip), kasir, struk, stok, kulakan, koreksi hitung fisik, uang keluar. Alur lengkapnya diuji di peramban sungguhan lewat `npm run smoke`.
 
 ---
 
@@ -44,16 +45,17 @@ Layar: pengaturan awal, beranda, katalog (daftar + tambah/ubah/arsip), kasir, st
 
 ---
 
-## Fase 2 — Menutup lingkaran stok (perkiraan 3 hari)
+## Fase 2 — Menutup lingkaran stok ✅
 
 Stok yang hanya berkurang akan habis, lalu angkanya berhenti berarti.
 
-- [ ] Layar kulakan: pilih barang, jumlah, harga modal → stok naik, kas turun
-- [ ] Koreksi stok lewat hitung fisik, dengan riwayat mutasinya
-- [ ] Layar barang menipis, langsung dari peringatan di beranda
-- [ ] Riwayat mutasi per barang — supaya selisih stok bisa dijelaskan, bukan cuma diperbaiki
+- [x] Layar kulakan: pilih barang, jumlah, harga modal → stok naik, kas turun
+- [x] Koreksi stok lewat hitung fisik, dengan riwayat mutasinya
+- [x] Layar stok, diurutkan menurut yang perlu ditindak — bukan abjad, bukan terlaris
+- [x] Riwayat mutasi per barang — supaya selisih stok bisa dijelaskan, bukan cuma diperbaiki
+- [x] **Stok awal ikut jadi mutasi.** Tanpa ini penjumlahan riwayat meleset selamanya sebesar stok awal tiap barang, dan seluruh gunanya riwayat hilang
 
-**Selesai kalau:** setelah kulakan, stok dan uang di tangan dua-duanya benar tanpa dicatat ulang.
+Yang terakhir itu bug nyata, ditemukan uji asap dan bukan oleh pembacaan ulang. Layar detail stok sekarang membandingkan rollup dengan penjumlahan riwayatnya dan memperingatkan kalau berbeda — jadi kebocoran yang sama tidak bisa diam lagi.
 
 ---
 
@@ -124,12 +126,12 @@ Posisi lengkapnya di [`08-posisi-produk.md`](08-posisi-produk.md). Ringkasnya: a
 | Fase | Perkiraan | Hasil |
 |---|---|---|
 | 0 | selesai | Paham cara ibu mencatat, dari bukunya sendiri |
-| — | selesai | Fondasi, skema, logika, 220 tes + 68 penegasan DB |
+| — | selesai | Fondasi, skema, logika, 243 tes + 73 penegasan DB |
 | 1 | selesai | **Kasir, katalog, dan struk jalan** |
-| 2 | 3 hari | Stok yang lingkarannya tertutup |
+| 2 | selesai | **Stok yang lingkarannya tertutup** |
 | 3 | 4 hari | Printer termal & piutang |
 | 4 | 4 hari | Laporan & sinkronisasi peladen |
 | 5 | 4 hari | Layak dipercaya jangka panjang |
 | 6 | 30 hari | Bukti, bukan asumsi |
 
-Sekitar 15 hari kerja sampai lengkap.
+Sekitar 12 hari kerja sampai lengkap.

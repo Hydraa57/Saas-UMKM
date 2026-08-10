@@ -87,6 +87,7 @@ export async function saveItem(
   const stockQty = isBarang ? (input.stockQty ?? 0) : null
   const minStock = isBarang ? (input.minStock ?? 0) : null
   const existing = await db.items.get(id)
+  const movementId = idFrom(context)
 
   await db.items.put({
     id,
@@ -107,6 +108,30 @@ export async function saveItem(
     archived_at: null,
     updated_at: stamp,
   })
+
+  // Stok awal butuh mutasinya sendiri.
+  //
+  // Tanpa ini, `stock_qty` bergerak tanpa baris yang menjelaskan dari
+  // mana angka pertamanya datang, dan penjumlahan seluruh mutasi tidak
+  // akan pernah cocok dengan angka tersimpan — untuk selamanya, sebesar
+  // stok awalnya. Selisih stok yang tidak bisa dijelaskan adalah awal
+  // dari berhenti memercayai angkanya.
+  //
+  // Hanya saat barangnya benar-benar baru: menyunting katalog tidak
+  // mengubah stok, jadi tidak ada mutasi yang boleh lahir dari situ.
+  if (!existing && isBarang && stockQty !== null && stockQty !== 0) {
+    await db.stockMovements.put({
+      id: movementId,
+      tenant_id: tenantId,
+      item_id: id,
+      occurred_at: stamp,
+      qty_change: stockQty,
+      reason: 'awal',
+      source_type: null,
+      source_id: null,
+      note: 'Stok saat barang didaftarkan',
+    })
+  }
 
   if (input.photo) {
     await db.photos.put({
@@ -132,6 +157,7 @@ export async function saveItem(
       p_stock_qty: stockQty,
       p_min_stock: minStock,
       p_barcode: input.barcode?.trim() || null,
+      p_movement_id: existing ? null : movementId,
     },
     now,
   })

@@ -20,7 +20,18 @@ revoke execute on all functions in schema public from public;
 -- Dan untuk fungsi yang ditambahkan nanti, supaya lubangnya tidak
 -- terbuka lagi diam-diam pada migrasi berikutnya.
 alter default privileges in schema public revoke execute on functions from anon;
-alter default privileges in schema public revoke execute on functions from public;
+
+-- Yang ini **tanpa** `in schema public`, dan itu bukan kelalaian.
+--
+-- PostgreSQL memberi `execute` kepada `public` pada setiap fungsi baru
+-- sebagai bawaan bahasanya sendiri, dan bawaan itu hanya bisa ditekan
+-- oleh default privileges tingkat peran. Bentuk yang dibatasi satu skema
+-- diterima tanpa galat, tersimpan rapi di `pg_default_acl` — dan tidak
+-- mengubah apa pun. Versi pertama migrasi ini memakai bentuk itu, dan
+-- fungsi berikutnya yang dibuat (`upsert_item` di migrasi stok awal)
+-- kembali bisa dipanggil tanpa login. Yang menangkapnya bukan pembacaan
+-- ulang, melainkan penegasan di `10_tenant_isolation.sql`.
+alter default privileges revoke all on functions from public;
 
 grant execute on all functions in schema public to authenticated;
 alter default privileges in schema public grant execute on functions to authenticated;

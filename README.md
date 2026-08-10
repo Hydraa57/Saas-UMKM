@@ -64,18 +64,19 @@ Alur pokoknya sudah jalan dari ujung ke ujung: pengaturan awal → isi katalog �
 | Perhitungan uang (rupiah `bigint`, pembulatan eksplisit) | 43 |
 | Tanggal & zona waktu (WIB, bukan UTC) | 18 |
 | Keranjang, diskon, peringatan stok | 29 |
+| Aturan stok: status, urutan, saran kulakan, susun ulang | 19 |
 | Struk lebar-tetap (layar = WhatsApp = printer) | 19 |
 | Buku kas, saldo dompet, cocokkan | 21 |
 | Rekap bulanan & total tahunan | 14 |
 | Utang & piutang | 17 |
 | Foto: pengecilan sebelum disimpan | 5 |
 | Antrean kirim luring + penggolongan kegagalan | 30 |
-| Aksi tulis (tulis lokal + antre, tanpa menunggu jaringan) | 24 |
-| Skema, RLS, jalur tulis (PostgreSQL sungguhan) | 68 penegasan |
+| Aksi tulis (tulis lokal + antre, tanpa menunggu jaringan) | 28 |
+| Skema, RLS, jalur tulis (PostgreSQL sungguhan) | 73 penegasan |
 
-Layar yang sudah ada: pengaturan awal, beranda, katalog (daftar, tambah, ubah, arsip), kasir, struk, uang keluar.
+Layar yang sudah ada: pengaturan awal, beranda, katalog (daftar, tambah, ubah, arsip), kasir, struk, stok, kulakan, koreksi hitung fisik, uang keluar.
 
-Belum ada: printer termal, kulakan, koreksi stok, riwayat struk, autentikasi, penarikan data dari peladen, laporan bulanan penuh.
+Belum ada: printer termal, riwayat struk, autentikasi, penarikan data dari peladen, laporan bulanan penuh.
 
 ### Supabase
 
@@ -113,17 +114,17 @@ npm run dev
 ### Pengujian
 
 ```bash
-npm test          # 220 tes unit
+npm test          # 243 tes unit
 npm run typecheck
-npm run db:test   # 68 penegasan: migrasi, RLS, jalur tulis
+npm run db:test   # 73 penegasan: migrasi, RLS, jalur tulis
 
 npm run build && npx next start -p 3311 &
 npm run smoke     # alur nyata di peramban sungguhan
 ```
 
-`npm run smoke` menjalankan satu hari kerja lengkap di Chromium: buka usaha, isi katalog dengan satu barang dan satu jasa, jual keduanya dalam satu struk, lalu periksa tiga hal — strukya keluar, stok barang berkurang, dan **stok jasa tidak pernah berkurang.**
+`npm run smoke` menjalankan satu hari kerja lengkap di Chromium: buka usaha, isi katalog dengan satu barang dan satu jasa, jual keduanya dalam satu struk, kulakan, lalu koreksi hitung fisik — memeriksa strukya keluar, stok bergerak benar, kulakan **ikut mengurangi kas**, riwayatnya menjelaskan tiap selisih, dan **stok jasa tidak pernah berkurang.**
 
-Ia menangkap hal yang tidak bisa ditangkap tes unit. Dua bug UX pertama — pilihan yang hilang saat kembali dari layar lain, dan ikon PWA yang tidak ada — lolos dari seluruh tes unit dan baru ketahuan di sana.
+Ia menangkap hal yang tidak bisa ditangkap tes unit. Tiga bug lolos dari seluruh tes unit dan baru ketahuan di sana: pilihan yang hilang saat kembali dari layar lain, ikon PWA yang tidak ada, dan — yang paling serius — **stok awal yang tidak pernah tercatat sebagai mutasi**, sehingga penjumlahan riwayat selamanya meleset sebesar stok awal tiap barang.
 
 `db:test` butuh cluster PostgreSQL lokal, sekali siapkan:
 

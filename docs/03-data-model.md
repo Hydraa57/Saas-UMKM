@@ -107,9 +107,15 @@ Kolom lain yang perlu penjelasan:
 
 ### `stock_movements`
 
-Satu baris untuk tiap perubahan stok, dengan `reason`: `penjualan`, `kulakan`, `koreksi`, `retur`, `rusak`.
+Satu baris untuk tiap perubahan stok, dengan `reason`: `awal`, `penjualan`, `kulakan`, `koreksi`, `retur`, `rusak`.
 
 Tanpa tabel ini, stok yang tidak cocok dengan rak tidak bisa ditelusuri — dan angka stok yang tidak bisa dijelaskan akan berhenti dipercaya, lalu berhenti dipakai. Jasa **tidak pernah** menghasilkan baris di sini.
+
+`awal` ditambahkan setelah sebuah bug: `upsert_item` menulis stok awal langsung ke `items.stock_qty` tanpa mutasi pasangannya, jadi penjumlahan seluruh riwayat meleset selamanya sebesar stok awal tiap barang. Aturannya sekarang tanpa pengecualian:
+
+> **Setiap perubahan `stock_qty` menulis satu baris `stock_movements` di transaksi yang sama.**
+
+Yang menangkapnya bukan pembacaan ulang, melainkan uji asap di peramban — dan penegasan SQL yang ada sebelumnya justru ikut menyembunyikannya, karena ia berbunyi `sum(qty_change) + 100` dengan 100 adalah stok awal yang hilang itu. Penegasan yang menambahkan selisihnya sendiri tidak menguji apa pun.
 
 ### `cash_entries`
 
@@ -188,6 +194,7 @@ Pengujian isolasi punya tiga penjaga untuk tabel yang ditambahkan nanti: setiap 
 | `create_tenant` | tenant + membership + dompet bawaan (ID dari perangkat) |
 | `upsert_item` | satu barang/jasa; stok **tidak** ditimpa saat menyunting |
 | `archive_item` | menandai arsip, tidak menghapus |
+| `upsert_item` (stok awal) | mutasi `awal` sekali saat barang pertama dibuat |
 | `next_invoice_no` | nomor struk per tenant per tahun |
 | `record_sale` | penjualan + barisnya + mutasi stok (barang saja) + entri kas + piutang |
 | `void_sale` | membatalkan penjualan, mengembalikan stok, membatalkan kas & piutangnya |
