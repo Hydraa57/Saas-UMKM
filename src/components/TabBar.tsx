@@ -11,10 +11,14 @@ import { Ikon, type NamaIkon } from './Ikon'
  * pembeli berdiri di depan meja: jalan ke kasir harus ada di tempat yang
  * sama di setiap layar, dan tepat di bawah ibu jari.
  *
- * Yang tidak masuk ke sini — kulakan, piutang, uang keluar — memang
- * bukan pekerjaan harian. Menaruhnya di bilah berarti menyita tempat
- * dari yang dipakai puluhan kali sehari demi yang dipakai seminggu
- * sekali.
+ * Pengelompokannya: dua di kiri untuk **melihat keadaan sekarang**
+ * (beranda, barang), dua di kanan untuk **melihat yang sudah terjadi**
+ * (riwayat, utang).
+ *
+ * Yang tidak masuk ke sini — kulakan dan uang keluar — memang bukan
+ * pekerjaan harian, dan keduanya sudah punya tempat di titik
+ * kebutuhannya: kulakan di tab Stok, tepat setelah melihat apa yang mau
+ * habis; uang keluar sebagai pintasan di beranda.
  */
 
 interface Tujuan {
@@ -23,14 +27,18 @@ interface Tujuan {
   readonly ikon: NamaIkon
 }
 
+// Tiga tujuan, bukan empat. "Katalog" dan "Stok" dulu berdiri sendiri di
+// sini, dan bersama "Kulakan" mereka jadi tiga kata yang gampang
+// tertukar — semua soal barang, dan tidak jelas dari namanya mana untuk
+// apa. Sekarang ketiganya satu tujuan, dengan tab di dalamnya.
 const KIRI: readonly Tujuan[] = [
   { href: '/', label: 'Beranda', ikon: 'beranda' },
-  { href: '/katalog', label: 'Katalog', ikon: 'katalog' },
+  { href: '/katalog', label: 'Barang', ikon: 'katalog' },
 ]
 
 const KANAN: readonly Tujuan[] = [
-  { href: '/stok', label: 'Stok', ikon: 'stok' },
   { href: '/riwayat', label: 'Riwayat', ikon: 'riwayat' },
+  { href: '/utang', label: 'Utang', ikon: 'utang' },
 ]
 
 function aktif(pathname: string, href: string): boolean {
@@ -62,7 +70,7 @@ export function TabBar() {
   // layar yang terlupa (`/katalog/baru`) menampilkan bilah ini bertumpuk
   // dengan bilah aksinya sendiri: tombol Simpan terlihat tapi tidak
   // pernah bisa ditekan. Daftar putih tidak punya cara gagal seperti itu.
-  const TUJUAN = ['/', '/katalog', '/stok', '/riwayat']
+  const TUJUAN = ['/', '/katalog', '/riwayat', '/utang']
   if (!TUJUAN.includes(pathname)) return null
 
   return (

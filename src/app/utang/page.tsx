@@ -101,7 +101,7 @@ export default function Utang() {
   // ── Layar terima pembayaran ────────────────────────────────────────
   if (aktif) {
     return (
-      <main className="flex flex-1 flex-col gap-3 px-4 pb-32">
+      <main className="flex flex-1 flex-col gap-3 px-4 pb-[calc(theme(spacing.bilah)+5rem)]">
         <AppBar judul={aktif.person} onKembali={() => setDipilih(null)} />
 
         <div className="kartu-gelap animate-naik">
@@ -140,12 +140,16 @@ export default function Utang() {
           pintasan={[5_000, 10_000, 20_000, 50_000]}
         />
 
-        <div className="bilah-bawah">
+        {/* Mengambang di atas bilah navigasi, bukan bilah aksi penuh:
+            /utang adalah tujuan tab, jadi bilah navigasi ikut tampil di
+            sini — dan dua bilah bertumpuk membuat tombolnya tidak pernah
+            bisa ditekan. */}
+        <div className="mengambang !justify-stretch">
           <button
             type="button"
             disabled={!M.isPositive(jumlah) || menyimpan}
             onClick={terima}
-            className="btn-primer btn-besar"
+            className="btn-primer flex-1"
           >
             <Ikon nama="cek" ukuran={22} tebal={2.2} />
             Terima pembayaran
@@ -157,7 +161,7 @@ export default function Utang() {
 
   // ── Daftar ─────────────────────────────────────────────────────────
   return (
-    <main className="flex flex-1 flex-col gap-3 px-4 pb-8">
+    <main className="flex flex-1 flex-col gap-3 px-4 pb-[calc(theme(spacing.bilah)+1rem)]">
       <AppBar judul="Belum bayar" kembali="/" />
 
       {ringkas.count === 0 ? (

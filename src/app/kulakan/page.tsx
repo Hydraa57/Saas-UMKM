@@ -103,7 +103,7 @@ export default function Kulakan() {
         walletId: defaultWallet.id,
         supplierName: pemasok.trim() || null,
       })
-      window.location.href = '/stok'
+      window.location.href = "/katalog?tab=stok"
     } catch {
       setMenyimpan(false)
     }
@@ -124,7 +124,7 @@ export default function Kulakan() {
 
   return (
     <main className="flex flex-1 flex-col gap-3 px-4 pb-36">
-      <AppBar judul="Kulakan" kembali="/stok" />
+      <AppBar judul="Kulakan" kembali="/katalog?tab=stok" />
 
       {baris.length > 0 && (
         <ul className="flex flex-col gap-2">

@@ -169,7 +169,7 @@ await page.goto(BASE + '/riwayat')
 await jeda(900)
 await potret('11-riwayat', true)
 
-await page.goto(BASE + '/stok')
+await page.goto(BASE + '/katalog?tab=stok')
 await jeda(900)
 await potret('12-stok', true)
 

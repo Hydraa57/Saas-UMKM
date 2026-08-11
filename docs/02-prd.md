@@ -111,9 +111,24 @@ Tiga hal yang mengalir dari sini:
 
 ### 5.1 Beranda
 
-Satu angka besar (masuk hari ini + jumlah struk), lalu **tombol Kasir yang paling besar di layar**, lalu katalog dan uang keluar, lalu rekap bulan ini, lalu peringatan yang butuh tindakan.
+Satu angka besar (masuk hari ini + jumlah struk), lalu dua pintasan, lalu rekap bulan ini, lalu peringatan yang butuh tindakan.
 
-Kasir di paling atas karena aplikasi ini dibuka saat ada pembeli berdiri di depan meja. Apa pun yang berdiri di antara membuka aplikasi dan menerima uang adalah beban.
+Kasir tidak ada di beranda melainkan di **tengah bilah navigasi bawah**, menonjol, dan karena itu ia ada di tempat yang sama di setiap layar. Aplikasi ini dibuka saat ada pembeli berdiri di depan meja; apa pun yang berdiri di antara membuka aplikasi dan menerima uang adalah beban.
+
+### 5.1b Navigasi: empat tujuan, bukan tujuh
+
+Bilah bawah: **Beranda · Barang · [Kasir] · Riwayat · Utang.** Dua kiri untuk melihat keadaan sekarang, dua kanan untuk melihat yang sudah terjadi.
+
+"Katalog", "Stok", dan "Kulakan" dulu berdiri sendiri-sendiri di sini, dan itu **tiga kata yang gampang tertukar** — semuanya soal barang, dan tidak jelas dari namanya mana untuk apa. Sekarang ketiganya satu tujuan bernama **Barang**, dengan dua tab di dalamnya:
+
+| Tab | Pertanyaan yang dijawab | Urutan | Ketukan menuju |
+|---|---|---|---|
+| Daftar | "apa saja yang saya jual, harganya berapa" | abjad, bisa dicari | penyuntingan |
+| Stok | "apa yang mau habis, apa yang perlu dibeli" | yang perlu ditindak dulu | riwayat pergerakan |
+
+Kulakan jadi tombol di tab Stok — tepat setelah pemiliknya melihat apa yang menipis. Uang keluar dan tab-nya sendiri tidak dibutuhkan tiap hari, jadi keduanya jadi pintasan di beranda.
+
+Tab disimpan di URL, bukan di state komponen: peringatan "barang menipis" perlu bisa menunjuk langsung ke tab Stok, dan tombol kembali peramban harus mengembalikan ke tab yang tadi dibuka.
 
 Rekap bulanan tetap di layar pertama, tidak disembunyikan di balik menu laporan. Inilah kegagalan bot WhatsApp sebelumnya: penggunanya menyerahkan data dan tidak pernah menerima apa pun sebagai gantinya.
 

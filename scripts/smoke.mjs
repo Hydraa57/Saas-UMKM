@@ -62,7 +62,7 @@ await step('isi nama usaha dan mulai', async () => {
 })
 
 await step('tambah barang: Biskuit 5.000, stok 10', async () => {
-  await page.getByRole('link', { name: 'Barang', exact: true }).click()
+  await page.getByRole('link', { name: 'Tambah barang' }).click()
   await page.waitForURL('**/katalog/baru**')
   await page.waitForTimeout(600)
   await page.getByPlaceholder('Biskuit Roma').fill('Biskuit Uji')
@@ -76,7 +76,7 @@ await step('tambah barang: Biskuit 5.000, stok 10', async () => {
 })
 
 await step('tambah jasa: Potong celana 30.000', async () => {
-  await page.getByRole('link', { name: 'Jasa', exact: true }).click()
+  await page.getByRole('link', { name: 'Tambah jasa' }).click()
   await page.waitForURL('**/katalog/baru**')
   await page.waitForTimeout(600)
   await page.getByPlaceholder('Potong celana').fill('Potong celana')
@@ -168,7 +168,7 @@ await step('kulakan 20 biskuit @ 3.000', async () => {
   await page.getByLabel(/Harga modal/).fill('3000')
   await page.waitForTimeout(200)
   await page.getByRole('button', { name: /Simpan kulakan/ }).click()
-  await page.waitForURL('**/stok', { timeout: 15000 })
+  await page.waitForURL('**/katalog?tab=stok', { timeout: 15000 })
   await page.waitForTimeout(900)
 })
 
@@ -200,7 +200,7 @@ await step('kulakan juga mengurangi uang di tangan, bukan cuma menambah stok', a
 // ── Koreksi hitung fisik ─────────────────────────────────────────────────
 
 await step('koreksi stok 28 → 25 setelah hitung fisik', async () => {
-  await page.goto(BASE + '/stok')
+  await page.goto(BASE + '/katalog?tab=stok')
   await page.waitForTimeout(800)
   await page.locator('a', { hasText: 'Biskuit Uji' }).first().click()
   await page.waitForURL('**/stok/**', { timeout: 15000 })
@@ -310,7 +310,7 @@ await step('struk ditandai batal, bukan hilang', async () => {
   }
 })
 
-await page.goto(BASE + '/stok')
+await page.goto(BASE + '/katalog?tab=stok')
 await page.waitForTimeout(900)
 await page.locator('a', { hasText: 'Biskuit Uji' }).first().click()
 await page.waitForURL('**/stok/**', { timeout: 15000 })

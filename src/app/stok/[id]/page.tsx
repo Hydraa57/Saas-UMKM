@@ -85,7 +85,7 @@ export default function DetailStok({
             ? 'Jasa tidak punya stok — "Potong celana" tidak pernah habis.'
             : 'Barang tidak ditemukan.'}
         </p>
-        <a href="/stok" className="btn-sekunder btn-besar">
+        <a href="/katalog?tab=stok" className="btn-sekunder btn-besar">
           Kembali
         </a>
       </main>
@@ -99,7 +99,7 @@ export default function DetailStok({
 
   return (
     <main className="flex flex-1 flex-col gap-4 px-4 pb-[calc(theme(spacing.bilah)+1rem)]">
-      <AppBar judul={item.name} kembali="/stok" />
+      <AppBar judul={item.name} kembali="/katalog?tab=stok" />
 
       <div className="kartu-gelap animate-naik">
         <p className="text-sm font-medium text-slate-400">Sisa menurut aplikasi</p>

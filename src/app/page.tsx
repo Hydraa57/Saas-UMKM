@@ -212,10 +212,12 @@ export default function Beranda() {
         </div>
       </a>
 
-      <nav className="grid grid-cols-3 gap-3">
+      {/* Dua pintasan, bukan tiga: piutang sudah punya tempat tetap di
+          bilah bawah, dan menaruhnya di dua tempat sekaligus membuat
+          orang ragu apakah keduanya hal yang sama. */}
+      <nav className="grid grid-cols-2 gap-3">
         <Pintasan href="/kulakan" ikon="kulakan" judul="Kulakan" ket="Isi stok" />
-        <Pintasan href="/keluar" ikon="keluar" judul="Keluar" ket="Biaya lain" />
-        <Pintasan href="/utang" ikon="utang" judul="Utang" ket="Belum bayar" />
+        <Pintasan href="/keluar" ikon="keluar" judul="Uang keluar" ket="Biaya lain" />
       </nav>
 
       {/* Yang hilang dari percobaan sebelumnya, dan yang selama ini
@@ -259,7 +261,7 @@ export default function Beranda() {
 
       {data && data.menipis.length > 0 && (
         <a
-          href="/stok"
+          href="/katalog?tab=stok"
           className="kartu-tekan flex items-center gap-3 bg-tunggu-soft ring-tunggu/10"
         >
           <span

@@ -8,6 +8,19 @@ const nextConfig: NextConfig = {
     // mengubahnya jadi number di batas server/klien.
     typedEnv: true,
   },
+  async redirects() {
+    return [
+      {
+        // "Stok" dulu halaman sendiri. Setelah digabung ke tab di
+        // /katalog, jalurnya dipertahankan sebagai pengalihan: tautan
+        // yang sudah beredar dan pintasan layar utama yang sudah dipasang
+        // pengguna tidak boleh berakhir di halaman 404.
+        source: '/stok',
+        destination: '/katalog?tab=stok',
+        permanent: false,
+      },
+    ]
+  },
   async headers() {
     return [
       {
