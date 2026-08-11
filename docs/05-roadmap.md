@@ -30,7 +30,7 @@ Dan satu urutan yang tidak boleh dibalik: **struk sebelum laporan.** Laporan ada
 | Aksi tulis (tulis lokal + antre, tanpa menunggu jaringan) | 40 |
 | Skema, RLS, jalur tulis (PostgreSQL sungguhan) | 82 penegasan |
 
-Layar: pengaturan awal, beranda, katalog (daftar + tambah/ubah/arsip), kasir, struk, riwayat struk, stok, kulakan, koreksi hitung fisik, piutang, uang keluar. Alur lengkapnya diuji di peramban sungguhan lewat `npm run smoke` — 29 langkah.
+Layar: pengaturan awal, beranda, katalog (daftar + tambah/ubah/arsip), kasir, struk, riwayat struk, stok, kulakan, koreksi hitung fisik, piutang, uang keluar. Alur lengkapnya diuji di peramban sungguhan lewat `npm run smoke` — 25 langkah.
 
 ---
 

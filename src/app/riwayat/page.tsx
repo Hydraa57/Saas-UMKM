@@ -6,6 +6,8 @@ import { useApp } from '@/lib/useApp'
 import { fromDb, ZERO } from '@/lib/money'
 import * as M from '@/lib/money'
 import { Uang } from '@/components/Uang'
+import { AppBar } from '@/components/AppBar'
+import { Ikon } from '@/components/Ikon'
 import { formatLocalDate, toLocalDate, today } from '@/lib/domain/dates'
 
 /**
@@ -69,7 +71,7 @@ export default function Riwayat() {
     return (
       <main className="flex flex-1 flex-col gap-4 p-4">
         <p className="kartu">Pengaturan awal belum selesai.</p>
-        <a href="/mulai" className="btn-aksi justify-center bg-slate-900 text-white">
+        <a href="/mulai" className="btn-primer btn-besar">
           Buka pengaturan
         </a>
       </main>
@@ -87,26 +89,22 @@ export default function Riwayat() {
   }
 
   return (
-    <main className="flex flex-1 flex-col gap-4 p-4 pb-8">
-      <header className="flex items-center gap-3">
-        <a
-          href="/"
-          aria-label="Kembali"
-          className="flex h-touch w-touch items-center justify-center rounded-xl
-                     bg-slate-200 text-2xl text-slate-700"
-        >
-          ←
-        </a>
-        <h1 className="text-xl font-bold">Riwayat struk</h1>
-      </header>
+    <main className="flex flex-1 flex-col gap-4 px-4 pb-[calc(theme(spacing.bilah)+1rem)]">
+      <AppBar judul="Riwayat struk" kembali="/" />
 
       {data.length === 0 ? (
-        <div className="kartu">
-          <p className="font-semibold">Belum ada transaksi</p>
+        <div className="kartu text-center">
+          <span
+            className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl
+                       bg-merek-50 text-merek-600"
+          >
+            <Ikon nama="riwayat" ukuran={26} />
+          </span>
+          <p className="mt-3 font-semibold">Belum ada transaksi</p>
           <p className="mt-1 text-slate-600">
             Struk muncul di sini begitu ada penjualan pertama.
           </p>
-          <a href="/kasir" className="btn-aksi mt-4 justify-center bg-slate-900 text-white">
+          <a href="/kasir" className="btn-primer btn-besar mt-5">
             Buka kasir
           </a>
         </div>
@@ -119,11 +117,11 @@ export default function Riwayat() {
 
           return (
             <section key={tanggal}>
-              <h2 className="mb-2 flex items-baseline justify-between text-sm text-slate-500">
-                <span>
+              <h2 className="mb-2 flex items-baseline justify-between px-1">
+                <span className="font-semibold">
                   {tanggal === hariIni ? 'Hari ini' : formatLocalDate(tanggal)}
                 </span>
-                <span className="font-semibold text-slate-700">
+                <span className="text-sm text-slate-500">
                   {hidup.length} struk · <Uang nilai={total} />
                 </span>
               </h2>
@@ -135,11 +133,19 @@ export default function Riwayat() {
                   )
                   return (
                     <li key={s.id}>
-                      <a
-                        href={`/struk/${s.id}`}
-                        className="flex items-center gap-3 rounded-2xl bg-white p-3 shadow-sm
-                                   active:bg-slate-100"
-                      >
+                      <a href={`/struk/${s.id}`} className="baris">
+                        <span
+                          className={`flex h-11 w-11 shrink-0 items-center justify-center
+                                      rounded-2xl ${
+                                        s.voided
+                                          ? 'bg-slate-100 text-slate-400'
+                                          : M.isPositive(kurang)
+                                            ? 'bg-keluar-soft text-keluar'
+                                            : 'bg-masuk-soft text-masuk'
+                                      }`}
+                        >
+                          <Ikon nama={s.voided ? 'silang' : 'kasir'} ukuran={20} />
+                        </span>
                         <span className="min-w-0 flex-1">
                           <span
                             className={`block font-semibold ${
@@ -154,21 +160,22 @@ export default function Riwayat() {
                             {s.voided ? ' · dibatalkan' : ''}
                           </span>
                           {!s.voided && M.isPositive(kurang) && (
-                            <span className="block text-sm text-keluar">
+                            <span
+                              className="mt-1 inline-block rounded-lg bg-keluar-soft px-2
+                                         py-0.5 text-xs font-semibold text-keluar"
+                            >
                               Belum lunas <Uang nilai={kurang} />
                             </span>
                           )}
                         </span>
                         <span
-                          className={`text-lg font-bold ${
+                          className={`shrink-0 whitespace-nowrap text-lg font-bold ${
                             s.voided ? 'text-slate-400 line-through' : ''
                           }`}
                         >
                           <Uang nilai={M.rupiah(s.total) ?? ZERO} />
                         </span>
-                        <span aria-hidden className="text-xl text-slate-400">
-                          ›
-                        </span>
+                        <Ikon nama="lanjut" ukuran={18} className="shrink-0 text-slate-300" />
                       </a>
                     </li>
                   )

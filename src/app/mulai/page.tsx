@@ -8,6 +8,7 @@ import {
   BUSINESS_TYPE_LABELS,
   type BusinessType,
 } from '@/lib/domain/types'
+import { Ikon } from '@/components/Ikon'
 
 /**
  * Pengaturan awal.
@@ -59,28 +60,34 @@ export default function Mulai() {
   }
 
   return (
-    <main className="flex flex-1 flex-col gap-5 p-4 pb-8">
-      <header>
-        <h1 className="text-xl font-bold">Selamat datang</h1>
-        <p className="text-slate-600">
+    <main className="flex flex-1 flex-col gap-5 p-4 pb-32">
+      <header className="animate-naik pt-4">
+        <span
+          className="mb-4 flex h-14 w-14 items-center justify-center rounded-2xl
+                     bg-merek-600 text-white shadow-tombol"
+        >
+          <Ikon nama="kasir" ukuran={26} tebal={1.9} />
+        </span>
+        <h1 className="text-2xl font-bold">Selamat datang</h1>
+        <p className="mt-1 text-slate-600">
           Isi nama usaha, lalu langsung bisa jualan.
         </p>
       </header>
 
       <label className="kartu block">
-        <span className="text-sm text-slate-500">Nama usaha</span>
+        <span className="label">Nama usaha</span>
         <input
           type="text"
           value={nama}
           onChange={(event) => setNama(event.target.value)}
           placeholder="Warung Bu Ani"
           autoFocus
-          className="mt-1 w-full bg-transparent text-lg outline-none"
+          className="kolom mt-1 text-xl font-semibold"
         />
       </label>
 
       <section>
-        <h2 className="mb-2 text-sm text-slate-500">Jenis usaha</h2>
+        <h2 className="label mb-2">Jenis usaha</h2>
         <div className="flex flex-col gap-2">
           {JENIS.map((pilihan) => (
             <button
@@ -88,50 +95,53 @@ export default function Mulai() {
               type="button"
               aria-pressed={jenis === pilihan}
               onClick={() => setJenis(pilihan)}
-              className={`min-h-touch rounded-xl px-4 py-3 text-left transition ${
-                jenis === pilihan
-                  ? 'bg-slate-900 text-white'
-                  : 'bg-white text-slate-800 shadow-sm'
-              }`}
+              className={`flex min-h-touch items-center gap-3 rounded-kartu px-4 py-3
+                          text-left transition active:scale-[0.985] ${
+                            jenis === pilihan
+                              ? 'bg-merek-600 text-white shadow-tombol'
+                              : 'bg-white text-slate-800 shadow-kartu ring-1 ring-slate-900/5'
+                          }`}
             >
-              <span className="block font-semibold">
-                {BUSINESS_TYPE_LABELS[pilihan]}
+              <span className="min-w-0 flex-1">
+                <span className="block font-semibold">
+                  {BUSINESS_TYPE_LABELS[pilihan]}
+                </span>
+                <span
+                  className={`block text-sm ${
+                    jenis === pilihan ? 'text-merek-100' : 'text-slate-500'
+                  }`}
+                >
+                  {BUSINESS_TYPE_HINTS[pilihan]}
+                </span>
               </span>
-              <span
-                className={`block text-sm ${
-                  jenis === pilihan ? 'text-slate-300' : 'text-slate-500'
-                }`}
-              >
-                {BUSINESS_TYPE_HINTS[pilihan]}
-              </span>
+              {jenis === pilihan && <Ikon nama="cek" ukuran={20} tebal={2.4} />}
             </button>
           ))}
         </div>
       </section>
 
       <label className="kartu block">
-        <span className="text-sm text-slate-500">
-          Nomor WhatsApp untuk struk (boleh kosong)
-        </span>
+        <span className="label">Nomor WhatsApp untuk struk (boleh kosong)</span>
         <input
           type="tel"
           inputMode="tel"
           value={telepon}
           onChange={(event) => setTelepon(event.target.value)}
           placeholder="08xxxxxxxxxx"
-          className="mt-1 w-full bg-transparent text-lg outline-none"
+          className="kolom mt-1"
         />
       </label>
 
-      <button
-        type="button"
-        disabled={!bisaLanjut}
-        onClick={mulai}
-        className="btn-aksi justify-center bg-slate-900 text-white
-                   disabled:bg-slate-300 disabled:text-slate-500"
-      >
-        Mulai
-      </button>
+      <div className="bilah-bawah">
+        <button
+          type="button"
+          disabled={!bisaLanjut}
+          onClick={mulai}
+          className="btn-primer btn-besar"
+        >
+          Mulai
+        </button>
+      </div>
     </main>
   )
 }

@@ -2,6 +2,8 @@
 
 import { useApp, useCatalog } from '@/lib/useApp'
 import { ItemThumb } from '@/components/ItemThumb'
+import { AppBar } from '@/components/AppBar'
+import { Ikon } from '@/components/Ikon'
 import { isBarang, type Barang } from '@/lib/domain/types'
 import { statusStok, urutkanUntukDitindak, STATUS_STOK_LABEL } from '@/lib/domain/stock'
 
@@ -19,10 +21,10 @@ import { statusStok, urutkanUntukDitindak, STATUS_STOK_LABEL } from '@/lib/domai
  * menolaknya.
  */
 
-const WARNA: Record<string, string> = {
-  habis: 'text-keluar',
-  menipis: 'text-tunggu',
-  aman: 'text-slate-500',
+const GAYA: Record<string, { teks: string; pil: string }> = {
+  habis: { teks: 'text-keluar', pil: 'bg-keluar-soft text-keluar' },
+  menipis: { teks: 'text-tunggu', pil: 'bg-tunggu-soft text-tunggu' },
+  aman: { teks: 'text-slate-500', pil: 'bg-slate-100 text-slate-500' },
 }
 
 export default function Stok() {
@@ -38,7 +40,7 @@ export default function Stok() {
     return (
       <main className="flex flex-1 flex-col gap-4 p-4">
         <p className="kartu">Pengaturan awal belum selesai.</p>
-        <a href="/mulai" className="btn-aksi justify-center bg-slate-900 text-white">
+        <a href="/mulai" className="btn-primer btn-besar">
           Buka pengaturan
         </a>
       </main>
@@ -46,66 +48,78 @@ export default function Stok() {
   }
 
   return (
-    <main className="flex flex-1 flex-col gap-3 p-4 pb-28">
-      <header className="flex items-center gap-3">
-        <a
-          href="/"
-          aria-label="Kembali"
-          className="flex h-touch w-touch items-center justify-center rounded-xl
-                     bg-slate-200 text-2xl text-slate-700"
-        >
-          ←
-        </a>
-        <h1 className="text-xl font-bold">Stok</h1>
-      </header>
+    <main className="flex flex-1 flex-col gap-3 px-4 pb-[calc(theme(spacing.bilah)+5rem)]">
+      <AppBar judul="Stok" kembali="/" />
 
       {barang.length === 0 ? (
-        <div className="kartu">
-          <p className="font-semibold">Belum ada barang</p>
+        <div className="kartu text-center">
+          <span
+            className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl
+                       bg-merek-50 text-merek-600"
+          >
+            <Ikon nama="stok" ukuran={26} />
+          </span>
+          <p className="mt-3 font-semibold">Belum ada barang</p>
           <p className="mt-1 text-slate-600">
             Stok hanya berlaku untuk barang. Jasa tidak pernah habis, jadi
             tidak ada yang perlu dihitung di sini.
           </p>
-          <a
-            href="/katalog/baru?jenis=barang"
-            className="btn-aksi mt-4 justify-center bg-slate-900 text-white"
-          >
+          <a href="/katalog/baru?jenis=barang" className="btn-primer btn-besar mt-5">
             Tambah barang
           </a>
         </div>
       ) : (
         <>
-          <p className="kartu text-slate-600">
-            {perluDitindak.length === 0
-              ? 'Semua stok masih aman.'
-              : `${perluDitindak.length} barang perlu ditindak.`}
-          </p>
+          {perluDitindak.length === 0 ? (
+            <div className="kartu flex items-center gap-3">
+              <span
+                className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl
+                           bg-masuk-soft text-masuk"
+              >
+                <Ikon nama="cek" ukuran={22} tebal={2.2} />
+              </span>
+              <span className="font-semibold">Semua stok masih aman</span>
+            </div>
+          ) : (
+            <div className="kartu flex items-center gap-3 bg-tunggu-soft ring-tunggu/10">
+              <span
+                className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl
+                           bg-white/70 text-tunggu"
+              >
+                <Ikon nama="peringatan" ukuran={22} />
+              </span>
+              <span className="font-semibold text-tunggu">
+                {perluDitindak.length} barang perlu ditindak
+              </span>
+            </div>
+          )}
 
           <ul className="flex flex-col gap-2">
             {barang.map((item) => {
               const status = statusStok(item)
+              const gaya = GAYA[status] ?? GAYA.aman!
               return (
                 <li key={item.id}>
-                  <a
-                    href={`/stok/${item.id}`}
-                    className="flex items-center gap-3 rounded-2xl bg-white p-3 shadow-sm
-                               active:bg-slate-100"
-                  >
+                  <a href={`/stok/${item.id}`} className="baris">
                     <span className="w-12 shrink-0">
                       <ItemThumb item={item} />
                     </span>
                     <span className="min-w-0 flex-1">
                       <span className="block truncate font-semibold">{item.name}</span>
-                      <span className={`block text-sm ${WARNA[status]}`}>
-                        {status === 'habis'
-                          ? STATUS_STOK_LABEL.habis
-                          : `${item.stockQty} ${item.unit}`}
-                        {status === 'menipis' && ` · ${STATUS_STOK_LABEL.menipis}`}
-                      </span>
+                      {status === 'menipis' && (
+                        <span className="block text-sm text-tunggu">
+                          {STATUS_STOK_LABEL.menipis}
+                        </span>
+                      )}
                     </span>
-                    <span aria-hidden className="text-xl text-slate-400">
-                      ›
+                    <span
+                      className={`shrink-0 rounded-xl px-3 py-1.5 text-sm font-bold ${gaya.pil}`}
+                    >
+                      {status === 'habis'
+                        ? STATUS_STOK_LABEL.habis
+                        : `${item.stockQty} ${item.unit}`}
                     </span>
+                    <Ikon nama="lanjut" ukuran={18} className="shrink-0 text-slate-300" />
                   </a>
                 </li>
               )
@@ -114,11 +128,9 @@ export default function Stok() {
         </>
       )}
 
-      <div
-        className="fixed inset-x-0 bottom-0 mx-auto max-w-md border-t border-slate-200
-                   bg-slate-50/95 p-4 pb-[max(1rem,env(safe-area-inset-bottom))] backdrop-blur"
-      >
-        <a href="/kulakan" className="btn-aksi justify-center bg-slate-900 text-white">
+      <div className="mengambang">
+        <a href="/kulakan" className="btn-primer px-5">
+          <Ikon nama="kulakan" ukuran={20} />
           Catat kulakan
         </a>
       </div>

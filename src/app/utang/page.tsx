@@ -9,6 +9,8 @@ import { fromDb } from '@/lib/money'
 import * as M from '@/lib/money'
 import { Uang } from '@/components/Uang'
 import { PapanAngka } from '@/components/PapanAngka'
+import { AppBar } from '@/components/AppBar'
+import { Ikon } from '@/components/Ikon'
 import { ageInDays, outstanding, summarizeDebts, STALE_AFTER_DAYS } from '@/lib/domain/debt'
 import { today } from '@/lib/domain/dates'
 import type { Debt } from '@/lib/domain/types'
@@ -89,7 +91,7 @@ export default function Utang() {
     return (
       <main className="flex flex-1 flex-col gap-4 p-4">
         <p className="kartu">Pengaturan awal belum selesai.</p>
-        <a href="/mulai" className="btn-aksi justify-center bg-slate-900 text-white">
+        <a href="/mulai" className="btn-primer btn-besar">
           Buka pengaturan
         </a>
       </main>
@@ -99,49 +101,36 @@ export default function Utang() {
   // ── Layar terima pembayaran ────────────────────────────────────────
   if (aktif) {
     return (
-      <main className="flex flex-1 flex-col gap-4 p-4 pb-28">
-        <header className="flex items-center gap-3">
-          <button
-            type="button"
-            onClick={() => setDipilih(null)}
-            aria-label="Kembali ke daftar"
-            className="flex h-touch w-touch items-center justify-center rounded-xl
-                       bg-slate-200 text-2xl text-slate-700"
-          >
-            ←
-          </button>
-          <h1 className="text-xl font-bold">{aktif.person}</h1>
-        </header>
+      <main className="flex flex-1 flex-col gap-3 px-4 pb-32">
+        <AppBar judul={aktif.person} onKembali={() => setDipilih(null)} />
 
-        <div className="kartu">
-          <p className="text-sm text-slate-500">Sisa utang</p>
-          <p className="text-money text-keluar">
+        <div className="kartu-gelap animate-naik">
+          <p className="text-sm font-medium text-slate-400">Sisa utang</p>
+          <p className="text-money mt-1">
             <Uang nilai={sisaAktif} />
           </p>
-          <p className="mt-1 text-slate-600">
+          <p className="mt-2 text-sm text-slate-400">
             {ageInDays(aktif, hariIni)} hari
             {aktif.note ? ` · ${aktif.note}` : ''}
           </p>
-        </div>
 
-        <div className="kartu">
-          <p className="text-sm text-slate-500">Uang diterima</p>
-          <p className="text-money-lg text-masuk">
-            <Uang nilai={jumlah} />
-          </p>
+          <div className="mt-5 flex items-center justify-between border-t border-white/10 pt-4">
+            <span className="text-sm font-medium text-slate-400">Uang diterima</span>
+            <span className="text-2xl font-bold">
+              <Uang nilai={jumlah} />
+            </span>
+          </div>
           {M.isPositive(M.subtract(sisaAktif, jumlah)) && (
-            <p className="mt-1 text-slate-600">
-              Masih kurang{' '}
-              <Uang nilai={M.subtract(sisaAktif, jumlah)} className="font-semibold" />
-            </p>
+            <div className="mt-3 flex items-center justify-between rounded-2xl bg-keluar/25 px-4 py-3">
+              <span className="font-semibold">Masih kurang</span>
+              <span className="text-xl font-bold">
+                <Uang nilai={M.subtract(sisaAktif, jumlah)} />
+              </span>
+            </div>
           )}
         </div>
 
-        <button
-          type="button"
-          onClick={() => setJumlah(sisaAktif)}
-          className="min-h-touch rounded-xl bg-slate-200 font-semibold text-slate-800"
-        >
+        <button type="button" onClick={() => setJumlah(sisaAktif)} className="btn-sekunder">
           Lunas
         </button>
 
@@ -151,17 +140,14 @@ export default function Utang() {
           pintasan={[5_000, 10_000, 20_000, 50_000]}
         />
 
-        <div
-          className="fixed inset-x-0 bottom-0 mx-auto max-w-md border-t border-slate-200
-                     bg-slate-50/95 p-4 pb-[max(1rem,env(safe-area-inset-bottom))] backdrop-blur"
-        >
+        <div className="bilah-bawah">
           <button
             type="button"
             disabled={!M.isPositive(jumlah) || menyimpan}
             onClick={terima}
-            className="btn-aksi justify-center bg-slate-900 text-white
-                       disabled:bg-slate-300 disabled:text-slate-500"
+            className="btn-primer btn-besar"
           >
+            <Ikon nama="cek" ukuran={22} tebal={2.2} />
             Terima pembayaran
           </button>
         </div>
@@ -171,22 +157,18 @@ export default function Utang() {
 
   // ── Daftar ─────────────────────────────────────────────────────────
   return (
-    <main className="flex flex-1 flex-col gap-3 p-4 pb-8">
-      <header className="flex items-center gap-3">
-        <a
-          href="/"
-          aria-label="Kembali"
-          className="flex h-touch w-touch items-center justify-center rounded-xl
-                     bg-slate-200 text-2xl text-slate-700"
-        >
-          ←
-        </a>
-        <h1 className="text-xl font-bold">Belum bayar</h1>
-      </header>
+    <main className="flex flex-1 flex-col gap-3 px-4 pb-8">
+      <AppBar judul="Belum bayar" kembali="/" />
 
       {ringkas.count === 0 ? (
-        <div className="kartu">
-          <p className="font-semibold">Tidak ada yang berutang</p>
+        <div className="kartu text-center">
+          <span
+            className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl
+                       bg-masuk-soft text-masuk"
+          >
+            <Ikon nama="cek" ukuran={26} tebal={2.2} />
+          </span>
+          <p className="mt-3 font-semibold">Tidak ada yang berutang</p>
           <p className="mt-1 text-slate-600">
             Piutang muncul sendiri dari struk yang kurang bayar, selama nama
             pembelinya diisi.
@@ -194,15 +176,16 @@ export default function Utang() {
         </div>
       ) : (
         <>
-          <div className="kartu">
-            <p className="text-sm text-slate-500">
+          <div className="kartu-gelap animate-naik">
+            <p className="text-sm font-medium text-slate-400">
               {ringkas.count} orang belum bayar
             </p>
-            <p className="text-money text-keluar">
+            <p className="text-money mt-1">
               <Uang nilai={ringkas.total} />
             </p>
             {ringkas.stale.length > 0 && (
-              <p className="mt-1 text-tunggu">
+              <p className="mt-3 inline-flex items-center gap-2 rounded-xl bg-tunggu/25 px-3 py-1.5 text-sm font-semibold">
+                <Ikon nama="peringatan" ukuran={16} />
                 {ringkas.stale.length} sudah lewat {STALE_AFTER_DAYS} hari
               </p>
             )}
@@ -217,9 +200,18 @@ export default function Utang() {
                   <button
                     type="button"
                     onClick={() => pilih(debt)}
-                    className="flex w-full items-center gap-3 rounded-2xl bg-white p-3
-                               text-left shadow-sm active:bg-slate-100"
+                    className="baris w-full text-left"
                   >
+                    <span
+                      className={`flex h-11 w-11 shrink-0 items-center justify-center
+                                  rounded-2xl text-base font-bold ${
+                                    lama
+                                      ? 'bg-tunggu-soft text-tunggu'
+                                      : 'bg-slate-100 text-slate-600'
+                                  }`}
+                    >
+                      {debt.person.charAt(0).toUpperCase()}
+                    </span>
                     <span className="min-w-0 flex-1">
                       <span className="block truncate font-semibold">{debt.person}</span>
                       <span

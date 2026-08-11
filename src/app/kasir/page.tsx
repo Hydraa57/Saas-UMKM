@@ -12,12 +12,15 @@ import {
   qtyInCart,
   setQty,
 } from '@/lib/domain/cart'
-import { isBarang, type CartLine, type Item, type PaymentMethod } from '@/lib/domain/types'
+import { isBarang, PAYMENT_LABELS, type CartLine, type Item, type PaymentMethod } from '@/lib/domain/types'
+import { statusStok } from '@/lib/domain/stock'
 import * as M from '@/lib/money'
 import type { Rupiah } from '@/lib/money'
 import { PapanAngka } from '@/components/PapanAngka'
 import { Uang } from '@/components/Uang'
 import { ItemThumb } from '@/components/ItemThumb'
+import { AppBar } from '@/components/AppBar'
+import { Ikon } from '@/components/Ikon'
 
 /**
  * Kasir.
@@ -36,6 +39,10 @@ import { ItemThumb } from '@/components/ItemThumb'
  * 3. **Stok memperingatkan, tidak melarang.** Angka stok sering
  *    tertinggal dari kenyataan; menolak penjualan karenanya akan membuat
  *    kasir ditinggalkan tepat saat pembeli menunggu.
+ *
+ * Bilah navigasi bawah sengaja disembunyikan di sini — keranjang dan
+ * tombol bayar yang menempatinya, dan berpindah halaman di tengah
+ * transaksi bukan hal yang perlu dipermudah.
  */
 
 type Fase =
@@ -94,7 +101,7 @@ export default function Kasir() {
     return (
       <main className="flex flex-1 flex-col gap-4 p-4">
         <p className="kartu">Pengaturan awal belum selesai.</p>
-        <a href="/mulai" className="btn-aksi justify-center bg-slate-900 text-white">
+        <a href="/mulai" className="btn-primer btn-besar">
           Buka pengaturan
         </a>
       </main>
@@ -113,48 +120,44 @@ export default function Kasir() {
   // ── Layar bayar ────────────────────────────────────────────────────
   if (fase.tahap === 'bayar') {
     return (
-      <main className="flex flex-1 flex-col gap-4 p-4 pb-28">
-        <header className="flex items-center gap-3">
-          <button
-            type="button"
-            onClick={() => setFase({ tahap: 'pilih' })}
-            aria-label="Kembali ke keranjang"
-            className="flex h-touch w-touch items-center justify-center rounded-xl
-                       bg-slate-200 text-2xl text-slate-700"
-          >
-            ←
-          </button>
-          <h1 className="text-xl font-bold">Bayar</h1>
-        </header>
+      <main className="flex flex-1 flex-col gap-3 px-4 pb-32">
+        <AppBar judul="Bayar" onKembali={() => setFase({ tahap: 'pilih' })} />
 
-        <div className="kartu">
-          <p className="text-sm text-slate-500">Total tagihan</p>
-          <p className="text-money">
+        <div className="kartu-gelap animate-naik">
+          <p className="text-sm font-medium text-slate-400">Total tagihan</p>
+          <p className="text-money mt-1">
             <Uang nilai={totals.total} />
           </p>
-        </div>
 
-        <div className="kartu">
-          <p className="text-sm text-slate-500">Uang diterima</p>
-          <p className="text-money-lg text-masuk">
-            <Uang nilai={dibayar} />
-          </p>
+          <div className="mt-5 flex items-center justify-between border-t border-white/10 pt-4">
+            <span className="text-sm font-medium text-slate-400">Uang diterima</span>
+            <span className="text-2xl font-bold">
+              <Uang nilai={dibayar} />
+            </span>
+          </div>
+
           {M.isPositive(kembalian) && (
-            <p className="mt-1 text-lg">
-              Kembali <Uang nilai={kembalian} className="font-bold" />
-            </p>
+            <div className="mt-3 flex items-center justify-between rounded-2xl bg-white/10 px-4 py-3">
+              <span className="font-semibold">Kembali</span>
+              <span className="text-xl font-bold">
+                <Uang nilai={kembalian} />
+              </span>
+            </div>
           )}
           {M.isPositive(kurang) && (
-            <p className="mt-1 text-lg text-keluar">
-              Kurang <Uang nilai={kurang} className="font-bold" />
-            </p>
+            <div className="mt-3 flex items-center justify-between rounded-2xl bg-keluar/25 px-4 py-3">
+              <span className="font-semibold">Kurang</span>
+              <span className="text-xl font-bold">
+                <Uang nilai={kurang} />
+              </span>
+            </div>
           )}
         </div>
 
         <button
           type="button"
           onClick={() => setDibayar(totals.total)}
-          className="min-h-touch rounded-xl bg-slate-200 font-semibold text-slate-800"
+          className="btn-sekunder"
         >
           Uang pas
         </button>
@@ -166,7 +169,7 @@ export default function Kasir() {
         />
 
         <section>
-          <h2 className="mb-2 text-sm text-slate-500">Cara bayar</h2>
+          <h2 className="label mb-2">Cara bayar</h2>
           <div className="flex flex-wrap gap-2">
             {(['tunai', 'qris', 'transfer'] as const).map((pilihan) => (
               <button
@@ -174,13 +177,9 @@ export default function Kasir() {
                 type="button"
                 aria-pressed={metode === pilihan}
                 onClick={() => setMetode(pilihan)}
-                className={`min-h-touch rounded-xl px-5 font-semibold capitalize ${
-                  metode === pilihan
-                    ? 'bg-slate-900 text-white'
-                    : 'bg-white text-slate-700 shadow-sm'
-                }`}
+                className={`chip flex-1 ${metode === pilihan ? 'chip-aktif' : ''}`}
               >
-                {pilihan}
+                {PAYMENT_LABELS[pilihan]}
               </button>
             ))}
           </div>
@@ -189,31 +188,26 @@ export default function Kasir() {
         {/* Nama pembeli hanya perlu kalau uangnya kurang — piutang tanpa
             nama tidak bisa ditagih. */}
         {M.isPositive(kurang) && (
-          <label className="kartu block">
-            <span className="text-sm text-slate-500">
-              Nama pembeli (supaya utangnya bisa ditagih)
-            </span>
+          <label className="kartu block animate-naik">
+            <span className="label">Nama pembeli, supaya utangnya bisa ditagih</span>
             <input
               type="text"
               value={pembeli}
               onChange={(e) => setPembeli(e.target.value)}
               placeholder="Bu Tetangga"
-              className="mt-1 w-full bg-transparent text-lg outline-none"
+              className="kolom mt-1"
             />
           </label>
         )}
 
-        <div
-          className="fixed inset-x-0 bottom-0 mx-auto max-w-md border-t border-slate-200
-                     bg-slate-50/95 p-4 pb-[max(1rem,env(safe-area-inset-bottom))] backdrop-blur"
-        >
+        <div className="bilah-bawah">
           <button
             type="button"
             disabled={menyimpan}
             onClick={bayar}
-            className="btn-aksi justify-center bg-slate-900 text-white
-                       disabled:bg-slate-300 disabled:text-slate-500"
+            className="btn-primer btn-besar"
           >
+            <Ikon nama="cek" ukuran={22} tebal={2.2} />
             {M.isZero(dibayar) ? 'Simpan sebagai utang' : 'Selesai & cetak struk'}
           </button>
         </div>
@@ -223,81 +217,84 @@ export default function Kasir() {
 
   // ── Layar pilih barang ─────────────────────────────────────────────
   return (
-    <main className="flex flex-1 flex-col gap-3 p-4 pb-32">
-      <header className="flex items-center gap-3">
-        <a
-          href="/"
-          aria-label="Kembali"
-          className="flex h-touch w-touch items-center justify-center rounded-xl
-                     bg-slate-200 text-2xl text-slate-700"
-        >
-          ←
-        </a>
-        <h1 className="text-xl font-bold">Kasir</h1>
-      </header>
+    <main className="flex flex-1 flex-col gap-3 px-4 pb-40">
+      <AppBar judul="Kasir" kembali="/" />
 
       {katalog.length === 0 ? (
-        <div className="kartu">
-          <p className="font-semibold">Katalog masih kosong</p>
+        <div className="kartu text-center">
+          <span
+            className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl
+                       bg-merek-50 text-merek-600"
+          >
+            <Ikon nama="katalog" ukuran={26} />
+          </span>
+          <p className="mt-3 font-semibold">Katalog masih kosong</p>
           <p className="mt-1 text-slate-600">
             Tambahkan barang atau jasa dulu supaya bisa diketuk dari sini.
           </p>
-          <a
-            href="/katalog/baru"
-            className="btn-aksi mt-4 justify-center bg-slate-900 text-white"
-          >
+          <a href="/katalog/baru" className="btn-primer btn-besar mt-5">
             Tambah barang / jasa
           </a>
         </div>
       ) : (
         <>
-          <div role="tablist" className="flex gap-2 rounded-2xl bg-slate-200 p-1">
+          <div role="tablist" className="tab-grup">
             {(['semua', 'barang', 'jasa'] as const).map((pilihan) => (
               <button
                 key={pilihan}
                 role="tab"
                 aria-selected={saring === pilihan}
                 onClick={() => setSaring(pilihan)}
-                className={`min-h-touch flex-1 rounded-xl font-semibold capitalize transition ${
-                  saring === pilihan ? 'bg-white shadow-sm' : 'text-slate-600'
-                }`}
+                className={`tab capitalize ${saring === pilihan ? 'tab-aktif' : ''}`}
               >
                 {pilihan}
               </button>
             ))}
           </div>
 
-          <div className="grid grid-cols-2 gap-2">
+          <div className="grid grid-cols-2 gap-3">
             {terlihat.map((item) => {
               const diKeranjang = qtyInCart(keranjang, item.id)
-              const habis = isBarang(item) && item.stockQty <= 0
+              const status = isBarang(item) ? statusStok(item) : null
               return (
                 <button
                   key={item.id}
                   type="button"
                   onClick={() => tambah(item)}
-                  className="relative flex min-h-touch-lg flex-col rounded-xl bg-white
-                             p-2 text-left shadow-sm active:bg-slate-100"
+                  className={`relative flex flex-col rounded-kartu bg-white p-2.5 text-left
+                              shadow-kartu ring-1 transition active:scale-[0.97] ${
+                                diKeranjang > 0
+                                  ? 'ring-2 ring-merek-500'
+                                  : 'ring-slate-900/5'
+                              }`}
                 >
                   <ItemThumb item={item} />
                   <span className="mt-2 line-clamp-2 font-semibold leading-snug">
                     {item.name}
                   </span>
-                  <span className="text-sm text-slate-600">
+                  <span className="mt-0.5 font-semibold text-merek-700">
                     {M.format(item.price)}
                   </span>
-                  {isBarang(item) && (
+                  {status && (
                     <span
-                      className={`text-xs ${habis ? 'text-keluar' : 'text-slate-500'}`}
+                      className={`text-xs font-medium ${
+                        status === 'habis'
+                          ? 'text-keluar'
+                          : status === 'menipis'
+                            ? 'text-tunggu'
+                            : 'text-slate-400'
+                      }`}
                     >
-                      {habis ? 'Stok habis' : `Sisa ${item.stockQty} ${item.unit}`}
+                      {status === 'habis'
+                        ? 'Stok habis'
+                        : `Sisa ${(item as { stockQty: number }).stockQty} ${item.unit}`}
                     </span>
                   )}
                   {diKeranjang > 0 && (
                     <span
                       className="absolute right-2 top-2 flex h-8 min-w-8 items-center
-                                 justify-center rounded-full bg-slate-900 px-2
-                                 font-bold text-white"
+                                 justify-center rounded-full bg-merek-600 px-2
+                                 font-bold text-white shadow-tombol"
                     >
                       {diKeranjang}
                     </span>
@@ -310,30 +307,49 @@ export default function Kasir() {
       )}
 
       {keranjang.length > 0 && (
-        <section className="kartu">
-          <h2 className="mb-2 text-sm text-slate-500">Keranjang</h2>
-          <ul className="flex flex-col gap-2">
+        <section className="kartu animate-naik">
+          <h2 className="label mb-3">Keranjang</h2>
+          <ul className="flex flex-col gap-3">
             {keranjang.map((line, index) => (
-              <li key={`${line.itemId ?? 'bebas'}-${index}`} className="flex items-center gap-2">
-                <span className="flex-1 leading-snug">{line.itemName}</span>
-                <button
-                  type="button"
-                  aria-label={`Kurangi ${line.itemName}`}
-                  onClick={() => setKeranjang((isi) => setQty(isi, index, line.qty - 1))}
-                  className="h-10 w-10 rounded-lg bg-slate-200 text-xl font-bold"
-                >
-                  −
-                </button>
-                <span className="w-8 text-center font-semibold">{line.qty}</span>
-                <button
-                  type="button"
-                  aria-label={`Tambah ${line.itemName}`}
-                  onClick={() => setKeranjang((isi) => setQty(isi, index, line.qty + 1))}
-                  className="h-10 w-10 rounded-lg bg-slate-200 text-xl font-bold"
-                >
-                  +
-                </button>
-                <span className="w-24 text-right font-semibold">
+              <li
+                key={`${line.itemId ?? 'bebas'}-${index}`}
+                className="flex items-center gap-2"
+              >
+                <span className="min-w-0 flex-1">
+                  <span className="line-clamp-2 font-semibold leading-tight">
+                    {line.itemName}
+                  </span>
+                  <span className="block text-sm text-slate-500">
+                    {M.format(line.unitPrice)}
+                  </span>
+                </span>
+
+                <span className="flex shrink-0 items-center gap-0.5 rounded-2xl bg-slate-100 p-1">
+                  <button
+                    type="button"
+                    aria-label={`Kurangi ${line.itemName}`}
+                    onClick={() => setKeranjang((isi) => setQty(isi, index, line.qty - 1))}
+                    className="flex h-9 w-9 items-center justify-center rounded-xl
+                               bg-white text-slate-700 shadow-kartu active:scale-95"
+                  >
+                    <Ikon nama="kurang" ukuran={18} tebal={2.4} />
+                  </button>
+                  <span className="w-6 text-center font-bold">{line.qty}</span>
+                  <button
+                    type="button"
+                    aria-label={`Tambah ${line.itemName}`}
+                    onClick={() => setKeranjang((isi) => setQty(isi, index, line.qty + 1))}
+                    className="flex h-9 w-9 items-center justify-center rounded-xl
+                               bg-white text-slate-700 shadow-kartu active:scale-95"
+                  >
+                    <Ikon nama="tambah" ukuran={18} tebal={2.4} />
+                  </button>
+                </span>
+
+                {/* `whitespace-nowrap` + `shrink-0`: nominal yang terpotong
+                    jadi dua baris membuat baris keranjang tinggi sendiri,
+                    dan nominal adalah hal terakhir yang boleh sulit dibaca. */}
+                <span className="shrink-0 whitespace-nowrap text-right font-bold">
                   {M.format(M.multiplyByQty(line.unitPrice, line.qty))}
                 </span>
               </li>
@@ -342,30 +358,40 @@ export default function Kasir() {
 
           {/* Peringatan, bukan larangan. */}
           {peringatan.length > 0 && (
-            <p className="mt-3 rounded-xl bg-tunggu-soft p-3 text-sm text-tunggu">
-              {peringatan
-                .map((p) => `${p.item.name} tinggal ${p.available}`)
-                .join(', ')}
-              . Tetap bisa dijual.
+            <p className="mt-4 flex gap-2 rounded-2xl bg-tunggu-soft p-3 text-sm text-tunggu">
+              <Ikon nama="peringatan" ukuran={18} className="mt-0.5 shrink-0" />
+              <span>
+                {peringatan.map((p) => `${p.item.name} tinggal ${p.available}`).join(', ')}
+                . Tetap bisa dijual.
+              </span>
             </p>
           )}
         </section>
       )}
 
       {keranjang.length > 0 && (
-        <div
-          className="fixed inset-x-0 bottom-0 mx-auto max-w-md border-t border-slate-200
-                     bg-slate-50/95 p-4 pb-[max(1rem,env(safe-area-inset-bottom))] backdrop-blur"
-        >
+        <div className="bilah-bawah">
           <button
             type="button"
             onClick={() => {
               setDibayar(totals.total)
               setFase({ tahap: 'bayar' })
             }}
-            className="btn-aksi justify-between bg-slate-900 text-white"
+            className="btn-primer btn-besar justify-between"
           >
-            <span>Bayar</span>
+            <span className="flex items-center gap-2">
+              {/* Jumlahnya `aria-hidden`: pembaca layar cukup mendengar
+                  "Bayar Rp 57.000", dan angka yang dibacakan lebih dulu
+                  justru membuat tombolnya sulit dikenali. */}
+              <span
+                aria-hidden
+                className="flex h-7 min-w-7 items-center justify-center rounded-lg
+                           bg-white/20 px-1.5 text-base"
+              >
+                {totals.itemCount}
+              </span>
+              Bayar
+            </span>
             <span>{M.format(totals.total)}</span>
           </button>
         </div>

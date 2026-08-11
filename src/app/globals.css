@@ -10,37 +10,164 @@
   }
 
   body {
-    @apply bg-slate-50 text-slate-900 antialiased;
+    @apply bg-slate-100 text-slate-900 antialiased;
     /* Aplikasi dipakai satu tangan sambil berdiri; tarik-untuk-muat-ulang
        yang tidak sengaja aktif saat menggulir daftar sangat mengganggu. */
     overscroll-behavior-y: contain;
   }
 
-  /* Fokus harus selalu terlihat. Ibu mungkin memakai keyboard layar
-     atau, nanti, pemindai barcode yang berperilaku seperti keyboard. */
+  /* Fokus harus selalu terlihat. Penggunanya mungkin memakai keyboard
+     layar atau, nanti, pemindai barcode yang berperilaku seperti
+     keyboard. */
   :focus-visible {
-    @apply outline outline-2 outline-offset-2 outline-slate-900;
+    @apply outline outline-2 outline-offset-2 outline-merek-600;
+  }
+
+  /* Menghilangkan panah naik-turun pada input angka. Panahnya kecil,
+     mudah tersentuh tidak sengaja, dan mengubah jumlah stok tanpa
+     disadari. */
+  input[type='number']::-webkit-outer-spin-button,
+  input[type='number']::-webkit-inner-spin-button {
+    -webkit-appearance: none;
+    margin: 0;
+  }
+  input[type='number'] {
+    -moz-appearance: textfield;
+  }
+
+  input[type='search']::-webkit-search-decoration,
+  input[type='search']::-webkit-search-cancel-button {
+    -webkit-appearance: none;
   }
 }
 
 @layer components {
-  /* Tombol aksi utama di beranda. Besar dengan sengaja: tiga tombol ini
-     adalah seluruh alur harian, dan salah tekan lebih mahal daripada
-     ruang layar yang terpakai. */
-  .btn-aksi {
-    @apply flex min-h-touch-lg w-full items-center gap-4 rounded-2xl px-6 py-5
-           text-left text-xl font-semibold shadow-sm transition
-           active:scale-[0.98];
+  /* ── Permukaan ──────────────────────────────────────────────────── */
+
+  .kartu {
+    @apply rounded-kartu bg-white p-5 shadow-kartu ring-1 ring-slate-900/5;
+  }
+
+  /* Kartu yang bisa ditekan. Umpan baliknya menyusut sedikit, bukan
+     berubah warna: warna sudah dipakai untuk arti, dan gerakan terbaca
+     lebih cepat daripada perubahan warna di layar yang silau. */
+  .kartu-tekan {
+    @apply kartu transition active:scale-[0.985] active:shadow-none;
+  }
+
+  /* Latar gelap untuk kartu utama di beranda. Gradiennya halus — cukup
+     untuk terasa bernapas, tidak sampai mengganggu keterbacaan angka
+     putih di atasnya. */
+  .kartu-gelap {
+    @apply rounded-kartu-lg bg-gradient-to-br from-slate-900 via-slate-900
+           to-merek-950 p-6 text-white shadow-naik;
+  }
+
+  /* ── Tombol ─────────────────────────────────────────────────────── */
+
+  .btn {
+    @apply flex min-h-touch items-center justify-center gap-2 rounded-kartu
+           px-5 text-lg font-semibold transition
+           active:scale-[0.98] disabled:pointer-events-none;
+  }
+
+  .btn-primer {
+    @apply btn bg-merek-600 text-white shadow-tombol
+           active:bg-merek-700 disabled:bg-slate-200 disabled:text-slate-400
+           disabled:shadow-none;
+  }
+
+  .btn-sekunder {
+    @apply btn bg-white text-slate-800 shadow-kartu ring-1 ring-slate-900/5
+           active:bg-slate-50 disabled:text-slate-400;
+  }
+
+  .btn-bahaya {
+    @apply btn bg-keluar text-white active:bg-red-800
+           disabled:bg-slate-200 disabled:text-slate-400;
+  }
+
+  /* Tombol aksi besar di beranda dan di akhir alur. Besar dengan
+     sengaja: salah tekan lebih mahal daripada ruang layar yang terpakai. */
+  .btn-besar {
+    @apply btn min-h-touch-lg w-full rounded-kartu-lg px-6 text-xl;
   }
 
   .btn-angka {
-    @apply flex min-h-touch items-center justify-center rounded-xl bg-white
-           text-2xl font-semibold text-slate-900 shadow-sm transition
-           active:bg-slate-200;
+    @apply flex min-h-touch items-center justify-center rounded-2xl bg-white
+           text-2xl font-semibold text-slate-900 shadow-kartu
+           ring-1 ring-slate-900/5 transition
+           active:scale-95 active:bg-slate-100;
   }
 
-  .kartu {
-    @apply rounded-2xl bg-white p-5 shadow-sm;
+  /* Tombol ikon persegi di kepala halaman. */
+  .btn-ikon {
+    @apply flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl
+           bg-white text-slate-700 shadow-kartu ring-1 ring-slate-900/5
+           transition active:scale-95 active:bg-slate-100;
+  }
+
+  /* ── Pilihan ────────────────────────────────────────────────────── */
+
+  /* Kelompok tab bergaya "pil": penanda posisinya berupa kartu putih
+     yang menyala di atas alur abu. */
+  .tab-grup {
+    @apply flex gap-1 rounded-kartu bg-slate-200/70 p-1;
+  }
+
+  .tab {
+    @apply flex min-h-[2.75rem] flex-1 items-center justify-center rounded-2xl
+           text-base font-semibold text-slate-600 transition;
+  }
+
+  .tab-aktif {
+    @apply bg-white text-slate-900 shadow-kartu;
+  }
+
+  .chip {
+    @apply flex min-h-touch items-center justify-center rounded-2xl bg-white
+           px-5 font-semibold text-slate-700 shadow-kartu ring-1
+           ring-slate-900/5 transition active:scale-95;
+  }
+
+  .chip-aktif {
+    @apply bg-merek-600 text-white shadow-tombol ring-merek-600;
+  }
+
+  /* ── Isian ──────────────────────────────────────────────────────── */
+
+  .kolom {
+    @apply w-full bg-transparent text-lg text-slate-900 outline-none
+           placeholder:text-slate-400;
+  }
+
+  .label {
+    @apply block text-sm font-medium text-slate-500;
+  }
+
+  /* ── Baris daftar ───────────────────────────────────────────────── */
+
+  .baris {
+    @apply flex items-center gap-3 rounded-kartu bg-white p-3 shadow-kartu
+           ring-1 ring-slate-900/5 transition active:scale-[0.985]
+           active:bg-slate-50;
+  }
+
+  /* ── Bilah bawah ────────────────────────────────────────────────── */
+
+  /* Tombol mengambang di atas bilah navigasi.
+     Halaman yang punya bilah aksi penuh **dan** bilah navigasi akan
+     saling menimpa — ketukan jatuh ke yang salah, dan yang di bawah
+     tidak pernah bisa disentuh. Yang di layar bertab memakai bentuk ini. */
+  .mengambang {
+    @apply fixed inset-x-0 z-20 mx-auto flex max-w-md justify-end gap-2 px-4;
+    bottom: calc(theme(spacing.bilah) + 0.5rem);
+  }
+
+  .bilah-bawah {
+    @apply fixed inset-x-0 bottom-0 z-30 mx-auto max-w-md
+           border-t border-slate-900/5 bg-white/85 px-4 pb-[max(0.75rem,env(safe-area-inset-bottom))]
+           pt-3 shadow-bilah backdrop-blur-xl;
   }
 }
 

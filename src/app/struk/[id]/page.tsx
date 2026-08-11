@@ -15,6 +15,8 @@ import {
 } from '@/lib/domain/receipt'
 import { Uang } from '@/components/Uang'
 import { bluetoothTersedia, cetakStruk, PrinterError } from '@/lib/print/bluetooth'
+import { AppBar } from '@/components/AppBar'
+import { Ikon } from '@/components/Ikon'
 import type { CartLine, PaymentMethod, Sale } from '@/lib/domain/types'
 
 /**
@@ -87,7 +89,7 @@ export default function LayarStruk({
     return (
       <main className="flex flex-1 flex-col gap-4 p-4">
         <p className="kartu">Struk tidak ditemukan.</p>
-        <a href="/" className="btn-aksi justify-center bg-slate-200 text-slate-900">
+        <a href="/riwayat" className="btn-sekunder btn-besar">
           Kembali
         </a>
       </main>
@@ -132,25 +134,37 @@ export default function LayarStruk({
   const dibatalkan = Boolean(sale.voidedAt)
 
   return (
-    <main className="flex flex-1 flex-col gap-4 p-4 pb-8">
-      <div className="kartu text-center">
-        <p className="text-4xl" aria-hidden>
-          {dibatalkan ? '✕' : '✓'}
-        </p>
-        <p className="mt-2 text-slate-600">
+    <main className="flex flex-1 flex-col gap-3 px-4 pb-8">
+      <AppBar judul={`Struk ${sale.invoiceNo}`} kembali="/riwayat" />
+
+      <div className="kartu-gelap animate-naik text-center">
+        <span
+          className={`mx-auto flex h-14 w-14 items-center justify-center rounded-2xl ${
+            dibatalkan ? 'bg-white/10 text-slate-300' : 'bg-masuk/30 text-emerald-300'
+          }`}
+        >
+          <Ikon nama={dibatalkan ? 'silang' : 'cek'} ukuran={28} tebal={2.4} />
+        </span>
+        <p className="mt-3 text-sm font-medium text-slate-400">
           {dibatalkan ? 'Struk dibatalkan' : 'Transaksi tersimpan'}
         </p>
-        <p className={`text-money ${dibatalkan ? 'text-slate-400 line-through' : 'text-masuk'}`}>
+        <p className={`text-money mt-1 ${dibatalkan ? 'text-slate-500 line-through' : ''}`}>
           <Uang nilai={ringkas.total} />
         </p>
-        {M.isPositive(ringkas.change) && (
-          <p className="mt-1 text-lg">
-            Kembali <Uang nilai={ringkas.change} className="font-bold" />
+        {!dibatalkan && M.isPositive(ringkas.change) && (
+          <p className="mt-4 flex items-center justify-between rounded-2xl bg-white/10 px-4 py-3 text-left">
+            <span className="font-semibold">Kembali</span>
+            <span className="text-xl font-bold">
+              <Uang nilai={ringkas.change} />
+            </span>
           </p>
         )}
-        {M.isPositive(ringkas.outstanding) && (
-          <p className="mt-1 text-lg text-keluar">
-            Kurang <Uang nilai={ringkas.outstanding} className="font-bold" />
+        {!dibatalkan && M.isPositive(ringkas.outstanding) && (
+          <p className="mt-4 flex items-center justify-between rounded-2xl bg-keluar/25 px-4 py-3 text-left">
+            <span className="font-semibold">Kurang</span>
+            <span className="text-xl font-bold">
+              <Uang nilai={ringkas.outstanding} />
+            </span>
           </p>
         )}
       </div>
@@ -158,8 +172,8 @@ export default function LayarStruk({
       {/* Lebar huruf tetap: bentuknya sama persis dengan yang dibagikan
           dan yang dicetak. */}
       <pre
-        className="overflow-x-auto rounded-2xl bg-white p-4 font-mono text-[13px]
-                   leading-snug shadow-sm"
+        className="overflow-x-auto rounded-kartu bg-white p-4 font-mono text-[13px]
+                   leading-snug text-slate-700 shadow-kartu ring-1 ring-slate-900/5"
       >
         {teks}
       </pre>
@@ -168,8 +182,9 @@ export default function LayarStruk({
         href={shareUrl}
         target="_blank"
         rel="noopener noreferrer"
-        className="btn-aksi justify-center bg-emerald-600 text-white"
+        className="btn btn-besar bg-emerald-600 text-white shadow-naik active:bg-emerald-700"
       >
+        <Ikon nama="wa" ukuran={22} />
         Kirim ke WhatsApp
       </a>
 
@@ -181,15 +196,15 @@ export default function LayarStruk({
           type="button"
           disabled={mencetak}
           onClick={cetak}
-          className="btn-aksi justify-center bg-slate-200 text-slate-900
-                     disabled:text-slate-400"
+          className="btn-sekunder btn-besar"
         >
+          <Ikon nama="cetak" ukuran={22} />
           {mencetak ? 'Mencetak…' : 'Cetak ke printer'}
         </button>
       )}
 
       {pesanCetak && (
-        <p role="status" className="kartu text-slate-700">
+        <p role="status" className="kartu animate-naik text-slate-700">
           {pesanCetak}
         </p>
       )}
@@ -211,16 +226,14 @@ export default function LayarStruk({
                 type="button"
                 disabled={membatalkan}
                 onClick={batalkan}
-                className="min-h-touch flex-1 rounded-xl bg-red-600 font-semibold
-                           text-white disabled:bg-slate-300"
+                className="btn-bahaya flex-1"
               >
                 Ya, batalkan
               </button>
               <button
                 type="button"
                 onClick={() => setKonfirmasiBatal(false)}
-                className="min-h-touch flex-1 rounded-xl bg-slate-200 font-semibold
-                           text-slate-800"
+                className="btn-sekunder flex-1"
               >
                 Tidak
               </button>
@@ -230,25 +243,18 @@ export default function LayarStruk({
           <button
             type="button"
             onClick={() => setKonfirmasiBatal(true)}
-            className="min-h-touch rounded-xl text-keluar"
+            className="min-h-touch rounded-kartu font-semibold text-keluar
+                       active:bg-keluar-soft"
           >
             Batalkan struk
           </button>
         ))}
 
       <div className="flex gap-3">
-        <a
-          href="/kasir"
-          className="flex min-h-touch flex-1 items-center justify-center rounded-xl
-                     bg-slate-900 font-semibold text-white"
-        >
+        <a href="/kasir" className="btn-primer flex-1">
           Transaksi baru
         </a>
-        <a
-          href="/riwayat"
-          className="flex min-h-touch flex-1 items-center justify-center rounded-xl
-                     bg-slate-200 font-semibold text-slate-800"
-        >
+        <a href="/riwayat" className="btn-sekunder flex-1">
           Riwayat
         </a>
       </div>

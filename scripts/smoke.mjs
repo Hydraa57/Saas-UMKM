@@ -62,7 +62,7 @@ await step('isi nama usaha dan mulai', async () => {
 })
 
 await step('tambah barang: Biskuit 5.000, stok 10', async () => {
-  await page.getByRole('link', { name: '+ Barang' }).click()
+  await page.getByRole('link', { name: 'Barang', exact: true }).click()
   await page.waitForURL('**/katalog/baru**')
   await page.waitForTimeout(600)
   await page.getByPlaceholder('Biskuit Roma').fill('Biskuit Uji')
@@ -76,7 +76,7 @@ await step('tambah barang: Biskuit 5.000, stok 10', async () => {
 })
 
 await step('tambah jasa: Potong celana 30.000', async () => {
-  await page.getByRole('link', { name: '+ Jasa' }).click()
+  await page.getByRole('link', { name: 'Jasa', exact: true }).click()
   await page.waitForURL('**/katalog/baru**')
   await page.waitForTimeout(600)
   await page.getByPlaceholder('Potong celana').fill('Potong celana')
@@ -151,7 +151,10 @@ const beranda = (await page.locator('main').innerText()).replace(/\n+/g, ' | ')
 
 await step('penjualan langsung masuk pembukuan tanpa dicatat ulang', async () => {
   if (!beranda.includes('40.000')) throw new Error('beranda tanpa total hari ini: ' + beranda)
-  if (!beranda.includes('1 struk')) throw new Error('beranda tanpa hitungan struk: ' + beranda)
+  // Beranda memisahkan label dan angkanya sejak rancangannya diperbarui.
+  if (!/Struk \| 1\b/.test(beranda)) {
+    throw new Error('beranda tanpa hitungan struk: ' + beranda)
+  }
 })
 
 // ── Lingkaran stok: kulakan menaikkan stok **dan** menurunkan kas ────────
@@ -183,7 +186,9 @@ await step('kulakan juga mengurangi uang di tangan, bukan cuma menambah stok', a
   // 40.000 masuk − 60.000 kulakan = −20.000. Kalau kulakan hanya
   // menambah stok, "sisa" akan tetap 40.000 dan selamanya terlihat lebih
   // bagus daripada isi laci.
-  if (!berandaSetelahKulakan.includes('60.000')) {
+  // Petak masuk/keluar di beranda memakai bentuk ringkas (`Rp 60rb`);
+  // angka penuhnya ada di "Sisa bulan ini" dan "Uang di tangan".
+  if (!berandaSetelahKulakan.includes('KELUAR | Rp 60rb')) {
     throw new Error('kulakan tidak muncul sebagai uang keluar: ' + berandaSetelahKulakan)
   }
   // Tandanya di depan "Rp", bukan di depan angkanya: `-Rp 20.000`.

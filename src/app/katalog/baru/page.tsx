@@ -11,6 +11,8 @@ import type { Rupiah } from '@/lib/money'
 import { PapanAngka } from '@/components/PapanAngka'
 import { Uang } from '@/components/Uang'
 import { ITEM_KIND_LABELS, type ItemKind } from '@/lib/domain/types'
+import { AppBar } from '@/components/AppBar'
+import { Ikon } from '@/components/Ikon'
 
 /**
  * Tambah atau ubah barang dan jasa.
@@ -137,20 +139,8 @@ function Isi() {
   if (!ready || memuat) return <main className="flex-1 p-4" aria-busy="true" />
 
   return (
-    <main className="flex flex-1 flex-col gap-4 p-4 pb-32">
-      <header className="flex items-center gap-3">
-        <a
-          href="/katalog"
-          aria-label="Kembali"
-          className="flex h-touch w-touch items-center justify-center rounded-xl
-                     bg-slate-200 text-2xl text-slate-700"
-        >
-          ←
-        </a>
-        <h1 className="text-xl font-bold">
-          {idLama ? 'Ubah' : 'Tambah ke katalog'}
-        </h1>
-      </header>
+    <main className="flex flex-1 flex-col gap-3 px-4 pb-32">
+      <AppBar judul={idLama ? 'Ubah' : 'Tambah ke katalog'} kembali="/katalog" />
 
       {/* Jenisnya dikunci saat mengubah. Mengubah barang menjadi jasa
           berarti membuang stok yang sudah punya riwayat pergerakan, dan
@@ -158,18 +148,19 @@ function Isi() {
           pernah terjual tanpa stok. Yang salah jenis lebih baik
           diarsipkan lalu dibuat ulang. */}
       {idLama ? (
-        <p className="kartu text-slate-600">{ITEM_KIND_LABELS[kind]}</p>
+        <p className="kartu flex items-center gap-2 py-3 text-slate-600">
+          <Ikon nama={kind === 'jasa' ? 'jasa' : 'katalog'} ukuran={20} />
+          {ITEM_KIND_LABELS[kind]}
+        </p>
       ) : (
-        <div role="tablist" className="flex gap-2 rounded-2xl bg-slate-200 p-1">
+        <div role="tablist" className="tab-grup">
           {(['barang', 'jasa'] as const).map((pilihan) => (
             <button
               key={pilihan}
               role="tab"
               aria-selected={kind === pilihan}
               onClick={() => setKind(pilihan)}
-              className={`min-h-touch flex-1 rounded-xl font-semibold transition ${
-                kind === pilihan ? 'bg-white shadow-sm' : 'text-slate-600'
-              }`}
+              className={`tab min-h-touch ${kind === pilihan ? 'tab-aktif' : ''}`}
             >
               {ITEM_KIND_LABELS[pilihan]}
             </button>
@@ -178,20 +169,20 @@ function Isi() {
       )}
 
       <label className="kartu block">
-        <span className="text-sm text-slate-500">Nama</span>
+        <span className="label">Nama</span>
         <input
           type="text"
           value={nama}
           onChange={(e) => setNama(e.target.value)}
           placeholder={kind === 'barang' ? 'Biskuit Roma' : 'Potong celana'}
           autoFocus
-          className="mt-1 w-full bg-transparent text-lg outline-none"
+          className="kolom mt-1 text-xl font-semibold"
         />
       </label>
 
-      <div className="kartu">
-        <p className="text-sm text-slate-500">Harga jual</p>
-        <p className="text-money text-masuk">
+      <div className="kartu-gelap">
+        <p className="text-sm font-medium text-slate-400">Harga jual</p>
+        <p className="text-money mt-1">
           <Uang nilai={harga} />
         </p>
       </div>
@@ -206,71 +197,70 @@ function Isi() {
           "Potong celana" tidak punya stok, dan menampilkan kolomnya
           dalam keadaan mati justru mengesankan sebaliknya. */}
       {kind === 'barang' && (
-        <section className="kartu flex flex-col gap-3">
+        <section className="kartu flex flex-col gap-3 animate-naik">
           {idLama ? (
             <p className="text-slate-600">
               Stok sekarang <span className="font-semibold">{stok || 0}</span>{' '}
               {satuan}. Berubah lewat penjualan, kulakan, dan koreksi.
             </p>
           ) : (
-            <label className="block">
-              <span className="text-sm text-slate-500">Stok sekarang</span>
+            <label className="block rounded-2xl bg-slate-50 px-4 py-3">
+              <span className="label">Stok sekarang</span>
               <input
                 type="number"
                 inputMode="decimal"
                 value={stok}
                 onChange={(e) => setStok(e.target.value)}
                 placeholder="0"
-                className="mt-1 w-full bg-transparent text-lg outline-none"
+                className="kolom mt-1 font-semibold"
               />
             </label>
           )}
-          <label className="block">
-            <span className="text-sm text-slate-500">
-              Ingatkan kalau tinggal (boleh kosong)
-            </span>
+          <label className="block rounded-2xl bg-slate-50 px-4 py-3">
+            <span className="label">Ingatkan kalau tinggal (boleh kosong)</span>
             <input
               type="number"
               inputMode="decimal"
               value={minStok}
               onChange={(e) => setMinStok(e.target.value)}
               placeholder="0"
-              className="mt-1 w-full bg-transparent text-lg outline-none"
+              className="kolom mt-1 font-semibold"
             />
           </label>
-          <label className="block">
-            <span className="text-sm text-slate-500">Satuan</span>
+          <label className="block rounded-2xl bg-slate-50 px-4 py-3">
+            <span className="label">Satuan</span>
             <input
               type="text"
               value={satuan}
               onChange={(e) => setSatuan(e.target.value)}
               placeholder="pcs"
-              className="mt-1 w-full bg-transparent text-lg outline-none"
+              className="kolom mt-1"
             />
           </label>
         </section>
       )}
 
       <details className="kartu">
-        <summary className="cursor-pointer font-semibold">
+        <summary className="flex cursor-pointer items-center gap-2 font-semibold">
+          <Ikon nama="foto" ukuran={20} className="text-slate-400" />
           Harga modal & foto (boleh dilewati)
         </summary>
 
         <div className="mt-3 flex flex-col gap-3">
-          <label className="block">
-            <span className="text-sm text-slate-500">Harga modal</span>
+          <label className="block rounded-2xl bg-slate-50 px-4 py-3">
+            <span className="label">Harga modal</span>
             <input
               type="text"
               inputMode="numeric"
               value={M.isZero(modal) ? '' : M.format(modal, { withPrefix: false })}
               onChange={(e) => setModal(M.parse(e.target.value) ?? M.ZERO)}
               placeholder="0"
-              className="mt-1 w-full bg-transparent text-lg outline-none"
+              className="kolom mt-1 font-semibold"
             />
           </label>
 
-          <label className="block">
-            <span className="text-sm text-slate-500">Foto</span>
+          <label className="block rounded-2xl bg-slate-50 px-4 py-3">
+            <span className="label">Foto</span>
             <input
               type="file"
               accept="image/*"
@@ -288,32 +278,26 @@ function Isi() {
             <img
               src={pratinjau}
               alt="Pratinjau foto"
-              className="aspect-square w-32 rounded-xl object-cover"
+              className="aspect-square w-32 rounded-2xl object-cover shadow-kartu"
             />
           )}
         </div>
       </details>
 
-      <div
-        className="fixed inset-x-0 bottom-0 mx-auto flex max-w-md gap-3 border-t
-                   border-slate-200 bg-slate-50/95 p-4
-                   pb-[max(1rem,env(safe-area-inset-bottom))] backdrop-blur"
-      >
+      <div className="bilah-bawah flex gap-3">
         <button
           type="button"
           disabled={menyimpan}
           onClick={() => (idLama ? void arsipkan() : void simpan(true))}
-          className="min-h-touch flex-1 rounded-xl bg-slate-200 font-semibold
-                     text-slate-800 disabled:text-slate-400"
+          className="btn-sekunder flex-1 text-base"
         >
-          {idLama ? 'Arsipkan' : 'Simpan & tambah lagi'}
+          {idLama ? 'Arsipkan' : 'Simpan & lagi'}
         </button>
         <button
           type="button"
           disabled={!bisaSimpan}
           onClick={() => simpan(false)}
-          className="min-h-touch flex-1 rounded-xl bg-slate-900 font-semibold
-                     text-white disabled:bg-slate-300 disabled:text-slate-500"
+          className="btn-primer flex-1"
         >
           Simpan
         </button>

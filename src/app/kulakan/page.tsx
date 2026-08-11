@@ -5,6 +5,8 @@ import { actionContext, useApp, useCatalog } from '@/lib/useApp'
 import { recordPurchase, type PurchaseLine } from '@/lib/actions/pos'
 import { ItemThumb } from '@/components/ItemThumb'
 import { Uang } from '@/components/Uang'
+import { AppBar } from '@/components/AppBar'
+import { Ikon } from '@/components/Ikon'
 import * as M from '@/lib/money'
 import { isBarang, type Barang } from '@/lib/domain/types'
 import { saranKulakan, statusStok, urutkanUntukDitindak } from '@/lib/domain/stock'
@@ -113,7 +115,7 @@ export default function Kulakan() {
     return (
       <main className="flex flex-1 flex-col gap-4 p-4">
         <p className="kartu">Pengaturan awal belum selesai.</p>
-        <a href="/mulai" className="btn-aksi justify-center bg-slate-900 text-white">
+        <a href="/mulai" className="btn-primer btn-besar">
           Buka pengaturan
         </a>
       </main>
@@ -121,18 +123,8 @@ export default function Kulakan() {
   }
 
   return (
-    <main className="flex flex-1 flex-col gap-3 p-4 pb-32">
-      <header className="flex items-center gap-3">
-        <a
-          href="/stok"
-          aria-label="Kembali"
-          className="flex h-touch w-touch items-center justify-center rounded-xl
-                     bg-slate-200 text-2xl text-slate-700"
-        >
-          ←
-        </a>
-        <h1 className="text-xl font-bold">Kulakan</h1>
-      </header>
+    <main className="flex flex-1 flex-col gap-3 px-4 pb-36">
+      <AppBar judul="Kulakan" kembali="/stok" />
 
       {baris.length > 0 && (
         <ul className="flex flex-col gap-2">
@@ -152,34 +144,34 @@ export default function Kulakan() {
                   type="button"
                   aria-label={`Hapus ${b.item.name}`}
                   onClick={() => hapus(index)}
-                  className="h-10 w-10 rounded-lg bg-slate-200 text-xl font-bold
-                             text-slate-700"
+                  className="flex h-10 w-10 items-center justify-center rounded-xl
+                             bg-slate-100 text-slate-500 active:scale-95"
                 >
-                  ×
+                  <Ikon nama="silang" ukuran={18} tebal={2.2} />
                 </button>
               </div>
 
               <div className="flex gap-3">
-                <label className="flex-1">
-                  <span className="text-sm text-slate-500">Jumlah</span>
+                <label className="flex-1 rounded-2xl bg-slate-50 px-3 py-2">
+                  <span className="label">Jumlah</span>
                   <input
                     type="number"
                     inputMode="decimal"
                     value={b.qty}
                     onChange={(e) => ubah(index, { qty: e.target.value })}
                     placeholder="0"
-                    className="mt-1 w-full bg-transparent text-lg font-semibold outline-none"
+                    className="kolom font-semibold"
                   />
                 </label>
-                <label className="flex-1">
-                  <span className="text-sm text-slate-500">Harga modal / {b.item.unit}</span>
+                <label className="flex-1 rounded-2xl bg-slate-50 px-3 py-2">
+                  <span className="label">Harga modal / {b.item.unit}</span>
                   <input
                     type="number"
                     inputMode="numeric"
                     value={b.modal}
                     onChange={(e) => ubah(index, { modal: e.target.value })}
                     placeholder="0"
-                    className="mt-1 w-full bg-transparent text-lg font-semibold outline-none"
+                    className="kolom font-semibold"
                   />
                 </label>
               </div>
@@ -208,17 +200,20 @@ export default function Kulakan() {
         </div>
       ) : (
         <section className="flex flex-col gap-2">
-          <h2 className="text-sm text-slate-500">
+          <h2 className="label">
             {baris.length > 0 ? 'Tambah lagi' : 'Pilih barang yang dibeli'}
           </h2>
 
-          <input
-            type="search"
-            value={cari}
-            onChange={(e) => setCari(e.target.value)}
-            placeholder="Cari nama"
-            className="kartu w-full text-lg outline-none"
-          />
+          <label className="kartu flex items-center gap-3 py-3">
+            <Ikon nama="cari" ukuran={20} className="shrink-0 text-slate-400" />
+            <input
+              type="search"
+              value={cari}
+              onChange={(e) => setCari(e.target.value)}
+              placeholder="Cari nama"
+              className="kolom"
+            />
+          </label>
 
           <ul className="flex flex-col gap-2">
             {tersedia.map((item) => {
@@ -228,8 +223,7 @@ export default function Kulakan() {
                   <button
                     type="button"
                     onClick={() => tambah(item)}
-                    className="flex w-full items-center gap-3 rounded-2xl bg-white p-3
-                               text-left shadow-sm active:bg-slate-100"
+                    className="baris w-full text-left"
                   >
                     <span className="w-10 shrink-0">
                       <ItemThumb item={item} />
@@ -248,8 +242,11 @@ export default function Kulakan() {
                         Sisa {item.stockQty} {item.unit}
                       </span>
                     </span>
-                    <span aria-hidden className="text-2xl text-slate-400">
-                      +
+                    <span
+                      className="flex h-9 w-9 shrink-0 items-center justify-center
+                                 rounded-xl bg-merek-50 text-merek-600"
+                    >
+                      <Ikon nama="tambah" ukuran={18} tebal={2.4} />
                     </span>
                   </button>
                 </li>
@@ -261,28 +258,24 @@ export default function Kulakan() {
 
       {baris.length > 0 && (
         <label className="kartu block">
-          <span className="text-sm text-slate-500">Beli di mana (boleh kosong)</span>
+          <span className="label">Beli di mana (boleh kosong)</span>
           <input
             type="text"
             value={pemasok}
             onChange={(e) => setPemasok(e.target.value)}
             placeholder="Toko grosir Pak Har"
-            className="mt-1 w-full bg-transparent text-lg outline-none"
+            className="kolom mt-1"
           />
         </label>
       )}
 
       {baris.length > 0 && (
-        <div
-          className="fixed inset-x-0 bottom-0 mx-auto max-w-md border-t border-slate-200
-                     bg-slate-50/95 p-4 pb-[max(1rem,env(safe-area-inset-bottom))] backdrop-blur"
-        >
+        <div className="bilah-bawah">
           <button
             type="button"
             disabled={!bisaSimpan}
             onClick={simpan}
-            className="btn-aksi justify-between bg-slate-900 text-white
-                       disabled:bg-slate-300 disabled:text-slate-500"
+            className="btn-primer btn-besar justify-between"
           >
             <span>Simpan kulakan</span>
             <span>{M.format(total)}</span>

@@ -8,6 +8,8 @@ import { adjustStock } from '@/lib/actions/pos'
 import { isBarang, STOCK_REASON_LABELS, type Barang, type StockMovement } from '@/lib/domain/types'
 import { selisihHitung, statusStok, stokDariMutasi } from '@/lib/domain/stock'
 import { formatLocalDate, toLocalDate } from '@/lib/domain/dates'
+import { AppBar } from '@/components/AppBar'
+import { Ikon } from '@/components/Ikon'
 
 /**
  * Satu barang: sisa stok, riwayat pergerakannya, dan koreksi hitung
@@ -83,7 +85,7 @@ export default function DetailStok({
             ? 'Jasa tidak punya stok — "Potong celana" tidak pernah habis.'
             : 'Barang tidak ditemukan.'}
         </p>
-        <a href="/stok" className="btn-aksi justify-center bg-slate-200 text-slate-900">
+        <a href="/stok" className="btn-sekunder btn-besar">
           Kembali
         </a>
       </main>
@@ -96,34 +98,24 @@ export default function DetailStok({
   const selisih = hitung === '' ? null : selisihHitung(item, Number(hitung))
 
   return (
-    <main className="flex flex-1 flex-col gap-4 p-4 pb-8">
-      <header className="flex items-center gap-3">
-        <a
-          href="/stok"
-          aria-label="Kembali"
-          className="flex h-touch w-touch items-center justify-center rounded-xl
-                     bg-slate-200 text-2xl text-slate-700"
-        >
-          ←
-        </a>
-        <h1 className="min-w-0 flex-1 truncate text-xl font-bold">{item.name}</h1>
-      </header>
+    <main className="flex flex-1 flex-col gap-4 px-4 pb-[calc(theme(spacing.bilah)+1rem)]">
+      <AppBar judul={item.name} kembali="/stok" />
 
-      <div className="kartu">
-        <p className="text-sm text-slate-500">Sisa menurut aplikasi</p>
+      <div className="kartu-gelap animate-naik">
+        <p className="text-sm font-medium text-slate-400">Sisa menurut aplikasi</p>
         <p
-          className={`text-money ${
+          className={`text-money mt-1 ${
             status === 'habis'
-              ? 'text-keluar'
+              ? 'text-red-300'
               : status === 'menipis'
-                ? 'text-tunggu'
+                ? 'text-amber-300'
                 : ''
           }`}
         >
           {item.stockQty} {item.unit}
         </p>
         {item.minStock > 0 && (
-          <p className="mt-1 text-sm text-slate-500">
+          <p className="mt-2 text-sm text-slate-400">
             Diingatkan saat tinggal {item.minStock} {item.unit}
           </p>
         )}
@@ -133,26 +125,27 @@ export default function DetailStok({
             asal-usul — dan pemiliknya perlu tahu sebelum dia berangkat
             kulakan dengan angka yang salah. */}
         {dariMutasi !== item.stockQty && (
-          <p className="mt-3 rounded-xl bg-tunggu-soft p-3 text-sm text-tunggu">
-            Penjumlahan riwayat menghasilkan {dariMutasi} {item.unit}, berbeda
-            dari angka di atas. Hitung fisik lalu koreksi di bawah.
+          <p className="mt-4 flex gap-2 rounded-2xl bg-tunggu/25 p-3 text-sm">
+            <Ikon nama="peringatan" ukuran={18} className="mt-0.5 shrink-0" />
+            <span>
+              Penjumlahan riwayat menghasilkan {dariMutasi} {item.unit}, berbeda
+              dari angka di atas. Hitung fisik lalu koreksi di bawah.
+            </span>
           </p>
         )}
       </div>
 
       <section className="kartu">
-        <h2 className="text-sm text-slate-500">Koreksi dari hitung fisik</h2>
-        <label className="mt-2 block">
-          <span className="text-sm text-slate-600">
-            Jumlah sebenarnya di rak
-          </span>
+        <h2 className="font-semibold">Koreksi dari hitung fisik</h2>
+        <label className="mt-3 block rounded-2xl bg-slate-50 px-4 py-3">
+          <span className="label">Jumlah sebenarnya di rak</span>
           <input
             type="number"
             inputMode="decimal"
             value={hitung}
             onChange={(e) => setHitung(e.target.value)}
             placeholder={String(item.stockQty)}
-            className="mt-1 w-full bg-transparent text-2xl font-bold outline-none"
+            className="kolom mt-1 text-2xl font-bold"
           />
         </label>
 
@@ -167,14 +160,14 @@ export default function DetailStok({
           <p className="mt-2 text-slate-600">Cocok, tidak ada yang perlu dikoreksi.</p>
         )}
 
-        <label className="mt-3 block">
-          <span className="text-sm text-slate-600">Keterangan (boleh kosong)</span>
+        <label className="mt-3 block rounded-2xl bg-slate-50 px-4 py-3">
+          <span className="label">Keterangan (boleh kosong)</span>
           <input
             type="text"
             value={catatan}
             onChange={(e) => setCatatan(e.target.value)}
             placeholder="Ada yang rusak"
-            className="mt-1 w-full bg-transparent text-lg outline-none"
+            className="kolom mt-1"
           />
         </label>
 
@@ -182,15 +175,14 @@ export default function DetailStok({
           type="button"
           disabled={hitung === '' || selisih === 0 || menyimpan}
           onClick={koreksi}
-          className="btn-aksi mt-4 justify-center bg-slate-900 text-white
-                     disabled:bg-slate-300 disabled:text-slate-500"
+          className="btn-primer btn-besar mt-4"
         >
           Simpan koreksi
         </button>
       </section>
 
       <section>
-        <h2 className="mb-2 text-sm text-slate-500">Riwayat pergerakan</h2>
+        <h2 className="mb-2 px-1 font-semibold">Riwayat pergerakan</h2>
         {data.mutasi.length === 0 ? (
           <p className="kartu text-slate-600">
             Belum ada pergerakan. Stok berubah lewat penjualan, kulakan, dan
@@ -201,8 +193,19 @@ export default function DetailStok({
             {data.mutasi.map((m) => (
               <li
                 key={m.id}
-                className="flex items-center gap-3 rounded-2xl bg-white p-3 shadow-sm"
+                className="flex items-center gap-3 rounded-kartu bg-white p-3
+                           shadow-kartu ring-1 ring-slate-900/5"
               >
+                <span
+                  className={`flex h-10 w-10 shrink-0 items-center justify-center
+                              rounded-xl ${
+                                m.qtyChange > 0
+                                  ? 'bg-masuk-soft text-masuk'
+                                  : 'bg-keluar-soft text-keluar'
+                              }`}
+                >
+                  <Ikon nama={m.qtyChange > 0 ? 'tambah' : 'kurang'} ukuran={18} tebal={2.4} />
+                </span>
                 <span className="min-w-0 flex-1">
                   <span className="block font-semibold">
                     {STOCK_REASON_LABELS[m.reason]}

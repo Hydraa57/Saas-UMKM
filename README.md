@@ -125,9 +125,12 @@ npm run db:test   # 82 penegasan: migrasi, RLS, jalur tulis
 
 npm run build && npx next start -p 3311 &
 npm run smoke     # alur nyata di peramban sungguhan
+npm run shots     # tangkapan layar tiap halaman, dengan data yang masuk akal
 ```
 
-`npm run smoke` menjalankan satu hari kerja lengkap di Chromium — 29 langkah: buka usaha, isi katalog dengan satu barang dan satu jasa, jual keduanya dalam satu struk, kulakan, koreksi hitung fisik, jual berutang, terima pelunasan, lalu batalkan satu struk. Yang diperiksa bukan "layarnya muncul" melainkan angkanya: kulakan **ikut mengurangi kas**, pembatalan **menarik uangnya kembali** dan mengembalikan stok lewat retur, penjumlahan riwayat stok tetap cocok setelah semuanya, dan **stok jasa tidak pernah berkurang.**
+`npm run shots` mengisi katalog, menjual, kulakan, dan menagih lebih dulu, lalu memotret seluruh halaman ke `shots/`. Dipakai untuk melihat rancangannya sebagai satu kesatuan: kebanyakan kejanggalan tata letak baru terlihat saat sepuluh layar dijejerkan, bukan saat dilihat satu per satu.
+
+`npm run smoke` menjalankan satu hari kerja lengkap di Chromium — 25 langkah: buka usaha, isi katalog dengan satu barang dan satu jasa, jual keduanya dalam satu struk, kulakan, koreksi hitung fisik, jual berutang, terima pelunasan, lalu batalkan satu struk. Yang diperiksa bukan "layarnya muncul" melainkan angkanya: kulakan **ikut mengurangi kas**, pembatalan **menarik uangnya kembali** dan mengembalikan stok lewat retur, penjumlahan riwayat stok tetap cocok setelah semuanya, dan **stok jasa tidak pernah berkurang.**
 
 Ia menangkap hal yang tidak bisa ditangkap tes unit. Tiga bug lolos dari seluruh tes unit dan baru ketahuan di sana: pilihan yang hilang saat kembali dari layar lain, ikon PWA yang tidak ada, dan — yang paling serius — **stok awal yang tidak pernah tercatat sebagai mutasi**, sehingga penjumlahan riwayat selamanya meleset sebesar stok awal tiap barang.
 

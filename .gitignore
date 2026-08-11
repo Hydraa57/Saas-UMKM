@@ -15,3 +15,7 @@ next-env.d.ts
 
 supabase/.temp/
 supabase/.branches/
+
+# Tangkapan layar hasil `npm run shots` — dibuat ulang kapan saja, dan
+# berkas PNG di riwayat git membuat repo membengkak tanpa alasan.
+/shots

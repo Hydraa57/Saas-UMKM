@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react'
 import { db } from '@/lib/db/local'
 import { isBarang, type Item } from '@/lib/domain/types'
+import { Ikon } from './Ikon'
 
 /**
  * Foto barang di grid kasir.
@@ -15,15 +16,22 @@ import { isBarang, type Item } from '@/lib/domain/types'
  * tetap untuk barang itu. Lebih baik daripada kotak abu-abu seragam:
  * warnanya konsisten antar kunjungan, jadi tetap bisa dikenali sekilas
  * meski belum ada satu pun foto yang diambil.
+ *
+ * Jasa tidak memakai huruf melainkan ikon yang sama untuk semuanya.
+ * Huruf awal berguna untuk membedakan barang yang berjejer di rak; jasa
+ * jumlahnya sedikit dan yang perlu terbaca justru bahwa ia **bukan**
+ * barang.
  */
 
 const WARNA = [
-  'bg-rose-100 text-rose-900',
-  'bg-amber-100 text-amber-900',
-  'bg-emerald-100 text-emerald-900',
-  'bg-sky-100 text-sky-900',
-  'bg-violet-100 text-violet-900',
-  'bg-orange-100 text-orange-900',
+  'from-rose-100 to-rose-200 text-rose-800',
+  'from-amber-100 to-amber-200 text-amber-800',
+  'from-emerald-100 to-emerald-200 text-emerald-800',
+  'from-sky-100 to-sky-200 text-sky-800',
+  'from-violet-100 to-violet-200 text-violet-800',
+  'from-orange-100 to-orange-200 text-orange-800',
+  'from-teal-100 to-teal-200 text-teal-800',
+  'from-fuchsia-100 to-fuchsia-200 text-fuchsia-800',
 ] as const
 
 function warnaDari(id: string): string {
@@ -63,7 +71,7 @@ export function ItemThumb({ item }: { readonly item: Item }) {
       <img
         src={url}
         alt=""
-        className="aspect-square w-full rounded-lg object-cover"
+        className="aspect-square w-full rounded-2xl object-cover"
       />
     )
   }
@@ -71,10 +79,14 @@ export function ItemThumb({ item }: { readonly item: Item }) {
   return (
     <span
       aria-hidden
-      className={`flex aspect-square w-full items-center justify-center rounded-lg
-                  text-3xl font-bold ${warnaDari(item.id)}`}
+      className={`flex aspect-square w-full items-center justify-center rounded-2xl
+                  bg-gradient-to-br text-3xl font-bold ${warnaDari(item.id)}`}
     >
-      {isBarang(item) ? item.name.charAt(0).toUpperCase() : '✂'}
+      {isBarang(item) ? (
+        item.name.charAt(0).toUpperCase()
+      ) : (
+        <Ikon nama="jasa" ukuran={28} tebal={2} />
+      )}
     </span>
   )
 }

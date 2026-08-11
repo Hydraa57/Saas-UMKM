@@ -1,5 +1,6 @@
 import type { Metadata, Viewport } from 'next'
 import './globals.css'
+import { TabBar } from '@/components/TabBar'
 
 export const metadata: Metadata = {
   title: 'Ezura',
@@ -24,7 +25,13 @@ export default function RootLayout({
 }: Readonly<{ children: React.ReactNode }>) {
   return (
     <html lang="id">
-      <body className="mx-auto flex min-h-dvh max-w-md flex-col">{children}</body>
+      {/* Lebar dibatasi karena ini aplikasi HP. Di layar lebar ia tetap
+          selebar HP dan berada di tengah, bukan melar jadi tata letak
+          yang tidak pernah dirancang. */}
+      <body className="mx-auto flex min-h-dvh max-w-md flex-col bg-slate-100">
+        {children}
+        <TabBar />
+      </body>
     </html>
   )
 }

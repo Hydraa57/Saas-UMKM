@@ -4,6 +4,8 @@ import { Suspense, useState } from 'react'
 import { useSearchParams } from 'next/navigation'
 import { useApp, useCatalog } from '@/lib/useApp'
 import { ItemThumb } from '@/components/ItemThumb'
+import { AppBar } from '@/components/AppBar'
+import { Ikon } from '@/components/Ikon'
 import * as M from '@/lib/money'
 import { ITEM_KIND_LABELS, isBarang, type Item } from '@/lib/domain/types'
 import { perluDitindak, statusStok } from '@/lib/domain/stock'
@@ -52,7 +54,7 @@ function Isi() {
     return (
       <main className="flex flex-1 flex-col gap-4 p-4">
         <p className="kartu">Pengaturan awal belum selesai.</p>
-        <a href="/mulai" className="btn-aksi justify-center bg-slate-900 text-white">
+        <a href="/mulai" className="btn-primer btn-besar">
           Buka pengaturan
         </a>
       </main>
@@ -60,31 +62,27 @@ function Isi() {
   }
 
   return (
-    <main className="flex flex-1 flex-col gap-3 p-4 pb-28">
-      <header className="flex items-center gap-3">
-        <a
-          href="/"
-          aria-label="Kembali"
-          className="flex h-touch w-touch items-center justify-center rounded-xl
-                     bg-slate-200 text-2xl text-slate-700"
-        >
-          ←
-        </a>
-        <h1 className="text-xl font-bold">Katalog</h1>
-      </header>
+    <main className="flex flex-1 flex-col gap-3 px-4 pb-[calc(theme(spacing.bilah)+5rem)]">
+      <AppBar judul="Katalog" kembali="/" />
 
       {/* Datang dari layar pembuka: katalognya pasti kosong, jadi yang
           ditampilkan adalah ajakan mengisi, bukan daftar kosong. */}
       {params.get('awal') === '1' && katalog.length === 0 && (
-        <p className="kartu text-slate-600">
-          Masukkan dulu apa saja yang dijual. Cukup nama dan harga — foto
-          dan stok bisa menyusul.
+        <p className="kartu animate-naik text-slate-600">
+          Masukkan dulu apa saja yang dijual. Cukup nama dan harga — foto dan
+          stok bisa menyusul.
         </p>
       )}
 
       {katalog.length === 0 ? (
-        <div className="kartu">
-          <p className="font-semibold">Belum ada isinya</p>
+        <div className="kartu text-center">
+          <span
+            className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl
+                       bg-merek-50 text-merek-600"
+          >
+            <Ikon nama="katalog" ukuran={26} />
+          </span>
+          <p className="mt-3 font-semibold">Belum ada isinya</p>
           <p className="mt-1 text-slate-600">
             Tambahkan barang yang dijual, atau jasa yang diterima seperti
             &ldquo;Potong celana&rdquo;.
@@ -95,34 +93,35 @@ function Isi() {
           {menipis.length > 0 && (
             <a
               href="/stok"
-              className="kartu flex items-start gap-3 bg-tunggu-soft text-tunggu"
+              className="kartu-tekan flex items-center gap-3 bg-tunggu-soft ring-tunggu/10"
             >
-              <span aria-hidden>⚠</span>
-              <span className="font-semibold">
-                {menipis.length} barang menipis:{' '}
-                {menipis.map((i) => i.name).join(', ')}
+              <Ikon nama="peringatan" ukuran={20} className="shrink-0 text-tunggu" />
+              <span className="min-w-0 flex-1 truncate font-semibold text-tunggu">
+                {menipis.length} barang menipis: {menipis.map((i) => i.name).join(', ')}
               </span>
+              <Ikon nama="lanjut" ukuran={18} className="shrink-0 text-tunggu/50" />
             </a>
           )}
 
-          <input
-            type="search"
-            value={cari}
-            onChange={(e) => setCari(e.target.value)}
-            placeholder="Cari nama"
-            className="kartu w-full text-lg outline-none"
-          />
+          <label className="kartu flex items-center gap-3 py-3">
+            <Ikon nama="cari" ukuran={20} className="shrink-0 text-slate-400" />
+            <input
+              type="search"
+              value={cari}
+              onChange={(e) => setCari(e.target.value)}
+              placeholder="Cari nama"
+              className="kolom"
+            />
+          </label>
 
-          <div role="tablist" className="flex gap-2 rounded-2xl bg-slate-200 p-1">
+          <div role="tablist" className="tab-grup">
             {(['semua', 'barang', 'jasa'] as const).map((pilihan) => (
               <button
                 key={pilihan}
                 role="tab"
                 aria-selected={saring === pilihan}
                 onClick={() => setSaring(pilihan)}
-                className={`min-h-touch flex-1 rounded-xl font-semibold capitalize transition ${
-                  saring === pilihan ? 'bg-white shadow-sm' : 'text-slate-600'
-                }`}
+                className={`tab capitalize ${saring === pilihan ? 'tab-aktif' : ''}`}
               >
                 {pilihan}
               </button>
@@ -132,17 +131,13 @@ function Isi() {
           <ul className="flex flex-col gap-2">
             {terlihat.map((item) => (
               <li key={item.id}>
-                <a
-                  href={`/katalog/baru?id=${item.id}`}
-                  className="flex items-center gap-3 rounded-2xl bg-white p-3 shadow-sm
-                             active:bg-slate-100"
-                >
+                <a href={`/katalog/baru?id=${item.id}`} className="baris">
                   <span className="w-14 shrink-0">
                     <ItemThumb item={item} />
                   </span>
                   <span className="min-w-0 flex-1">
                     <span className="block truncate font-semibold">{item.name}</span>
-                    <span className="block text-sm text-slate-600">
+                    <span className="block font-semibold text-merek-700">
                       {M.format(item.price)}
                     </span>
                     {/* Jasa memang tidak punya baris sisa sama sekali. */}
@@ -166,9 +161,7 @@ function Isi() {
                       </span>
                     )}
                   </span>
-                  <span aria-hidden className="text-xl text-slate-400">
-                    ›
-                  </span>
+                  <Ikon nama="lanjut" ukuran={20} className="shrink-0 text-slate-300" />
                 </a>
               </li>
             ))}
@@ -182,24 +175,14 @@ function Isi() {
         </>
       )}
 
-      <div
-        className="fixed inset-x-0 bottom-0 mx-auto flex max-w-md gap-3 border-t
-                   border-slate-200 bg-slate-50/95 p-4
-                   pb-[max(1rem,env(safe-area-inset-bottom))] backdrop-blur"
-      >
-        <a
-          href="/katalog/baru?jenis=barang"
-          className="flex min-h-touch flex-1 items-center justify-center rounded-xl
-                     bg-slate-900 font-semibold text-white"
-        >
-          + Barang
+      <div className="mengambang">
+        <a href="/katalog/baru?jenis=jasa" className="btn-sekunder px-4 text-base">
+          <Ikon nama="tambah" ukuran={18} tebal={2.4} />
+          Jasa
         </a>
-        <a
-          href="/katalog/baru?jenis=jasa"
-          className="flex min-h-touch flex-1 items-center justify-center rounded-xl
-                     bg-slate-200 font-semibold text-slate-800"
-        >
-          + Jasa
+        <a href="/katalog/baru?jenis=barang" className="btn-primer px-4 text-base">
+          <Ikon nama="tambah" ukuran={18} tebal={2.4} />
+          Barang
         </a>
       </div>
     </main>

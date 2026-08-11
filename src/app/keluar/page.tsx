@@ -7,6 +7,8 @@ import * as M from '@/lib/money'
 import type { Rupiah } from '@/lib/money'
 import { PapanAngka } from '@/components/PapanAngka'
 import { Uang } from '@/components/Uang'
+import { AppBar } from '@/components/AppBar'
+import { Ikon } from '@/components/Ikon'
 import {
   CATEGORY_LABELS,
   EXPENSE_CATEGORIES,
@@ -59,7 +61,7 @@ export default function Keluar() {
     return (
       <main className="flex flex-1 flex-col gap-4 p-4">
         <p className="kartu">Pengaturan awal belum selesai.</p>
-        <a href="/mulai" className="btn-aksi justify-center bg-slate-900 text-white">
+        <a href="/mulai" className="btn-primer btn-besar">
           Buka pengaturan
         </a>
       </main>
@@ -67,22 +69,12 @@ export default function Keluar() {
   }
 
   return (
-    <main className="flex flex-1 flex-col gap-4 p-4 pb-28">
-      <header className="flex items-center gap-3">
-        <a
-          href="/"
-          aria-label="Kembali"
-          className="flex h-touch w-touch items-center justify-center rounded-xl
-                     bg-slate-200 text-2xl text-slate-700"
-        >
-          ←
-        </a>
-        <h1 className="text-xl font-bold">Uang Keluar</h1>
-      </header>
+    <main className="flex flex-1 flex-col gap-3 px-4 pb-32">
+      <AppBar judul="Uang Keluar" kembali="/" />
 
-      <div className="kartu">
-        <p className="text-sm text-slate-500">Jumlah</p>
-        <p className="text-money-lg text-keluar">
+      <div className="kartu-gelap animate-naik">
+        <p className="text-sm font-medium text-slate-400">Jumlah</p>
+        <p className="text-money mt-1">
           <Uang nilai={jumlah} />
         </p>
       </div>
@@ -94,19 +86,15 @@ export default function Keluar() {
       />
 
       <section>
-        <h2 className="mb-2 text-sm text-slate-500">Untuk apa</h2>
-        <div className="flex flex-wrap gap-2">
+        <h2 className="label mb-2">Untuk apa</h2>
+        <div className="grid grid-cols-2 gap-2">
           {EXPENSE_CATEGORIES.map((pilihan) => (
             <button
               key={pilihan}
               type="button"
               aria-pressed={kategori === pilihan}
               onClick={() => setKategori(pilihan)}
-              className={`min-h-touch rounded-xl px-5 font-semibold ${
-                kategori === pilihan
-                  ? 'bg-slate-900 text-white'
-                  : 'bg-white text-slate-700 shadow-sm'
-              }`}
+              className={`chip ${kategori === pilihan ? 'chip-aktif' : ''}`}
             >
               {CATEGORY_LABELS[pilihan]}
             </button>
@@ -115,27 +103,24 @@ export default function Keluar() {
       </section>
 
       <label className="kartu block">
-        <span className="text-sm text-slate-500">Catatan (boleh kosong)</span>
+        <span className="label">Catatan (boleh kosong)</span>
         <input
           type="text"
           value={catatan}
           onChange={(e) => setCatatan(e.target.value)}
           placeholder="Gas 3 kg"
-          className="mt-1 w-full bg-transparent text-lg outline-none"
+          className="kolom mt-1"
         />
       </label>
 
-      <div
-        className="fixed inset-x-0 bottom-0 mx-auto max-w-md border-t border-slate-200
-                   bg-slate-50/95 p-4 pb-[max(1rem,env(safe-area-inset-bottom))] backdrop-blur"
-      >
+      <div className="bilah-bawah">
         <button
           type="button"
           disabled={!bisaSimpan}
           onClick={simpan}
-          className="btn-aksi justify-center bg-slate-900 text-white
-                     disabled:bg-slate-300 disabled:text-slate-500"
+          className="btn-primer btn-besar"
         >
+          <Ikon nama="cek" ukuran={22} tebal={2.2} />
           Simpan
         </button>
       </div>
