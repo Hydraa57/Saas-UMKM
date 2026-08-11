@@ -157,6 +157,26 @@ await step('penjualan langsung masuk pembukuan tanpa dicatat ulang', async () =>
   }
 })
 
+await step('peringatan cadangan muncul selama belum masuk akun', async () => {
+  // Kehilangan HP adalah satu-satunya cara seluruh isi aplikasi lenyap
+  // sekaligus, dan pengguna tidak punya cara lain mengetahuinya.
+  if (!beranda.includes('Catatan baru ada di HP ini')) {
+    throw new Error('peringatan cadangan tidak muncul: ' + beranda)
+  }
+})
+
+await step('peladen tak terjangkau tidak menghentikan apa pun', async () => {
+  // Supabase sudah dikonfigurasi di .env.local tapi tidak bisa dihubungi
+  // dari sini. Itu justru keadaan yang harus diuji: seluruh langkah di
+  // atas berhasil, dan tidak ada satu pun galat halaman.
+  await page.goto(BASE + '/masuk')
+  await page.waitForTimeout(900)
+  const layar = await page.locator('main').innerText()
+  if (!layar.includes('Catatan ini baru ada di HP ini')) {
+    throw new Error('layar cadangan tidak menampilkan keadaan yang benar: ' + layar)
+  }
+})
+
 // ── Lingkaran stok: kulakan menaikkan stok **dan** menurunkan kas ────────
 
 await step('kulakan 20 biskuit @ 3.000', async () => {

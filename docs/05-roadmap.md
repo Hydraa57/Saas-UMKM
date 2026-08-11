@@ -76,8 +76,10 @@ Penyandi ESC/POS menerima **string**, bukan `Sale`. Kalau ia menyusun sendiri ba
 ## Fase 4 — Laporan & sinkronisasi (perkiraan 4 hari)
 
 - [x] Proyek Supabase berdiri, keenam migrasi terpasang, advisor bersih dari temuan yang tidak disengaja
-- [ ] Login satu akun, tanpa alur pendaftaran publik
-- [ ] Sambungkan antrean kirim ke Supabase sungguhan + penarikan data dari peladen
+- [x] Login — **opsional, bukan gerbang.** Aplikasi jalan penuh tanpa akun; login hanya untuk mencadangkan
+- [x] Antrean kirim benar-benar dijalankan: saat dibuka, saat sinyal kembali, saat antrean bertambah, dan berkala
+- [x] Indikator keadaan cadangan yang menghilang sendiri kalau semuanya sudah aman
+- [ ] Penarikan data dari peladen (untuk HP kedua; risiko kehilangan sudah ditutup oleh pengiriman)
 - [ ] Unggah foto katalog ke Storage
 - [ ] Daftar rekap bulanan + total tahunan, meniru halaman buku tulisnya
 - [ ] Barang terlaris & jam paling ramai — jawaban yang buku tulis tidak akan pernah bisa beri

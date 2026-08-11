@@ -75,11 +75,13 @@ Alur pokoknya sudah jalan dari ujung ke ujung: pengaturan awal → isi katalog �
 | Aksi tulis (tulis lokal + antre, tanpa menunggu jaringan) | 40 |
 | Skema, RLS, jalur tulis (PostgreSQL sungguhan) | 82 penegasan |
 
-Layar yang sudah ada: pengaturan awal, beranda, katalog (daftar, tambah, ubah, arsip), kasir, struk, riwayat struk, stok, kulakan, koreksi hitung fisik, piutang, uang keluar.
+Layar yang sudah ada: pengaturan awal, beranda, barang & jasa (tab Daftar + Stok), tambah/ubah/arsip, kasir, struk, riwayat struk, kulakan, koreksi hitung fisik, piutang, uang keluar, cadangan.
 
 Struk bisa dicetak ke printer termal Bluetooth (Web Bluetooth + ESC/POS) — **teks yang sama persis** dengan yang tampil di layar dan yang dikirim ke WhatsApp. Penyandinya menerima string, bukan `Sale`, jadi tidak ada tempat kedua yang bisa melenceng. Kodenya sudah lengkap dan teruji; yang belum adalah pengujian dengan printer sungguhan.
 
-Belum ada: autentikasi, penarikan data dari peladen, laporan bulanan penuh.
+Login sudah ada, dan **bukan sebagai gerbang**: seluruh aplikasi jalan penuh tanpa akun. Tenant dibuat di perangkat dengan UUID sendiri, dan baru diklaim oleh sebuah akun saat antrean pertama kali terkirim — `create_tenant` memang menerima `p_tenant_id` dari perangkat. Antrean kirim berjalan saat aplikasi dibuka, saat sinyal kembali, saat antrean bertambah, dan berkala.
+
+Belum ada: penarikan data dari peladen (untuk HP kedua), laporan bulanan penuh.
 
 ### Supabase
 

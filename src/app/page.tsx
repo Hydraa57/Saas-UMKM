@@ -13,6 +13,7 @@ import { fromDb, ZERO } from '@/lib/money'
 import * as M from '@/lib/money'
 import { Uang } from '@/components/Uang'
 import { Ikon, type NamaIkon } from '@/components/Ikon'
+import { StatusCadangan } from '@/components/StatusCadangan'
 import {
   isBarang,
   type CashEntry,
@@ -211,6 +212,11 @@ export default function Beranda() {
           <Ikon nama="lanjut" ukuran={20} className="text-slate-500" />
         </div>
       </a>
+
+      {/* Keadaan cadangan. Ia menghilang sendiri kalau semuanya sudah
+          aman — penanda hijau yang selalu ada akan berhenti dibaca dalam
+          dua hari, dan bersamanya peringatan yang sesungguhnya. */}
+      <StatusCadangan />
 
       {/* Dua pintasan, bukan tiga: piutang sudah punya tempat tetap di
           bilah bawah, dan menaruhnya di dua tempat sekaligus membuat

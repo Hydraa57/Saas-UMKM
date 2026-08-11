@@ -192,5 +192,9 @@ await page.getByRole('button', { name: /Bu Sri/ }).click()
 await jeda(700)
 await potret('16-terima-bayar', true)
 
+await page.goto(BASE + '/masuk')
+await jeda(900)
+await potret('17-cadangan', true)
+
 console.log('\nselesai → ' + DIR)
 await browser.close()
