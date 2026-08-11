@@ -35,6 +35,9 @@ export type NamaIkon =
   | 'cari'
   | 'jasa'
   | 'foto'
+  | 'laporan'
+  | 'piala'
+  | 'jam'
 
 const JALUR: Readonly<Record<NamaIkon, React.ReactNode>> = {
   kasir: (
@@ -133,6 +136,26 @@ const JALUR: Readonly<Record<NamaIkon, React.ReactNode>> = {
     <>
       <path d="M3.5 8a2 2 0 0 1 2-2h2l1.4-2h6.2L16.5 6h2a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2h-13a2 2 0 0 1-2-2z" />
       <circle cx="12" cy="12.5" r="3.2" />
+    </>
+  ),
+  laporan: (
+    <>
+      <path d="M3.5 20.5V4M3.5 20.5H21" />
+      <path d="M7 15.5l4-4.5 3.2 3L20 6.5" />
+      <path d="M15.6 6.5H20v4.3" />
+    </>
+  ),
+  piala: (
+    <>
+      <path d="M7.5 3.5h9v5.2a4.5 4.5 0 0 1-9 0z" />
+      <path d="M7.5 5H5a2.2 2.2 0 0 0 2.5 3.4M16.5 5H19a2.2 2.2 0 0 1-2.5 3.4" />
+      <path d="M12 13.2v3.6M8.8 20.5h6.4l-.7-3.7H9.5z" />
+    </>
+  ),
+  jam: (
+    <>
+      <circle cx="12" cy="12" r="8.5" />
+      <path d="M12 7v5.3l3.2 2" />
     </>
   ),
 }

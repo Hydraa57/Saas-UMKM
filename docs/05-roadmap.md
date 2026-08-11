@@ -81,8 +81,9 @@ Penyandi ESC/POS menerima **string**, bukan `Sale`. Kalau ia menyusun sendiri ba
 - [x] Indikator keadaan cadangan yang menghilang sendiri kalau semuanya sudah aman
 - [ ] Penarikan data dari peladen (untuk HP kedua; risiko kehilangan sudah ditutup oleh pengiriman)
 - [ ] Unggah foto katalog ke Storage
-- [ ] Daftar rekap bulanan + total tahunan, meniru halaman buku tulisnya
-- [ ] Barang terlaris & jam paling ramai — jawaban yang buku tulis tidak akan pernah bisa beri
+- [x] Daftar rekap bulanan + total tahunan, meniru halaman buku tulisnya
+- [x] Barang terlaris & jam paling ramai — jawaban yang buku tulis tidak akan pernah bisa beri
+- [x] Untung kotor per bulan, dari harga modal yang disalin saat transaksi
 - [ ] Ekspor ke Excel
 
 ---

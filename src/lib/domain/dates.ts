@@ -121,6 +121,41 @@ export function dayRange(
   }
 }
 
+const hourFormatterCache = new Map<string, Intl.DateTimeFormat>()
+
+/**
+ * Instan waktu → jam (0–23) di zona waktu usaha.
+ *
+ * Dipakai untuk mencari jam paling ramai. Ada di sini, bukan di modul
+ * laporan, karena aturannya sama dengan seluruh berkas ini: tidak ada
+ * satu pun tempat lain yang boleh membaca jam dari zona waktu peladen.
+ * Penjualan jam 19.00 WIB adalah jam 12 UTC — dan jam 12 bukan jawaban
+ * yang berguna untuk siapa pun.
+ *
+ * `hourCycle: 'h23'` dipakai supaya tengah malam terbaca `00`, bukan
+ * `24` seperti bawaan `hour12: false` di sebagian mesin.
+ */
+export function hourOf(
+  instant: string | Date,
+  timeZone: string = DEFAULT_TIMEZONE,
+): number {
+  const date = typeof instant === 'string' ? new Date(instant) : instant
+  if (Number.isNaN(date.getTime())) {
+    throw new Error(`Waktu tidak valid: ${String(instant)}`)
+  }
+
+  let formatter = hourFormatterCache.get(timeZone)
+  if (!formatter) {
+    formatter = new Intl.DateTimeFormat('en-GB', {
+      timeZone,
+      hour: '2-digit',
+      hourCycle: 'h23',
+    })
+    hourFormatterCache.set(timeZone, formatter)
+  }
+  return Number(formatter.format(date))
+}
+
 export function rangeBetween(
   from: LocalDate,
   to: LocalDate,

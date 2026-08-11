@@ -53,20 +53,27 @@ await page.waitForURL('**/katalog**', { timeout: 15000 })
 await jeda()
 await potret('02-katalog-kosong')
 
+// Harga modal ikut diisi, dan itu bukan kelengkapan yang mubazir: tanpa
+// modal, laporan menampilkan untung 100% dari omzet — angka yang tidak
+// pernah benar di warung mana pun, dan yang membuat seluruh layar
+// laporan terlihat seperti data contoh alih-alih hasil hitungan.
 const barang = [
-  ['Biskuit Roma', 5000, 24, 10],
-  ['Chitato', 12000, 6, 10],
-  ['Teh Botol', 5000, 0, 6],
-  ['Indomie Goreng', 3500, 40, 12],
-  ['Kopi Kapal Api', 2000, 18, 10],
+  ['Biskuit Roma', 5000, 3500, 24, 10],
+  ['Chitato', 12000, 9500, 6, 10],
+  ['Teh Botol', 5000, 3800, 0, 6],
+  ['Indomie Goreng', 3500, 2800, 40, 12],
+  ['Kopi Kapal Api', 2000, 1400, 18, 10],
 ]
-for (const [nama, harga, stok, min] of barang) {
+for (const [nama, harga, modal, stok, min] of barang) {
   await page.goto(BASE + '/katalog/baru?jenis=barang')
   await jeda(500)
   await page.getByPlaceholder('Biskuit Roma').fill(nama)
   await ketik(harga)
   await page.getByLabel('Stok sekarang').fill(String(stok))
   await page.getByLabel(/Ingatkan kalau tinggal/).fill(String(min))
+  await page.getByText(/Harga modal & foto/).click()
+  await jeda(200)
+  await page.getByLabel('Harga modal').fill(String(modal))
   await page.getByRole('button', { name: 'Simpan', exact: true }).click()
   await page.waitForURL('**/katalog', { timeout: 15000 })
 }
@@ -119,10 +126,23 @@ await jeda(900)
 await potret('08-struk', true)
 
 // Beberapa transaksi lagi supaya riwayat dan laporan tidak kosong.
-for (const [nama, bayar] of [['Chitato', 12000], ['Kopi Kapal Api', 2000]]) {
+// Jumlah ketukannya sengaja berbeda-beda: daftar "paling laku" yang
+// semua barisnya sama panjang tidak menunjukkan apa pun, dan justru
+// urutan itulah yang jadi jawaban di layar laporan.
+const belanjaan = [
+  ['Kopi Kapal Api', 4],
+  ['Indomie Goreng', 3],
+  ['Kopi Kapal Api', 3],
+  ['Chitato', 1],
+  ['Biskuit Roma', 2],
+  ['Indomie Goreng', 2],
+  ['Kopi Kapal Api', 2],
+]
+for (const [nama, banyak] of belanjaan) {
   await page.goto(BASE + '/kasir')
   await jeda(700)
-  await page.locator('.grid button', { hasText: nama }).click()
+  const petak = page.locator('.grid button', { hasText: nama })
+  for (let i = 0; i < banyak; i++) await petak.click()
   await jeda(300)
   await page.getByRole('button', { name: /^Bayar/ }).click()
   await jeda(400)
@@ -130,7 +150,6 @@ for (const [nama, bayar] of [['Chitato', 12000], ['Kopi Kapal Api', 2000]]) {
   await jeda(200)
   await page.getByRole('button', { name: /Selesai & cetak struk/ }).click()
   await page.waitForURL('**/struk/**', { timeout: 15000 })
-  void bayar
 }
 
 // Satu transaksi berutang.
@@ -195,6 +214,10 @@ await potret('16-terima-bayar', true)
 await page.goto(BASE + '/masuk')
 await jeda(900)
 await potret('17-cadangan', true)
+
+await page.goto(BASE + '/laporan')
+await jeda(1000)
+await potret('18-laporan', true)
 
 console.log('\nselesai → ' + DIR)
 await browser.close()

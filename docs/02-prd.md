@@ -132,6 +132,27 @@ Tab disimpan di URL, bukan di state komponen: peringatan "barang menipis" perlu 
 
 Rekap bulanan tetap di layar pertama, tidak disembunyikan di balik menu laporan. Inilah kegagalan bot WhatsApp sebelumnya: penggunanya menyerahkan data dan tidak pernah menerima apa pun sebagai gantinya.
 
+### 5.1c Laporan: dua angka "untung", dan keduanya benar
+
+Tidak ada tab "Laporan" di bilah bawah. Jalan ke sana lewat kartu rekap di beranda — lewat **angka yang memunculkan pertanyaannya.** Menu bernama "Laporan" mengharuskan orang tahu lebih dulu bahwa dia ingin laporan; kartu bertuliskan "Sisa bulan ini −Rp 55.000" tidak.
+
+Layarnya memisahkan dua ringkasan yang sering dikira satu:
+
+| Kartu | Pertanyaan | Sumber |
+|---|---|---|
+| **Buku kas** | "uangnya ke mana" | seluruh entri kas, termasuk kulakan dan biaya |
+| **Dari penjualan** | "dagangannya untung berapa" | omzet − harga modal barang yang keluar |
+
+Keduanya hampir selalu berbeda, dan itu benar: kulakan bulan ini membeli barang yang lakunya bulan depan. Satu angka "untung" gabungan akan menyembunyikan justru bulan yang perlu dilihat — kasnya minus karena kulakan besar padahal dagangannya sehat, atau sebaliknya.
+
+Tiga aturan yang menjaga angkanya jujur:
+
+1. **Harga modal diambil dari salinan saat transaksi**, bukan dari katalog hari ini. Harga kulakan naik-turun; laba bulan lalu harus tetap sama walau harganya sudah diubah minggu ini.
+2. **Sisa tagihan dihitung dari daftar utang**, bukan dari `total − paid` di struk. `paid` adalah uang yang berpindah di meja kasir dan tidak pernah berubah lagi — pelunasan seminggu kemudian tercatat di tempat lain. Menghitung dari struk berarti menagih orang yang sudah membayar.
+3. **Potongan tingkat struk dibagi ke tiap barisnya** secara proporsional dengan sisa pembagian dibereskan, supaya jumlah omzet per barang persis sama dengan omzet ringkasannya. Dua angka yang seharusnya sama tapi meleset dua rupiah adalah cara tercepat kehilangan kepercayaan.
+
+Sebaran jam **tidak** ditampilkan selama penjualannya masih jatuh di satu jam saja: "paling ramai jam 08.00" yang cuma mengulang satu-satunya jam yang ada tidak menjawab apa pun. Grafik garis omzet harian juga tidak ada — terlihat profesional, tidak menjawab satu pun pertanyaan yang benar-benar dibawa orang ke sini.
+
 ### 5.2 Aturan timbal balik
 
 > **Setiap kali pengguna memasukkan sesuatu, dia harus langsung menerima sesuatu.**

@@ -270,6 +270,16 @@ await step('jual berutang atas nama Bu Tetangga', async () => {
   await page.waitForTimeout(800)
 })
 
+// Dicatat di sini, bukan saat laporannya diperiksa: struk inilah
+// satu-satunya yang selamat sampai akhir (yang pertama dibatalkan), jadi
+// jam ramai di laporan harus persis jam ini. Membaca jamnya di akhir uji
+// akan meleset kalau uji ini kebetulan melewati pergantian jam.
+const jamJualWib = new Date().toLocaleString('en-GB', {
+  timeZone: 'Asia/Jakarta',
+  hour: '2-digit',
+  hourCycle: 'h23',
+})
+
 await page.goto(BASE + '/utang')
 await page.waitForTimeout(900)
 const utang = (await page.locator('main').innerText()).replace(/\n+/g, ' | ')
@@ -363,11 +373,97 @@ await step('uang dari struk yang dibatalkan ditarik dari buku kas', async () => 
   }
 })
 
+// ── Laporan ─────────────────────────────────────────────────────────────
+
+await step('beranda mengantar ke laporan lewat angka bulan ini', async () => {
+  await page.getByRole('link', { name: /Lihat laporan lengkap/ }).click()
+  await page.waitForURL('**/laporan', { timeout: 15000 })
+  await page.waitForTimeout(900)
+})
+
+const laporan = (await page.locator('main').innerText()).replace(/\n+/g, ' | ')
+
+await step('buku kas di laporan sama persis dengan yang di beranda', async () => {
+  // Dua layar yang menampilkan angka berbeda untuk hal yang sama adalah
+  // cara tercepat kehilangan kepercayaan pada aplikasi uang.
+  if (!laporan.includes('-Rp 55.000')) {
+    throw new Error('sisa buku kas di laporan meleset: ' + laporan)
+  }
+})
+
+await step('untung dagangan dihitung terpisah dari isi laci', async () => {
+  // Keadaan akhir uji ini kebetulan justru kasus yang membuat kedua
+  // kartu itu harus dipisah: kasnya minus 55.000 karena kulakan 60.000,
+  // padahal dagangan yang benar-benar laku untung 2.000.
+  //
+  // Struk pertama sudah dibatalkan, jadi yang tersisa satu biskuit
+  // seharga 5.000 dengan modal 3.000 — modalnya dari kulakan tadi,
+  // bukan dari harga katalog hari ini.
+  // Label petaknya dikapitalkan lewat CSS, jadi `innerText` membacanya
+  // sebagai OMZET — bukan seperti yang tertulis di berkas sumbernya.
+  if (!/OMZET \| Rp 5\.000/.test(laporan)) {
+    throw new Error('omzet penjualan salah: ' + laporan)
+  }
+  if (!/MODAL BARANG \| Rp 3\.000/.test(laporan)) {
+    throw new Error('modal barang salah: ' + laporan)
+  }
+  if (!/Untung kotor \| 40% dari omzet \| Rp 2\.000/.test(laporan)) {
+    throw new Error('untung kotor salah: ' + laporan)
+  }
+  // Kalau struk yang dibatalkan ikut dihitung, omzetnya jadi 45.000 —
+  // dan pemeriksaan di atas sudah menangkap itu. Yang tidak tertangkap
+  // oleh angka: jasa 30.000 dari struk itu tetap sah punya baris di
+  // buku kas, jadi keberadaannya di daftar terlaris yang jadi buktinya.
+})
+
+await step('yang sudah dilunasi tidak ditagih lagi di laporan', async () => {
+  // Satu-satunya struk yang tersisa dijual berutang penuh — `paid`-nya
+  // nol dan akan tetap nol selamanya, karena pelunasannya tercatat di
+  // daftar utang, bukan di struknya. Menghitung sisa tagihan dari
+  // `total − paid` membuat baris ini muncul terus meski Bu Tetangga
+  // sudah membayar; itu persis yang sempat terjadi dan baru ketahuan di
+  // sini, bukan di tes unit.
+  //
+  // Bukan asersi kosong: kartu "Dari penjualan" jelas tampil (lihat
+  // langkah di atas), jadi kalau perhitungannya kembali ke cara lama,
+  // barisnya pasti ikut tampil.
+  if (laporan.includes('belum dibayar')) {
+    throw new Error('utang yang sudah lunas masih ditagih di laporan: ' + laporan)
+  }
+})
+
+await step('barang paling laku muncul dengan jumlah potongnya', async () => {
+  if (!/Paling laku bulan ini \| 1 \| Biskuit Uji/.test(laporan)) {
+    throw new Error('daftar terlaris kosong atau salah urut: ' + laporan)
+  }
+  // Jasa dari struk yang dibatalkan tidak pernah benar-benar laku.
+  if (laporan.includes('Potong celana')) {
+    throw new Error('barang dari struk batal masuk daftar terlaris: ' + laporan)
+  }
+})
+
+await step('bagian jam ramai menahan diri selama belum ada sebarannya', async () => {
+  // Seluruh struk uji ini jatuh di satu jam yang sama, dan pada keadaan
+  // itu "paling ramai jam sekian" cuma mengulang satu-satunya jam yang
+  // ada — sambil menggambar satu balok penuh selebar layar yang tidak
+  // membandingkan apa pun. Hari pertama pemakaian nyata bentuknya persis
+  // begini.
+  //
+  // Ketepatan jamnya sendiri diuji di `laporan.test.ts`; yang diperiksa
+  // di sini adalah keputusan untuk tidak menampilkannya.
+  if (laporan.includes('Jam paling ramai')) {
+    throw new Error(
+      `bagian jam ramai muncul padahal semua struk di jam ${jamJualWib}: ${laporan}`,
+    )
+  }
+})
+
 console.log('\nSTRUK:\n' + struk.split('\n').map((l) => '  ' + l).join('\n'))
 console.log('\nKATALOG :', daftar)
 console.log('BERANDA :', beranda)
 console.log('UTANG   :', utang)
 console.log('AKHIR   :', berandaAkhir)
+console.log('LAPORAN :', laporan)
 console.log('\ngalat/404:', errs.length ? JSON.stringify([...new Set(errs)], null, 2) : 'tidak ada')
 
 await browser.close()

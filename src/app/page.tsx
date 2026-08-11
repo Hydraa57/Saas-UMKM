@@ -227,11 +227,20 @@ export default function Beranda() {
       </nav>
 
       {/* Yang hilang dari percobaan sebelumnya, dan yang selama ini
-          dihitung sendiri dengan pulpen tiap bulan. */}
-      <section className="kartu">
+          dihitung sendiri dengan pulpen tiap bulan.
+
+          Sekaligus pintu ke laporan lengkap: pertanyaan berikutnya
+          sesudah melihat sisa bulan ini hampir selalu "dari mana" —
+          bulan lalu berapa, apa yang paling laku, untungnya berapa.
+          Karena itu tidak ada menu "Laporan" tersendiri; jalannya lewat
+          angka yang memunculkan pertanyaannya. */}
+      <a href="/laporan" className="kartu-tekan block">
         <div className="mb-4 flex items-baseline justify-between">
           <h2 className="font-semibold">{formatMonth(bulanIni)}</h2>
-          <span className="text-sm text-slate-500">{bulan?.entryCount ?? 0} catatan</span>
+          <span className="flex items-center gap-1 text-sm text-slate-500">
+            {bulan?.entryCount ?? 0} catatan
+            <Ikon nama="lanjut" ukuran={16} className="text-slate-300" />
+          </span>
         </div>
 
         <div className="flex gap-3">
@@ -263,7 +272,11 @@ export default function Beranda() {
             <Uang nilai={bulan?.net ?? ZERO} />
           </span>
         </div>
-      </section>
+
+        <p className="mt-3 text-sm font-semibold text-merek-700">
+          Lihat laporan lengkap
+        </p>
+      </a>
 
       {data && data.menipis.length > 0 && (
         <a
