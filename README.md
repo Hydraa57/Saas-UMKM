@@ -70,6 +70,8 @@ Alur pokoknya sudah jalan dari ujung ke ujung: pengaturan awal → isi katalog �
 | Buku kas, saldo dompet, cocokkan | 21 |
 | Rekap bulanan & total tahunan | 14 |
 | Laporan penjualan: terlaris, untung kotor, jam ramai | 28 |
+| Penyandi `.xlsx` (ZIP + OOXML, tanpa pustaka) | 26 |
+| Isi berkas ekspor | 19 |
 | Utang & piutang | 17 |
 | Foto: pengecilan sebelum disimpan | 5 |
 | Antrean kirim luring + penggolongan kegagalan | 30 |
@@ -82,7 +84,11 @@ Struk bisa dicetak ke printer termal Bluetooth (Web Bluetooth + ESC/POS) — **t
 
 Login sudah ada, dan **bukan sebagai gerbang**: seluruh aplikasi jalan penuh tanpa akun. Tenant dibuat di perangkat dengan UUID sendiri, dan baru diklaim oleh sebuah akun saat antrean pertama kali terkirim — `create_tenant` memang menerima `p_tenant_id` dari perangkat. Antrean kirim berjalan saat aplikasi dibuka, saat sinyal kembali, saat antrean bertambah, dan berkala.
 
-Belum ada: penarikan data dari peladen (untuk HP kedua), laporan bulanan penuh.
+Laporan bulanan sudah ada: rekap per bulan, total tahunan, barang terlaris, untung kotor dari harga modal yang disalin saat transaksi, dan jam paling ramai. Seluruh catatan bisa diunduh jadi satu berkas `.xlsx` — **penyandinya ditulis sendiri**, tanpa pustaka: `.xlsx` cuma ZIP berisi XML, dan `exceljs` membawa lebih dari satu megabita untuk tabel datar. Ekspor dipakai sebulan sekali; kasir dibuka puluhan kali sehari.
+
+Penyandi buatan sendiri punya satu bahaya khas: tes yang ditulis di repo yang sama membaca hasilnya dengan anggapan yang sama, jadi keduanya bisa sama-sama salah dan tetap cocok. Karena itu ada satu berkas tes yang menyerahkan hasilnya ke **`openpyxl`** — pustaka Python yang menerapkan OOXML secara terpisah — dengan peringatan dinaikkan jadi galat. Uji asap melangkah lebih jauh lagi: ia menekan tombolnya di Chromium sungguhan, menangkap berkas yang benar-benar terunduh, lalu membacanya dengan `openpyxl`. Bagian `<cellStyles>` yang hilang tertangkap justru oleh pemeriksaan itu, dan tidak oleh satu pun tes di repo ini.
+
+Belum ada: penarikan data dari peladen (untuk HP kedua), unggah foto ke Storage.
 
 ### Supabase
 
@@ -122,7 +128,7 @@ npm run dev
 ### Pengujian
 
 ```bash
-npm test          # 301 tes unit
+npm test          # 346 tes unit
 npm run typecheck
 npm run db:test   # 82 penegasan: migrasi, RLS, jalur tulis
 
@@ -133,9 +139,15 @@ npm run shots     # tangkapan layar tiap halaman, dengan data yang masuk akal
 
 `npm run shots` mengisi katalog, menjual, kulakan, dan menagih lebih dulu, lalu memotret seluruh halaman ke `shots/`. Dipakai untuk melihat rancangannya sebagai satu kesatuan: kebanyakan kejanggalan tata letak baru terlihat saat sepuluh layar dijejerkan, bukan saat dilihat satu per satu.
 
-`npm run smoke` menjalankan satu hari kerja lengkap di Chromium — 33 langkah: buka usaha, isi katalog dengan satu barang dan satu jasa, jual keduanya dalam satu struk, kulakan, koreksi hitung fisik, jual berutang, terima pelunasan, batalkan satu struk, lalu baca laporannya. Yang diperiksa bukan "layarnya muncul" melainkan angkanya: kulakan **ikut mengurangi kas**, pembatalan **menarik uangnya kembali** dan mengembalikan stok lewat retur, penjumlahan riwayat stok tetap cocok setelah semuanya, dan **stok jasa tidak pernah berkurang.**
+`npm run smoke` menjalankan satu hari kerja lengkap di Chromium — 35 langkah: buka usaha, isi katalog dengan satu barang dan satu jasa, jual keduanya dalam satu struk, kulakan, koreksi hitung fisik, jual berutang, terima pelunasan, batalkan satu struk, baca laporannya, lalu unduh seluruh catatan ke Excel. Yang diperiksa bukan "layarnya muncul" melainkan angkanya: kulakan **ikut mengurangi kas**, pembatalan **menarik uangnya kembali** dan mengembalikan stok lewat retur, penjumlahan riwayat stok tetap cocok setelah semuanya, dan **stok jasa tidak pernah berkurang.**
 
 Ia menangkap hal yang tidak bisa ditangkap tes unit. Empat bug lolos dari seluruh tes unit dan baru ketahuan di sana: pilihan yang hilang saat kembali dari layar lain, ikon PWA yang tidak ada, **stok awal yang tidak pernah tercatat sebagai mutasi** (sehingga penjumlahan riwayat selamanya meleset sebesar stok awal tiap barang), dan laporan yang **terus menagih pembeli yang sudah melunasi** — karena sisa tagihannya dihitung dari `total − paid` di struk, padahal pelunasan tercatat di daftar utang dan tidak pernah mengubah `paid`. Yang terakhir cuma muncul kalau ada penjualan berutang **dan** pelunasan **dan** laporan dibuka sesudahnya; tidak ada tes unit yang kebetulan menyusun ketiganya.
+
+Tes penyandi `.xlsx` punya satu berkas yang memanggil `openpyxl` lewat `python3`. Kalau pustaka itu tidak terpasang, berkas tesnya **dilewati dengan tanda yang terlihat di keluaran**, bukan lulus diam-diam:
+
+```bash
+pip install openpyxl   # opsional; tanpa ini tes oracle dilewati
+```
 
 `db:test` butuh cluster PostgreSQL lokal, sekali siapkan:
 

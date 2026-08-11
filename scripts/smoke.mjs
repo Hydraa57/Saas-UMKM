@@ -21,10 +21,15 @@
  *   node scripts/smoke.mjs
  */
 import { chromium } from '@playwright/test'
+import { spawnSync } from 'node:child_process'
+import { mkdtempSync } from 'node:fs'
+import { tmpdir } from 'node:os'
+import { join } from 'node:path'
 
 const BASE = 'http://localhost:3311'
 const browser = await chromium.launch({ executablePath: '/opt/pw-browsers/chromium' })
 const page = await browser.newPage({ viewport: { width: 390, height: 844 } })
+const BERKAS_EKSPOR = join(mkdtempSync(join(tmpdir(), 'ezura-')), 'ekspor.xlsx')
 const errs = []
 page.on('pageerror', (e) => errs.push(String(e)))
 page.on('response', (r) => { if (r.status() === 404) errs.push('404 ' + r.url()) })
@@ -455,6 +460,96 @@ await step('bagian jam ramai menahan diri selama belum ada sebarannya', async ()
     throw new Error(
       `bagian jam ramai muncul padahal semua struk di jam ${jamJualWib}: ${laporan}`,
     )
+  }
+})
+
+// ── Ekspor ──────────────────────────────────────────────────────────────
+
+await step('tombol ekspor benar-benar menurunkan berkas', async () => {
+  const menunggu = page.waitForEvent('download', { timeout: 30000 })
+  await page.getByRole('button', { name: 'Unduh semua ke Excel' }).click()
+  const unduhan = await menunggu
+  await unduhan.saveAs(BERKAS_EKSPOR)
+
+  // Nama berkasnya membawa nama usaha dan tanggal, supaya dua unduhan
+  // tidak saling menimpa di folder Unduhan.
+  const nama = unduhan.suggestedFilename()
+  if (!/^Ezura - Warung Uji - \d{4}-\d{2}-\d{2}\.xlsx$/.test(nama)) {
+    throw new Error('nama berkas ekspor tidak sesuai: ' + nama)
+  }
+})
+
+await step('berkasnya dibuka pembaca xlsx di luar aplikasi ini', async () => {
+  // Ini pemeriksaan yang paling berarti dari seluruh berkas ini.
+  // Penyandi `.xlsx` di repo ini ditulis sendiri, dan seluruh tes
+  // unitnya membaca hasilnya dengan kode dari repo ini juga — yang
+  // membuktikan ia konsisten dengan dirinya sendiri, bukan bahwa Excel
+  // mau membukanya. Di sini berkasnya lahir dari peramban sungguhan dan
+  // diserahkan ke `openpyxl`, yang tidak tahu apa pun tentang kode ini.
+  //
+  // Dilewati kalau `openpyxl` tidak terpasang: yang tidak bisa
+  // dijalankan tidak boleh menyamar jadi keberhasilan, jadi pelewatannya
+  // dicetak.
+  const ada = spawnSync('python3', ['-c', 'import openpyxl'])
+  if (ada.status !== 0) {
+    console.log('       (dilewati: openpyxl tidak terpasang)')
+    return
+  }
+
+  const skrip = `
+import json, sys, warnings, openpyxl
+warnings.simplefilter("error")
+wb = openpyxl.load_workbook(sys.argv[1])
+ws = wb["Rekap bulanan"]
+print(json.dumps({
+    "lembar": wb.sheetnames,
+    "rekap": [list(r) for r in ws.iter_rows(values_only=True)],
+    "katalog": [list(r) for r in wb["Barang & jasa"].iter_rows(values_only=True)],
+}))
+`
+  const hasil = spawnSync('python3', ['-W', 'error', '-c', skrip, BERKAS_EKSPOR], {
+    encoding: 'utf8',
+  })
+  if (hasil.status !== 0) {
+    throw new Error('openpyxl menolak berkasnya: ' + (hasil.stderr || '').trim())
+  }
+
+  const isi = JSON.parse(hasil.stdout)
+  const lembarWajib = [
+    'Rekap bulanan',
+    'Penjualan',
+    'Buku kas',
+    'Barang & jasa',
+    'Utang & piutang',
+    'Pergerakan stok',
+  ]
+  for (const l of lembarWajib) {
+    if (!isi.lembar.includes(l)) {
+      throw new Error(`lembar "${l}" hilang: ${JSON.stringify(isi.lembar)}`)
+    }
+  }
+
+  // Angkanya harus sampai sebagai angka, bukan teks — itu satu-satunya
+  // alasan mengekspor ke Excel alih-alih ke teks biasa.
+  const agustus = isi.rekap.find((r) => r[0] === 'Agustus 2026')
+  if (!agustus) throw new Error('baris Agustus tidak ada: ' + JSON.stringify(isi.rekap))
+  if (agustus[3] !== -55000) {
+    throw new Error('sisa bulan di berkas ekspor meleset: ' + JSON.stringify(agustus))
+  }
+
+  // Jasa tidak punya sisa stok, dan selnya harus **kosong** — bukan nol.
+  // Ini pembeda utama produknya, dan berkas ekspor adalah perjalanan
+  // terpanjang yang harus dilaluinya.
+  const jasa = isi.katalog.find((r) => r[1] === 'Potong celana')
+  const barang = isi.katalog.find((r) => r[1] === 'Biskuit Uji')
+  if (!jasa || !barang) {
+    throw new Error('katalog tidak lengkap di berkas ekspor: ' + JSON.stringify(isi.katalog))
+  }
+  if (jasa[5] !== null) {
+    throw new Error('jasa punya angka sisa stok di berkas ekspor: ' + JSON.stringify(jasa))
+  }
+  if (barang[5] !== 26) {
+    throw new Error('sisa stok barang meleset di berkas ekspor: ' + JSON.stringify(barang))
   }
 })
 

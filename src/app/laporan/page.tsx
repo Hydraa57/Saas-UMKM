@@ -99,8 +99,28 @@ function Kosong() {
 }
 
 export default function Laporan() {
-  const { ready, tenantId } = useApp()
+  const { ready, tenantId, businessName } = useApp()
   const [dipilih, setDipilih] = useState<LocalMonth | null>(null)
+
+  const [mengekspor, setMengekspor] = useState(false)
+  const [berkas, setBerkas] = useState<string | null>(null)
+  const [galatEkspor, setGalatEkspor] = useState<string | null>(null)
+
+  async function ekspor() {
+    setMengekspor(true)
+    setGalatEkspor(null)
+    try {
+      // Dimuat saat ditekan, bukan bersama halamannya. Penyandi xlsx
+      // tidak boleh ikut terunduh oleh orang yang cuma melihat rekap —
+      // apalagi oleh kasir, yang dibuka puluhan kali sehari.
+      const { eksporSemua } = await import('@/lib/export/ekspor')
+      setBerkas(await eksporSemua(businessName))
+    } catch {
+      setGalatEkspor('Gagal menyiapkan berkasnya. Coba lagi sebentar.')
+    } finally {
+      setMengekspor(false)
+    }
+  }
 
   const data = useLiveQuery(async () => {
     const [entries, sales, debts] = await Promise.all([
@@ -480,6 +500,52 @@ export default function Laporan() {
             </dd>
           </div>
         </dl>
+      </section>
+
+      {/* ── Ekspor ───────────────────────────────────────────────────
+
+          Seluruh catatan, bukan cuma bulan yang sedang dipilih — dan
+          judulnya menyebutkan itu, karena tombol di bawah laporan satu
+          bulan wajar disangka mengekspor bulan itu saja.
+
+          Isinya dibaca dari HP, bukan dari peladen: yang paling butuh
+          menyalin datanya keluar justru orang yang belum mencadangkan
+          apa pun. */}
+      <section className="kartu">
+        <div className="mb-3 flex items-center gap-2">
+          <span
+            className="flex h-9 w-9 items-center justify-center rounded-xl
+                       bg-merek-50 text-merek-700"
+          >
+            <Ikon nama="unduh" ukuran={19} />
+          </span>
+          <h2 className="font-semibold">Simpan salinan</h2>
+        </div>
+        <p className="text-slate-600">
+          Semua catatan sejak awal — penjualan, buku kas, katalog, utang,
+          dan pergerakan stok — jadi satu berkas Excel yang bisa dibuka di
+          HP atau dikirim ke orang lain.
+        </p>
+
+        {galatEkspor && (
+          <p role="alert" className="mt-3 font-semibold text-keluar">
+            {galatEkspor}
+          </p>
+        )}
+        {berkas && !galatEkspor && (
+          <p role="status" className="mt-3 text-sm text-masuk">
+            Tersimpan sebagai {berkas}. Cari di folder Unduhan.
+          </p>
+        )}
+
+        <button
+          type="button"
+          disabled={mengekspor}
+          onClick={ekspor}
+          className="btn-sekunder mt-4 w-full"
+        >
+          {mengekspor ? 'Menyiapkan…' : 'Unduh semua ke Excel'}
+        </button>
       </section>
     </main>
   )

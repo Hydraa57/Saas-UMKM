@@ -96,7 +96,7 @@ Tiga hal yang mengalir dari sini:
 | Dibuang | Alasan |
 |---|---|
 | Buku rumah tangga | Aplikasi kasir dibuka saat ada pembeli; belanja dapur tidak terjadi di situ. Sudah ada NayyiraAI |
-| Laporan untung per barang (HPP) | Harga modal disimpan, tapi laporannya belum — yang dicari dulu: apa yang laku dan apa yang mau habis |
+| ~~Laporan untung per barang (HPP)~~ | **Sudah masuk.** Harga modal disalin ke tiap baris struk sejak awal, jadi untung kotor per barang dan per bulan tinggal dihitung — dan itu angka yang buku tulis tidak akan pernah bisa beri |
 | Order berjangka: DP, tenggat, status | Yang dicatat cuma tanggal + jenis + harga |
 | Varian, satuan bertingkat, diskon per item | Beban input di depan pembeli, untuk kasus yang belum terbukti ada |
 | Barcode scanner | Menyusul; grid foto lebih cepat untuk katalog puluhan item |
@@ -152,6 +152,19 @@ Tiga aturan yang menjaga angkanya jujur:
 3. **Potongan tingkat struk dibagi ke tiap barisnya** secara proporsional dengan sisa pembagian dibereskan, supaya jumlah omzet per barang persis sama dengan omzet ringkasannya. Dua angka yang seharusnya sama tapi meleset dua rupiah adalah cara tercepat kehilangan kepercayaan.
 
 Sebaran jam **tidak** ditampilkan selama penjualannya masih jatuh di satu jam saja: "paling ramai jam 08.00" yang cuma mengulang satu-satunya jam yang ada tidak menjawab apa pun. Grafik garis omzet harian juga tidak ada — terlihat profesional, tidak menjawab satu pun pertanyaan yang benar-benar dibawa orang ke sini.
+
+### 5.1d Ekspor: semuanya, bukan yang sedang dilihat
+
+Tombolnya ada di dasar layar Laporan, tapi yang diunduh **seluruh catatan sejak awal** — enam lembar: rekap bulanan, penjualan per baris, buku kas, katalog, utang, dan pergerakan stok. Judulnya menyebutkan itu, karena tombol di bawah laporan satu bulan wajar disangka mengekspor bulan itu saja.
+
+Alasannya ada di [`04-arsitektur.md`](04-arsitektur.md): free tier tidak menjamin cadangan yang bisa dipulihkan sendiri, dan janjinya sejak awal adalah tombol "ekspor semua ke Excel" yang bisa ditekan sendiri. Karena itu **yang dibatalkan dan yang diarsipkan ikut**, ditandai di kolomnya sendiri — cadangan yang diam-diam membuang sebagian isi bukan cadangan. Datanya dibaca dari HP, bukan dari peladen, jadi ekspornya tetap bekerja tanpa sinyal dan tanpa akun: yang paling butuh menyalin datanya keluar justru orang yang belum mencadangkan apa pun.
+
+Dua keputusan bentuk di dalam berkasnya:
+
+- **Rupiah ditulis sebagai bilangan**, supaya bisa dijumlah. Itu satu-satunya alasan mengekspor ke Excel alih-alih ke teks biasa.
+- **Tanggal ditulis sebagai teks `YYYY-MM-DD`.** Penanggalan asli Excel disimpan sebagai bilangan hari dan ditampilkan menurut setelan wilayah pembacanya, jadi berkas yang sama bisa terbaca 8 November di satu HP dan 11 Agustus di HP lain. Untuk catatan keuangan, ambiguitas itu tidak sepadan dengan kemudahan mengurutkannya.
+
+Dan satu hal yang harus selamat sampai ke sini: **kolom stok kosong untuk jasa, bukan nol.** Itu pembeda utama produknya, dan berkas ekspor adalah perjalanan terpanjang yang harus dilaluinya.
 
 ### 5.2 Aturan timbal balik
 
