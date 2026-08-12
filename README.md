@@ -83,6 +83,7 @@ Alur pokoknya sudah jalan dari ujung ke ujung: pengaturan awal → isi katalog �
 | Foto: pengecilan sebelum disimpan | 5 |
 | Unggah foto ke Storage (termasuk jalur gagalnya) | 10 |
 | Antrean kirim luring + penggolongan kegagalan | 30 |
+| Tarik dua arah: watermark, gagal di tengah, aturan bentrok | 13 |
 | Aksi tulis (tulis lokal + antre, tanpa menunggu jaringan) | 40 |
 | Skema, RLS, jalur tulis (PostgreSQL sungguhan) | 92 penegasan |
 
@@ -122,7 +123,18 @@ Putaran berikutnya menjawab dua keluhan sekaligus: *"layout dan fontnya kayak ga
 
 **Terlalu besar** adalah akibat langsung dari menganggap produk ini milik satu orang. Seluruh skala dinaikkan satu tingkat atas nama mata yang tidak lagi sempurna, dan di layar selebar 390px itu bekerja melawan tujuannya sendiri: huruf besar membantu membaca satu baris, tapi menghambat membaca satu daftar. Sekarang base 16px dan target sentuh 48px — dan yang butuh lebih besar **memilihnya sendiri** di Pengaturan → Ukuran huruf. Seluruh skala ditulis dalam `rem`, jadi satu angka di akar menggeser huruf, tombol, dan jarak secara sepadan; huruf yang membesar sendiri di dalam tombol yang tidak ikut membesar justru lebih sulit dibaca. Pilihannya dipasang oleh skrip sebaris di `<head>` supaya sudah berlaku sebelum gambar pertama — kontrol negatifnya tegas: tanpa skrip itu pilihannya **hilang sama sekali** setelah muat ulang, bukan cuma berkedip.
 
-Belum ada: penarikan data dari peladen (untuk HP kedua).
+**Sinkronisasinya sekarang dua arah.** Sampai putaran ini alirannya cuma satu: perangkat menulis, antrean mengirim, peladen menyimpan — dan tidak pernah ada jalan pulangnya. Akibatnya satu janji di layar ganti akun tidak bisa ditepati sama sekali: *"yang sudah terkirim tetap aman di peladen dan bisa ditarik lagi nanti."*
+
+Sekarang bisa. Masuk akun yang sama di HP lain, dan katalog, penjualan, stok, kas, serta utangnya turun ke sana sendiri; fotonya menyusul di belakang supaya kasirnya bisa dipakai sejak menit pertama. HP baru yang kosong adalah kasus HP kedua dengan watermark nol, jadi pemulihan tidak butuh jalur tersendiri.
+
+Dua keputusan kecil yang menentukan benar-tidaknya, dan keduanya punya kontrol negatif:
+
+- **Pembandingnya `>=`, bukan `>`.** Dengan `>`, baris yang ditulis pada detik yang sama persis dengan watermark hilang **selamanya** — dan dua penjualan dalam satu detik itu biasa di jam ramai. Akibatnya sebagian baris terambil dua kali, dan itu tidak apa-apa: penyimpanannya `bulkPut` berdasarkan `id`.
+- **Watermark diambil dari jam peladen**, bukan jam perangkat. Jam HP murah sering meleset berjam-jam, dan watermark yang lebih maju daripada kenyataan berarti baris yang hilang tanpa gejala apa pun sampai ada yang mencari struk lama dan tidak menemukannya.
+
+Yang bentrok ternyata hampir tidak ada, dan itu bukan keberuntungan: antreannya mengangkut **maksud**, bukan baris. Yang dikirim `record_sale`, bukan "tulis nilai stok jadi 8" — jadi dua HP yang menjual barang yang sama menghasilkan dua penjualan berbeda dan peladen yang menjumlahkan akibatnya. Sisanya tiga aturan: rollup selalu milik peladen, yang diketik manusia dipilih dari `updated_at`, dan tidak ada yang dihapus keras sehingga tarikan tidak pernah perlu menghapus. Rincian di [`docs/04-arsitektur.md`](docs/04-arsitektur.md) §2.
+
+Satu aturan menahan tarikan: **ia tidak berjalan selama antrean kirim masih berisi.** Kalau dilanggar, baris yang perubahannya masih di antrean akan ditimpa keadaan lama dari peladen — suntingan terlihat kembali seperti semula, lalu berubah lagi beberapa detik kemudian.
 
 Dua hal yang baru jadi masalah **karena** sasarannya umum, dan sengaja dicatat sebagai terbuka alih-alih ditutup diam-diam: **auto-pause Supabase** (proyek gratis tertidur setelah 7 hari menganggur — pengguna harian aman, pendaftar yang mencoba lalu menghilang tidak) dan **kasir yang dijaga pegawai** (sekarang jalan satu-satunya berbagi akun, jadi tidak ada jejak siapa yang menerima uangnya; `memberships` sudah ada di skema, layarnya belum).
 

@@ -27,7 +27,7 @@ import { useSync } from '@/lib/sync/useSync'
 
 export default function Masuk() {
   const { status, email: emailSesi } = useSesi()
-  const { menunggu, sedangMengirim, kirimSekarang } = useSync()
+  const { menunggu, fotoMenyusul, sedangMengirim, kirimSekarang } = useSync()
 
   const [mode, setMode] = useState<'masuk' | 'daftar'>('masuk')
   const [email, setEmail] = useState('')
@@ -99,6 +99,19 @@ export default function Masuk() {
             </span>
             <span className="text-xl font-bold">{menunggu}</span>
           </div>
+
+          {/* Hanya muncul kalau memang ada yang menyusul. Baris tetap
+              yang selalu menunjukkan nol adalah baris yang berhenti
+              dibaca, dan sesudah itu ia tidak berguna saat angkanya
+              benar-benar berubah. */}
+          {fotoMenyusul > 0 && (
+            <div className="mt-3 flex items-center justify-between">
+              <span className="text-sm font-medium text-slate-400">
+                Foto sedang diturunkan
+              </span>
+              <span className="text-xl font-bold">{fotoMenyusul}</span>
+            </div>
+          )}
         </div>
 
         {menunggu > 0 && (
@@ -116,6 +129,12 @@ export default function Masuk() {
           Catatan tetap tersimpan di HP ini dan tetap bisa dipakai tanpa
           sinyal. Yang dikirim ke peladen adalah salinannya, supaya tidak ikut
           hilang kalau HP-nya kenapa-kenapa.
+        </p>
+
+        <p className="kartu text-slate-600">
+          Jalannya dua arah. Masuk akun yang sama di HP lain, dan katalog,
+          penjualan, stok, serta utangnya turun ke sana sendiri — foto
+          menyusul di belakang supaya kasirnya bisa langsung dipakai.
         </p>
 
         <button

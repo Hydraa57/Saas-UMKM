@@ -32,10 +32,11 @@ Dan satu urutan yang tidak boleh dibalik: **struk sebelum laporan.** Laporan ada
 | Foto: pengecilan sebelum disimpan | 5 |
 | Unggah foto ke Storage (termasuk jalur gagalnya) | 10 |
 | Antrean kirim luring + penggolongan kegagalan | 30 |
+| Tarik dua arah: watermark, gagal di tengah, aturan bentrok | 13 |
 | Aksi tulis (tulis lokal + antre, tanpa menunggu jaringan) | 40 |
 | Skema, RLS, jalur tulis (PostgreSQL sungguhan) | 92 penegasan |
 
-Layar: pengaturan awal, beranda, barang & jasa (tab Daftar + Stok, termasuk tambah/ubah/arsip), kasir, struk, riwayat struk, kulakan, koreksi hitung fisik, piutang, uang keluar, cadangan, laporan, pengaturan. Alur lengkapnya diuji di peramban sungguhan lewat `npm run smoke` — 46 langkah, termasuk mengunduh berkas ekspor dan membacanya kembali dengan pembaca `.xlsx` di luar repo ini.
+Layar: pengaturan awal, beranda, barang & jasa (tab Daftar + Stok, termasuk tambah/ubah/arsip), kasir, struk, riwayat struk, kulakan, koreksi hitung fisik, piutang, uang keluar, cadangan, laporan, pengaturan. Alur lengkapnya diuji di peramban sungguhan lewat `npm run smoke` — 47 langkah, termasuk mengunduh berkas ekspor dan membacanya kembali dengan pembaca `.xlsx` di luar repo ini.
 
 ---
 
@@ -84,7 +85,8 @@ Penyandi ESC/POS menerima **string**, bukan `Sale`. Kalau ia menyusun sendiri ba
 - [x] Login — **wajib di awal.** Arahnya dibalik setelah dicoba di HP sungguhan: catatan yang tidak pernah dicadangkan adalah catatan yang akan hilang. Gerbangnya cuma sekali; sesudah pernah masuk, HP itu tidak pernah dikunci lagi walau sinyal mati
 - [x] Antrean kirim benar-benar dijalankan: saat dibuka, saat sinyal kembali, saat antrean bertambah, dan berkala
 - [x] Indikator keadaan cadangan yang menghilang sendiri kalau semuanya sudah aman
-- [ ] Penarikan data dari peladen (untuk HP kedua; risiko kehilangan sudah ditutup oleh pengiriman)
+- [x] **Penarikan data dari peladen.** Sampai sekarang alirannya cuma satu arah, dan itu membuat satu janji di layar ganti akun tidak bisa ditepati sama sekali: *"yang sudah terkirim tetap aman di peladen dan bisa ditarik lagi nanti."* Watermark per tabel, `>=` supaya dua catatan pada detik yang sama tidak terlewat, dan waktunya diambil dari jam peladen — bukan jam HP, yang sering meleset berjam-jam. HP baru yang kosong adalah kasus HP kedua dengan watermark nol, jadi pemulihan tidak butuh jalur tersendiri
+- [x] **Foto ikut turun, menyusul di belakang.** Angka dan katalog lebih dulu supaya kasirnya bisa dipakai sejak menit pertama; fotonya mengisi sendiri beberapa per putaran
 - [x] Unggah foto katalog ke Storage — ember privat, jalur `<tenant>/<item>`, antrean terpisah dari antrean penjualan
 - [x] Daftar rekap bulanan + total tahunan, meniru halaman buku tulis yang digantikannya
 - [x] Barang terlaris & jam paling ramai — jawaban yang buku tulis tidak akan pernah bisa beri

@@ -96,3 +96,86 @@ export async function unggahFoto(
 export async function fotoTertunda(db: LocalDatabase): Promise<number> {
   return db.photos.filter((row) => row.uploaded_at === null).count()
 }
+
+/**
+ * Mengunduh foto barang yang sudah ada di peladen tapi belum di sini.
+ *
+ * Kebalikan dari `unggahFoto`, dan dibutuhkan HP kedua: katalognya turun
+ * lengkap dengan `photo_path`, tapi berkasnya masih di Storage. Tanpa ini
+ * kasirnya tergambar sebagai dua puluh petak huruf awal — bisa dipakai,
+ * tapi bukan katalog yang sama dengan yang dilihat di HP pertama.
+ *
+ * **Menyusul di belakang, tidak pernah menahan.** Angka dan katalog
+ * sudah turun lebih dulu, jadi kasirnya bisa dipakai sejak menit pertama
+ * dan fotonya mengisi sendiri beberapa per putaran. Katalog lima puluh
+ * barang di sinyal lemah tidak boleh berarti lima puluh unduhan sebelum
+ * transaksi pertama bisa dilayani.
+ *
+ * Embernya privat, jadi berkasnya diambil lewat `download()` yang
+ * membawa token sesi — bukan lewat URL publik, yang memang tidak ada.
+ */
+export async function unduhFoto(
+  db: LocalDatabase,
+  supabase: SupabaseClient,
+  batas = 5,
+): Promise<HasilUnduh> {
+  const punya = new Set(await db.photos.toCollection().primaryKeys())
+
+  const kurang = await db.items
+    .filter(
+      (row) =>
+        typeof row.photo_path === 'string' &&
+        row.photo_path.length > 0 &&
+        !punya.has(row.id),
+    )
+    .limit(batas)
+    .toArray()
+
+  let turun = 0
+  let gagal = 0
+
+  for (const item of kurang) {
+    try {
+      const { data, error } = await supabase.storage
+        .from(EMBER_FOTO)
+        .download(item.photo_path as string)
+      if (error) throw error
+      if (!data) throw new Error('berkas kosong')
+
+      await db.photos.put({
+        item_id: item.id,
+        tenant_id: item.tenant_id,
+        blob: data,
+        // Sudah ada di peladen — memang dari sanalah asalnya. Menandainya
+        // kosong akan membuat antrean unggah mengirimnya balik ke tempat
+        // ia baru saja diambil, selamanya.
+        uploaded_at: new Date().toISOString(),
+      })
+      turun += 1
+    } catch {
+      // Sama seperti unggahan: foto bukan uang. Yang gagal akan ditemukan
+      // lagi di putaran berikutnya karena barisnya masih belum ada.
+      gagal += 1
+    }
+  }
+
+  return { turun, gagal }
+}
+
+export interface HasilUnduh {
+  readonly turun: number
+  readonly gagal: number
+}
+
+/** Berapa foto yang ada di peladen tapi belum turun ke HP ini. */
+export async function fotoBelumTurun(db: LocalDatabase): Promise<number> {
+  const punya = new Set(await db.photos.toCollection().primaryKeys())
+  return db.items
+    .filter(
+      (row) =>
+        typeof row.photo_path === 'string' &&
+        row.photo_path.length > 0 &&
+        !punya.has(row.id),
+    )
+    .count()
+}

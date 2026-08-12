@@ -69,7 +69,8 @@ Aturan yang tidak boleh dilanggar: **tidak ada satu pun jalur mencatat yang menu
 - **Service worker** — cache-first untuk aset aplikasi, sehingga membuka aplikasi tidak pernah menunggu jaringan
 - **Dexie (IndexedDB)** — seluruh data tenant ada di perangkat. Satu usaha setahun jauh di bawah batas penyimpanan browser
 - **Antrean sinkron** — tabel Dexie berisi panggilan RPC tertunda, diputar ulang berurutan saat online
-- **Tarik inkremental** — `where updated_at > last_sync_at` saat aplikasi dibuka dan saat koneksi kembali
+- **Tarik inkremental** — `where updated_at >= watermark`, per tabel, saat aplikasi dibuka, saat koneksi kembali, dan berkala. Pembandingnya `>=` dan bukan `>`: dengan `>`, baris yang ditulis pada detik yang sama persis dengan watermark akan terlewat **selamanya**, dan dua penjualan dalam satu detik itu biasa di jam ramai. Akibatnya sebagian baris terambil dua kali, dan itu tidak apa-apa — penyimpanannya `bulkPut` berdasarkan `id`
+- **Watermark diambil dari jam peladen** yang menempel di barisnya, bukan dari jam perangkat. Jam HP murah sering meleset berjam-jam, dan watermark yang lebih maju daripada kenyataan berarti baris yang hilang tanpa gejala apa pun sampai ada yang mencari struk lama dan tidak menemukannya
 - **Indikator status** — penanda kecil "belum tersinkron", bukan pesan error. Pemiliknya tidak perlu tahu istilah sinkronisasi; dia perlu tahu catatannya aman
 
 ### Idempotensi
@@ -80,9 +81,21 @@ Pencegahannya sudah ada di desain data: primary key dibuat di perangkat, dan set
 
 ### Konflik
 
-Satu tenant, satu perangkat → "tulisan terakhir menang" sudah memadai, dan mekanisme yang lebih rumit hanya menambah kode yang tidak pernah dieksekusi.
+Sekarang tarikannya sudah ada, jadi dua perangkat memang bisa jalan bersamaan. Dan yang ternyata terjadi: **hampir tidak ada yang bentrok** — bukan karena beruntung, melainkan karena bentuk antreannya.
 
-Ini ditinjau ulang saat ada dua perangkat mencatat bersamaan — HP kedua, atau pegawai yang menjaga kasir — bukan sebelumnya. Yang menahannya bukan anggapan bahwa itu tidak akan pernah terjadi, melainkan bahwa menebak bentuk konfliknya sebelum melihat satu pun kejadian nyata menghasilkan kode yang salah **dan** tidak teruji.
+Yang membuat sinkronisasi dua arah berbahaya adalah dua perangkat mengubah **baris yang sama**. Di sini itu jarang, karena antreannya tidak mengangkut baris melainkan **maksud**: yang dikirim `record_sale`, bukan "tulis nilai stok jadi 8". Dua HP yang menjual barang yang sama menghasilkan dua penjualan dengan UUID berbeda, dan peladen yang menjumlahkan akibatnya. Nomor struknya pun tidak bisa kembar — `sale_sequences` ada di peladen, bukan di perangkat.
+
+Sisanya cukup tiga aturan:
+
+| Jenis kolom | Siapa yang benar | Contoh |
+|---|---|---|
+| Angka hasil hitungan (rollup) | **Peladen, selalu.** Yang ditarik menimpa yang lokal | `stock_qty`, `sold_count` |
+| Yang diketik manusia | Yang terakhir menang, dan peladen sudah memastikannya | nama & harga barang |
+| Penghapusan | Tidak ada yang dihapus keras, jadi tarikan tidak pernah perlu menghapus | `voided_at`, `archived_at`, `deleted_at` |
+
+Baris ketiga itu yang paling menghemat: karena pembatalan struk, pengarsipan barang, dan penghapusan kas semuanya cuma menyetel kolom waktu, ketiganya ikut menaikkan `updated_at` dan sampai ke perangkat lain sebagai perubahan biasa. Tidak perlu tabel batu nisan, tidak perlu daftar "yang sudah dihapus" yang harus dijaga sepadan di dua tempat.
+
+**Satu aturan yang menahan tarikan:** ia tidak berjalan selama antrean kirim masih berisi. Kalau dilanggar, baris yang perubahannya masih di antrean akan ditimpa keadaan lama dari peladen — suntingan terlihat kembali seperti semula, lalu berubah lagi beberapa detik kemudian. Berkedip seperti itu di layar kasir lebih merusak kepercayaan daripada data yang tertinggal sebentar. Yang menahan cuma antrean `pending`; yang sudah `failed` ditolak permanen dan tidak akan pernah terkirim, jadi membiarkannya menahan berarti satu baris rusak menyandera sinkronisasi HP itu selamanya.
 
 ---
 

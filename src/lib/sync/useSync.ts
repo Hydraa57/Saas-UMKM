@@ -5,8 +5,9 @@ import { useLiveQuery } from 'dexie-react-hooks'
 import { db } from '@/lib/db/local'
 import { isConfigured, supabase } from '@/lib/supabase/client'
 import { failedItems, flush, pendingCount } from './outbox'
-import { fotoTertunda, unggahFoto } from './foto'
+import { fotoBelumTurun, fotoTertunda, unduhFoto, unggahFoto } from './foto'
 import { createTransport } from './transport'
+import { tarik } from './tarik'
 import { useSesi } from '@/lib/auth'
 
 /**
@@ -40,6 +41,8 @@ export interface StatusSync {
   readonly menunggu: number
   /** Foto katalog yang belum tersalin. Terpisah karena bukan uang. */
   readonly fotoMenunggu: number
+  /** Foto yang ada di peladen tapi belum turun ke HP ini. */
+  readonly fotoMenyusul: number
   /** Catatan yang ditolak permanen dan butuh perhatian. */
   readonly gagal: number
   readonly sedangMengirim: boolean
@@ -60,6 +63,7 @@ export function useSync(): StatusSync {
 
   const menunggu = useLiveQuery(() => pendingCount(db()), [], 0)
   const fotoMenunggu = useLiveQuery(() => fotoTertunda(db()), [], 0)
+  const fotoMenyusul = useLiveQuery(() => fotoBelumTurun(db()), [], 0)
   const gagal = useLiveQuery(async () => (await failedItems(db())).length, [], 0)
 
   const kirim = useCallback(async () => {
@@ -71,7 +75,20 @@ export function useSync(): StatusSync {
       // aman adalah penjualannya; foto katalog yang menyusul semenit
       // kemudian tidak merugikan siapa pun.
       await flush(db(), createTransport(supabase()))
+
+      // Tarikan **sesudah** kiriman, dan itu urutan yang menentukan.
+      // Kalau dibalik, keadaan lama dari peladen menimpa baris yang
+      // perubahannya masih di antrean — suntingan terlihat kembali
+      // seperti semula lalu berubah lagi beberapa detik kemudian.
+      // `tarik` sendiri menolak jalan selama antreannya belum kosong,
+      // jadi aturan itu tetap berlaku walau urutannya suatu saat
+      // tergeser.
+      await tarik(db(), supabase())
+
+      // Foto paling belakang, dua arah sekaligus. Keduanya paling berat
+      // dan paling tidak mendesak: yang harus segera aman penjualannya.
       await unggahFoto(db(), supabase())
+      await unduhFoto(db(), supabase())
     } catch {
       // Kegagalan pengiriman tidak boleh merusak layar mana pun.
       // Antreannya tetap utuh dan akan dicoba lagi pada pemicu
@@ -107,6 +124,7 @@ export function useSync(): StatusSync {
   return {
     menunggu: menunggu ?? 0,
     fotoMenunggu: fotoMenunggu ?? 0,
+    fotoMenyusul: fotoMenyusul ?? 0,
     gagal: gagal ?? 0,
     sedangMengirim,
     bisaMengirim,
