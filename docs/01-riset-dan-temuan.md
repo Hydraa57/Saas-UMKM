@@ -94,19 +94,19 @@ Blueprint menempatkan notifikasi WhatsApp sebagai fitur MVP. Kenyataannya:
 
 - WhatsApp Business API resmi di Indonesia dikenakan biaya per pesan — [sekitar Rp356 per pesan utility ditambah PPN 11%](https://cekat.ai/en/blog/harga-whatsapp-api-indonesia-2026), dengan tarif marketing lebih mahal lagi
 - Perlu verifikasi Meta Business dan umumnya lewat penyedia (BSP)
-- Dan yang paling penting: sasarannya **ibu sendiri**. Membangun integrasi berbayar dan berizin untuk mengirim "omzet hari ini" ke orang yang HP-nya sedang memegang aplikasi itu adalah biaya tanpa manfaat.
+- Dan yang paling penting: di usaha mikro, **penerimanya adalah orang yang sedang memegang HP itu.** Pemiliknya sendiri yang jaga kasir. Membangun integrasi berbayar dan berizin untuk mengirim "omzet hari ini" ke orang yang aplikasinya sedang terbuka adalah biaya tanpa manfaat.
 
-Jalur tidak resmi (library seperti Baileys/whatsapp-web.js) menghindari biaya, tapi menukarnya dengan risiko nomor WhatsApp diblokir. Mempertaruhkan nomor WhatsApp ibu — yang dipakai pelanggan jahitnya untuk memesan — demi notifikasi yang bisa digantikan Web Push adalah pertukaran yang buruk.
+Jalur tidak resmi (library seperti Baileys/whatsapp-web.js) menghindari biaya, tapi menukarnya dengan risiko nomor WhatsApp diblokir. Pada usaha mikro, nomor WhatsApp pemiliknya biasanya satu-satunya saluran pelanggan. Mempertaruhkannya demi notifikasi yang bisa digantikan Web Push adalah pertukaran yang buruk.
 
 Keputusan: lihat [`04-arsitektur.md`](04-arsitektur.md#notifikasi).
 
-### 2.5 Infrastrukturnya over-engineered untuk satu pengguna
+### 2.5 Infrastrukturnya over-engineered untuk usaha mikro
 
 Blueprint meminta NestJS + PostgreSQL + Prisma + Redis + BullMQ + S3 + WebSocket + worker terpisah, di-deploy ke VPS/Docker.
 
-Untuk satu pengguna yang mencatat belasan transaksi sehari, tidak satu pun dari Redis, BullMQ, WebSocket, dan worker terpisah dibutuhkan. Yang mereka tambahkan bukan kemampuan, tapi permukaan yang bisa rusak dan tagihan bulanan.
+Untuk usaha yang mencatat belasan transaksi sehari — dan itu bentuk sebagian besar usaha mikro — tidak satu pun dari Redis, BullMQ, WebSocket, dan worker terpisah dibutuhkan. Yang mereka tambahkan bukan kemampuan, tapi permukaan yang bisa rusak dan tagihan bulanan.
 
-Ini juga bertabrakan dengan dua batasan yang sudah dikonfirmasi: anggaran harus semurah mungkin, dan targetnya ibu bisa mulai memakai dalam hitungan minggu, bukan bulan.
+Ini juga bertabrakan dengan dua batasan yang sudah dikonfirmasi: anggaran harus semurah mungkin, dan targetnya usaha pertamanya bisa mulai memakai dalam hitungan minggu, bukan bulan.
 
 ### 2.6 Posisi pasarnya head-on melawan pemain bermodal
 
@@ -150,12 +150,12 @@ Sumber: [uibakery.io](https://uibakery.io/blog/supabase-pricing), [automationatl
 
 Dua catatan penting:
 
-- **Auto-pause bukan risiko untuk kasus ini.** Ibu memakainya harian, jadi database tidak pernah menganggur 7 hari. Tapi ini jadi risiko nyata saat nanti ada tenant percobaan yang mendaftar lalu menghilang — perlu diingat di fase komersial.
+- **Auto-pause adalah risiko nyata, dan sekarang bukan lagi risiko "nanti".** Pengguna harian tidak pernah membuat database menganggur 7 hari. Tapi begitu sasarannya usaha mikro pada umumnya, pasti ada yang mendaftar, mencoba, lalu menghilang sebulan — dan yang kembali disambut proyek tertidur. Harus ditangani sebelum pendaftaran dibuka untuk umum.
 - **500 MB sangat lapang.** Transaksi teks satu warung setahun tidak sampai puluhan MB. Yang akan menghabiskan kuota lebih dulu adalah **foto produk**, dan itu masuk ke storage 1 GB. Konsekuensi: foto wajib dikompres di sisi klien sebelum diunggah.
 
 ### 3.2 Multi-tenant dengan Row Level Security
 
-Karena tujuannya "mulai dari ibu, siapkan jadi produk", isolasi tenant harus benar sejak awal — menambahkannya belakangan berarti menyentuh ulang setiap tabel dan setiap query.
+Karena tujuannya "buktikan pada satu usaha nyata, siapkan untuk semua", isolasi tenant harus benar sejak awal — menambahkannya belakangan berarti menyentuh ulang setiap tabel dan setiap query.
 
 Temuan yang menentukan desain:
 
@@ -173,15 +173,15 @@ Pola yang mapan: service worker untuk aset, **IndexedDB sebagai sumber kebenaran
 
 Sumber: [rohitraj.tech](https://rohitraj.tech/en/notes/pwa-offline-sync), [pixelfreestudio](https://blog.pixelfreestudio.com/best-practices-for-making-pwas-offline-first/)
 
-Untuk kasus ini, offline-first **bukan fitur kenyamanan — ini syarat menang melawan buku tulis.** Aplikasi yang menampilkan spinner saat ibu ingin mencatat penjualan Rp5.000 sudah kalah sebelum dinilai.
+Untuk kasus ini, offline-first **bukan fitur kenyamanan — ini syarat menang melawan buku tulis.** Aplikasi yang menampilkan spinner saat pemiliknya ingin mencatat penjualan Rp5.000 sudah kalah sebelum dinilai.
 
 Soal konflik data: selama satu tenant dipakai satu orang, "tulisan terakhir menang" sudah memadai dan tidak perlu mekanisme yang lebih rumit. Ini baru perlu ditinjau ulang kalau nanti ada dua orang mencatat bersamaan.
 
 ### 3.4 QRIS
 
-Kalau nanti ibu menerima pembayaran QRIS, tarif MDR yang berlaku: **0% untuk usaha mikro pada transaksi ≤ Rp500.000**, 0,3% di atas itu, dan biaya ini ditanggung merchant serta [dilarang dibebankan ke pembeli](https://www.bi.go.id/id/publikasi/ruang-media/cerita-bi/Pages/mdr-qris.aspx).
+Untuk pembayaran QRIS, tarif MDR yang berlaku: **0% untuk usaha mikro pada transaksi ≤ Rp500.000**, 0,3% di atas itu, dan biaya ini ditanggung merchant serta [dilarang dibebankan ke pembeli](https://www.bi.go.id/id/publikasi/ruang-media/cerita-bi/Pages/mdr-qris.aspx).
 
-Praktisnya untuk ibu: hampir semua transaksi snack di bawah Rp500.000, jadi potongannya nol. Order jahit bisa melewatinya. Aplikasi cukup mencatat metode bayar; tidak perlu menghitung MDR di MVP.
+Praktisnya untuk usaha mikro: hampir semua transaksi eceran di bawah Rp500.000, jadi potongannya nol. Order jasa yang besar bisa melewatinya. Aplikasi cukup mencatat metode bayar; tidak perlu menghitung MDR di MVP.
 
 ---
 
@@ -191,7 +191,7 @@ Blueprint awal tidak salah sebagai dokumen SaaS. Yang salah adalah urutannya: ia
 
 Arah yang diambil:
 
-1. Bangun buku kas yang benar-benar dipakai ibu, dengan tiga aliran uangnya yang nyata
+1. Bangun buku kas yang benar-benar dipakai, dengan tiga aliran uang yang nyata
 2. Simpan fondasi multi-tenant di lapisan data, sembunyikan dari permukaan
 3. Setelah terbukti dipakai 30 hari, baru buka untuk pengguna lain — dengan bukti, bukan asumsi
 

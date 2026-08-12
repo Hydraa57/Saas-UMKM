@@ -814,6 +814,59 @@ await step('ganti akun memperingatkan sebelum mengosongkan HP', async () => {
   await page.waitForTimeout(400)
 })
 
+await step('ukuran huruf besar membesarkan tombolnya juga, bukan cuma hurufnya', async () => {
+  // Yang diperiksa bukan angka hurufnya melainkan **tinggi bilah
+  // navigasi**. Huruf yang membesar sendiri di dalam bilah yang tidak
+  // ikut membesar akan tertabrak tepinya, dan justru jadi lebih sulit
+  // dibaca daripada sebelum diperbesar. Seluruh skala ditulis dalam
+  // `rem` supaya keduanya bergerak bersama; kalau ada satu yang
+  // terlanjur ditulis dalam piksel, langkah inilah yang menangkapnya.
+  // Bilahnya cuma tergambar di kelima layar utama, jadi diukur di
+  // beranda — bukan di layar pengaturan tempat tombolnya ditekan.
+  const tinggiBilah = async () => {
+    await page.goto(BASE + '/')
+    await page.waitForTimeout(700)
+    const t = await page.evaluate(() => {
+      const nav = document.querySelector('nav')
+      return nav ? Math.round(nav.getBoundingClientRect().height) : 0
+    })
+    if (t === 0) throw new Error('bilah navigasi tidak ditemukan di beranda')
+    return t
+  }
+
+  const pilih = async (nama) => {
+    await page.goto(BASE + '/pengaturan')
+    await page.waitForTimeout(800)
+    await page.getByRole('radio', { name: nama }).click()
+    await page.waitForTimeout(300)
+  }
+
+  const sebelum = await tinggiBilah()
+
+  await pilih('Besar')
+  const sesudah = await tinggiBilah()
+  if (!(sesudah > sebelum)) {
+    throw new Error(`bilah tidak ikut membesar: ${sebelum} → ${sesudah}`)
+  }
+
+  // Dan pilihannya harus sudah terpasang **sebelum React hidup**.
+  // Kalau ia baru dipasang sesudahnya, tiap kali aplikasi dibuka
+  // halamannya tergambar sekejap dengan ukuran bawaan lalu melompat —
+  // gangguan yang paling terasa justru bagi yang memilihnya.
+  await page.goto(BASE + '/', { waitUntil: 'commit' })
+  const dini = await page.evaluate(
+    () => document.documentElement.dataset.huruf ?? null,
+  )
+  if (dini !== 'besar') {
+    throw new Error('ukuran huruf belum terpasang saat halaman digambar: ' + dini)
+  }
+
+  await pilih('Normal')
+  if ((await tinggiBilah()) !== sebelum) {
+    throw new Error('kembali ke Normal tidak mengembalikan ukurannya')
+  }
+})
+
 console.log('\nSTRUK:\n' + struk.split('\n').map((l) => '  ' + l).join('\n'))
 console.log('\nKATALOG :', daftar)
 console.log('BERANDA :', beranda)

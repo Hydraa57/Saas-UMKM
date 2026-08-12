@@ -65,7 +65,7 @@ export default function Mulai() {
     <main className="flex flex-1 flex-col gap-5 p-4 pb-32">
       <header className="animate-naik pt-4">
         <span
-          className="mb-4 flex h-14 w-14 items-center justify-center rounded-2xl
+          className="mb-4 flex h-14 w-14 items-center justify-center rounded-kartu
                      bg-merek-600 text-white"
         >
           <Ikon nama="kasir" ukuran={26} tebal={1.9} />

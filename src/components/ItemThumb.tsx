@@ -79,7 +79,7 @@ export function ItemThumb({ item }: { readonly item: Item }) {
       <img
         src={url}
         alt=""
-        className="aspect-square w-full rounded-2xl object-cover"
+        className="aspect-square w-full rounded-kartu object-cover"
       />
     )
   }
@@ -87,7 +87,7 @@ export function ItemThumb({ item }: { readonly item: Item }) {
   return (
     <span
       aria-hidden
-      className={`flex aspect-square w-full items-center justify-center rounded-2xl
+      className={`flex aspect-square w-full items-center justify-center rounded-kartu
                   text-3xl font-bold ${warnaDari(item.id)}`}
     >
       {isBarang(item) ? (

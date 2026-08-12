@@ -96,7 +96,7 @@ export default function Riwayat() {
       {data.length === 0 ? (
         <div className="kartu text-center">
           <span
-            className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl
+            className="mx-auto flex h-14 w-14 items-center justify-center rounded-kartu
                        bg-merek-50 text-merek-600"
           >
             <Ikon nama="riwayat" ukuran={26} />
@@ -137,7 +137,7 @@ export default function Riwayat() {
                       <a href={`/struk/${s.id}`} className="baris">
                         <span
                           className={`flex h-11 w-11 shrink-0 items-center justify-center
-                                      rounded-2xl ${
+                                      rounded-kartu ${
                                         s.voided
                                           ? 'bg-slate-100 text-slate-400'
                                           : M.isPositive(kurang)
@@ -162,7 +162,7 @@ export default function Riwayat() {
                           </span>
                           {!s.voided && M.isPositive(kurang) && (
                             <span
-                              className="mt-1 inline-block rounded-lg bg-keluar-soft px-2
+                              className="mt-1 inline-block rounded-kartu-kecil bg-keluar-soft px-2
                                          py-0.5 text-xs font-semibold text-keluar"
                             >
                               Belum lunas <Uang nilai={kurang} />

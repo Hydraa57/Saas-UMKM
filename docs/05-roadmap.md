@@ -6,7 +6,7 @@
 
 ## Prinsip
 
-**Setiap fase berakhir dengan sesuatu yang ibu bisa pakai.** Kalau pengerjaan berhenti di tengah jalan karena apa pun, yang sudah jadi tetap berguna.
+**Setiap fase berakhir dengan sesuatu yang bisa langsung dipakai berjualan.** Kalau pengerjaan berhenti di tengah jalan karena apa pun, yang sudah jadi tetap berguna.
 
 Dan satu urutan yang tidak boleh dibalik: **struk sebelum laporan.** Laporan adalah imbalan yang menahan orang bertahan, tapi struk adalah alasan orang membuka aplikasinya sama sekali.
 
@@ -86,7 +86,7 @@ Penyandi ESC/POS menerima **string**, bukan `Sale`. Kalau ia menyusun sendiri ba
 - [x] Indikator keadaan cadangan yang menghilang sendiri kalau semuanya sudah aman
 - [ ] Penarikan data dari peladen (untuk HP kedua; risiko kehilangan sudah ditutup oleh pengiriman)
 - [x] Unggah foto katalog ke Storage — ember privat, jalur `<tenant>/<item>`, antrean terpisah dari antrean penjualan
-- [x] Daftar rekap bulanan + total tahunan, meniru halaman buku tulisnya
+- [x] Daftar rekap bulanan + total tahunan, meniru halaman buku tulis yang digantikannya
 - [x] Barang terlaris & jam paling ramai — jawaban yang buku tulis tidak akan pernah bisa beri
 - [x] Untung kotor per bulan, dari harga modal yang disalin saat transaksi
 - [x] Ekspor ke Excel — semua catatan jadi satu berkas `.xlsx`, penyandinya ditulis sendiri tanpa pustaka
@@ -95,6 +95,8 @@ Penyandi ESC/POS menerima **string**, bukan `Sale`. Kalau ia menyusun sendiri ba
 - [x] **Foto dari galeri, bukan cuma dari kamera.** `capture="environment"` ternyata bukan "utamakan kamera" melainkan **paksa kamera**: di Android pemilih galerinya tidak ditawarkan sama sekali, jadi foto yang sudah ada di HP — kiriman pemasok, atau yang difoto kemarin — tidak bisa dipakai dan tiap barang harus difoto ulang saat itu juga
 - [x] **Perpindahan layar tanpa muat ulang.** Keempat puluh tautan dalam aplikasi masih `<a href>`, yang berarti tiap ketukan menu memuat ulang seluruh dokumen: layar berkedip putih, dan Dexie dibuka lagi dari nol. Semuanya jadi `next/link`; `window.location` hanya tersisa di ganti akun, di mana muat ulang penuhnya memang disengaja
 - [x] **Kendali bawaan peramban dibuang.** `<details>` menggambar segitiga yang bentuknya ditentukan sistem operasi, dan `<input type="file">` menuliskan "Choose file / no file chosen" — dua hal yang tidak bisa diwarnai, berbeda di tiap HP, dan cukup untuk membuat layar di sekitarnya terbaca sebagai halaman web
+- [x] **Skala diturunkan, radius dan jarak diseragamkan.** Enam nilai radius dipakai berdampingan (16px dan 18px sekaligus) dan empat jarak dalam kartu — itu penyebab "tidak simetris" yang bisa dihitung. Skalanya sendiri dulu dinaikkan satu tingkat atas nama satu orang, dan akibatnya tiap layar cuma memuat separuh isinya bagi semua yang lain
+- [x] **Ukuran huruf jadi pilihan (Normal/Besar), bukan paksaan.** Menyelesaikan ketegangan "umum vs mata yang tidak lagi sempurna" tanpa mengorbankan salah satunya. Terpasang sebelum gambar pertama, jadi tidak ada lompatan ukuran tiap kali aplikasi dibuka
 
 ---
 
@@ -104,9 +106,9 @@ Tidak ada fitur baru.
 
 - [ ] Ekspor cadangan otomatis ke luar Supabase
 - [ ] Penanganan error yang tidak menakutkan
-- [ ] Uji di HP ibu yang sebenarnya, bukan emulator
+- [ ] Uji di HP pengguna pilot yang sebenarnya, bukan emulator
 - [ ] **Isi katalog bersama-sama** — ini bagian dari uji, bukan persiapan sebelum uji. Pengisian katalog adalah gerbang terbesar produk ini, dan kalau ia terlalu berat, itu temuan
-- [ ] **Pendampingan hari pertama** — duduk bersama ibu, jangan bantu, catat di mana dia macet
+- [ ] **Pendampingan hari pertama** — duduk bersama penggunanya, jangan bantu, catat di mana dia macet
 
 ---
 
@@ -121,13 +123,18 @@ Tidak ada fitur baru.
 - [ ] Apakah angka stoknya masih cocok dengan rak setelah sebulan?
 - [ ] Fitur mana yang tidak pernah disentuh? Hapus atau sembunyikan
 
-**Gerbang:** kalau setelah 30 hari ibu masih memakai buku tulis untuk hal yang seharusnya sudah tercakup, jangan lanjut ke fase produk. Perbaiki dulu.
+**Gerbang:** kalau setelah 30 hari penggunanya masih memakai buku tulis untuk hal yang seharusnya sudah tercakup, jangan lanjut ke fase produk. Perbaiki dulu.
 
 ---
 
 ## Fase 7 — Baru bicara produk
 
 Hanya kalau Fase 6 lulus.
+
+Dua hal di bawah ini **tidak boleh menunggu Fase 7 selesai** — keduanya syarat sebelum pendaftaran dibuka, dan keduanya baru jadi masalah begitu sasarannya usaha mikro pada umumnya, bukan satu usaha yang dipakai harian:
+
+- [ ] **Auto-pause Supabase.** Proyek gratis tertidur setelah 7 hari menganggur. Pengguna harian tidak pernah menyentuhnya; pendaftar yang mencoba lalu menghilang sebulan pasti menyentuhnya, dan yang kembali disambut galat
+- [ ] **Kasir dijaga pegawai.** Sekarang jalan satu-satunya berbagi akun, dan itu berarti tidak ada jejak siapa yang menerima uangnya. Skemanya sudah siap (`memberships`); yang belum ada layarnya
 
 - [ ] Pendaftaran publik + onboarding
 - [ ] Pemilih tenant di UI (lapisan datanya sudah siap)
@@ -141,7 +148,7 @@ Posisi lengkapnya di [`08-posisi-produk.md`](08-posisi-produk.md). Ringkasnya: a
 
 | Fase | Perkiraan | Hasil |
 |---|---|---|
-| 0 | selesai | Paham cara ibu mencatat, dari bukunya sendiri |
+| 0 | selesai | Paham cara usaha mikro mencatat, dari buku aslinya |
 | — | selesai | Fondasi, skema, logika, 380 tes + 92 penegasan DB |
 | 1 | selesai | **Kasir, katalog, dan struk jalan** |
 | 2 | selesai | **Stok yang lingkarannya tertutup** |

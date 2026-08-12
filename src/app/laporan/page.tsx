@@ -81,7 +81,7 @@ function Kosong() {
       <AppBar judul="Laporan" kembali="/" />
       <div className="kartu text-center">
         <span
-          className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl
+          className="mx-auto flex h-14 w-14 items-center justify-center rounded-kartu
                      bg-merek-50 text-merek-600"
         >
           <Ikon nama="laporan" ukuran={26} />
@@ -259,7 +259,7 @@ export default function Laporan() {
       {banding && (
         <p className="kartu flex items-center gap-3 text-slate-600">
           <span
-            className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl
+            className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-kartu
                         ${
                           M.isNegative(banding.deltaNet)
                             ? 'bg-keluar-soft text-keluar'
@@ -290,7 +290,7 @@ export default function Laporan() {
         </div>
 
         <div className="flex gap-3">
-          <div className="flex-1 rounded-2xl bg-slate-100 p-3">
+          <div className="flex-1 rounded-kartu bg-slate-100 p-3">
             <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">
               Omzet
             </p>
@@ -298,7 +298,7 @@ export default function Laporan() {
               <Uang nilai={jual.omzet} ringkas />
             </p>
           </div>
-          <div className="flex-1 rounded-2xl bg-slate-100 p-3">
+          <div className="flex-1 rounded-kartu bg-slate-100 p-3">
             <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">
               Modal barang
             </p>
@@ -355,7 +355,7 @@ export default function Laporan() {
       <section className="kartu">
         <div className="mb-4 flex items-center gap-2">
           <span
-            className="flex h-9 w-9 items-center justify-center rounded-xl
+            className="flex h-9 w-9 items-center justify-center rounded-kartu-kecil
                        bg-merek-50 text-merek-700"
           >
             <Ikon nama="piala" ukuran={19} />
@@ -411,7 +411,7 @@ export default function Laporan() {
         <section className="kartu">
           <div className="mb-4 flex items-center gap-2">
             <span
-              className="flex h-9 w-9 items-center justify-center rounded-xl
+              className="flex h-9 w-9 items-center justify-center rounded-kartu-kecil
                          bg-merek-50 text-merek-700"
             >
               <Ikon nama="jam" ukuran={19} />
@@ -438,7 +438,7 @@ export default function Laporan() {
             {jam.map((row) => (
               <div key={row.jam} className="flex flex-1 flex-col items-center gap-1">
                 <div
-                  className={`w-full rounded-t-md ${
+                  className={`w-full rounded-t ${
                     row.jam === teramai?.jam ? 'bg-merek-600' : 'bg-merek-200'
                   }`}
                   style={{
@@ -515,7 +515,7 @@ export default function Laporan() {
       <section className="kartu">
         <div className="mb-3 flex items-center gap-2">
           <span
-            className="flex h-9 w-9 items-center justify-center rounded-xl
+            className="flex h-9 w-9 items-center justify-center rounded-kartu-kecil
                        bg-merek-50 text-merek-700"
           >
             <Ikon nama="unduh" ukuran={19} />

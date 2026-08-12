@@ -85,7 +85,7 @@ export function KartuQris({ nominal }: Props) {
     return (
       <Link href="/qris" className="kartu-tekan flex items-center gap-3 animate-naik">
         <span
-          className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl
+          className="flex h-11 w-11 shrink-0 items-center justify-center rounded-kartu
                      bg-merek-50 text-merek-700"
         >
           <Ikon nama="qris" ukuran={22} />
@@ -117,7 +117,7 @@ export function KartuQris({ nominal }: Props) {
           // luar — tidak ada markah yang bisa ikut terbawa.
           <div id="qris-qr" dangerouslySetInnerHTML={{ __html: svg }} />
         ) : (
-          <div className="aspect-square w-full animate-pulse rounded-2xl bg-slate-100" />
+          <div className="aspect-square w-full animate-pulse rounded-kartu bg-slate-100" />
         )}
       </div>
 

@@ -122,7 +122,7 @@ export default function Utang() {
             </span>
           </div>
           {M.isPositive(M.subtract(sisaAktif, jumlah)) && (
-            <div className="mt-3 flex items-center justify-between rounded-2xl bg-keluar/25 px-4 py-3">
+            <div className="mt-3 flex items-center justify-between rounded-kartu bg-keluar/25 px-4 py-3">
               <span className="font-semibold">Masih kurang</span>
               <span className="text-xl font-bold">
                 <Uang nilai={M.subtract(sisaAktif, jumlah)} />
@@ -168,7 +168,7 @@ export default function Utang() {
       {ringkas.count === 0 ? (
         <div className="kartu text-center">
           <span
-            className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl
+            className="mx-auto flex h-14 w-14 items-center justify-center rounded-kartu
                        bg-masuk-soft text-masuk"
           >
             <Ikon nama="cek" ukuran={26} tebal={2.2} />
@@ -189,7 +189,7 @@ export default function Utang() {
               <Uang nilai={ringkas.total} />
             </p>
             {ringkas.stale.length > 0 && (
-              <p className="mt-3 inline-flex items-center gap-2 rounded-xl bg-tunggu/25 px-3 py-1.5 text-sm font-semibold">
+              <p className="mt-3 inline-flex items-center gap-2 rounded-kartu-kecil bg-tunggu/25 px-3 py-1.5 text-sm font-semibold">
                 <Ikon nama="peringatan" ukuran={16} />
                 {ringkas.stale.length} sudah lewat {STALE_AFTER_DAYS} hari
               </p>
@@ -209,7 +209,7 @@ export default function Utang() {
                   >
                     <span
                       className={`flex h-11 w-11 shrink-0 items-center justify-center
-                                  rounded-2xl text-base font-bold ${
+                                  rounded-kartu text-base font-bold ${
                                     lama
                                       ? 'bg-tunggu-soft text-tunggu'
                                       : 'bg-slate-100 text-slate-600'

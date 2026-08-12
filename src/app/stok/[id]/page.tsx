@@ -126,7 +126,7 @@ export default function DetailStok({
             asal-usul — dan pemiliknya perlu tahu sebelum dia berangkat
             kulakan dengan angka yang salah. */}
         {dariMutasi !== item.stockQty && (
-          <p className="mt-4 flex gap-2 rounded-2xl bg-tunggu/25 p-3 text-sm">
+          <p className="mt-4 flex gap-2 rounded-kartu bg-tunggu/25 p-3 text-sm">
             <Ikon nama="peringatan" ukuran={18} className="mt-0.5 shrink-0" />
             <span>
               Penjumlahan riwayat menghasilkan {dariMutasi} {item.unit}, berbeda
@@ -138,7 +138,7 @@ export default function DetailStok({
 
       <section className="kartu">
         <h2 className="font-semibold">Koreksi dari hitung fisik</h2>
-        <label className="mt-3 block rounded-2xl bg-slate-50 px-4 py-3">
+        <label className="mt-3 kolom-kotak">
           <span className="label">Jumlah sebenarnya di rak</span>
           <input
             type="number"
@@ -161,7 +161,7 @@ export default function DetailStok({
           <p className="mt-2 text-slate-600">Cocok, tidak ada yang perlu dikoreksi.</p>
         )}
 
-        <label className="mt-3 block rounded-2xl bg-slate-50 px-4 py-3">
+        <label className="mt-3 kolom-kotak">
           <span className="label">Keterangan (boleh kosong)</span>
           <input
             type="text"
@@ -199,7 +199,7 @@ export default function DetailStok({
               >
                 <span
                   className={`flex h-10 w-10 shrink-0 items-center justify-center
-                              rounded-xl ${
+                              rounded-kartu-kecil ${
                                 m.qtyChange > 0
                                   ? 'bg-masuk-soft text-masuk'
                                   : 'bg-keluar-soft text-keluar'

@@ -194,7 +194,7 @@ export default function PasangQris() {
             yang curiga. */}
         <div className="kartu animate-naik text-center">
           <span
-            className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl
+            className="mx-auto flex h-14 w-14 items-center justify-center rounded-kartu
                        bg-masuk-soft text-masuk"
           >
             <Ikon nama="cek" ukuran={28} tebal={2.4} />
@@ -264,7 +264,7 @@ export default function PasangQris() {
       ) : (
         <div className="kartu">
           <span
-            className="flex h-12 w-12 items-center justify-center rounded-2xl
+            className="flex h-12 w-12 items-center justify-center rounded-kartu
                        bg-merek-50 text-merek-700"
           >
             <Ikon nama="qris" ukuran={24} />

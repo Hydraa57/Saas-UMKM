@@ -71,9 +71,9 @@ function Pintasan({
   ket: string
 }) {
   return (
-    <a href={href} className="kartu-tekan flex flex-col gap-2 p-4">
+    <a href={href} className="kartu-tekan flex flex-col gap-2">
       <span
-        className="flex h-11 w-11 items-center justify-center rounded-2xl
+        className="flex h-11 w-11 items-center justify-center rounded-kartu
                    bg-merek-50 text-merek-700"
       >
         <Ikon nama={ikon} ukuran={22} />
@@ -160,10 +160,10 @@ export default function Beranda() {
 
   if (!tenantId) {
     return (
-      <main className="flex flex-1 flex-col justify-center gap-6 p-6">
+      <main className="flex flex-1 flex-col justify-center gap-6 p-4">
         <div className="animate-naik">
           <span
-            className="mb-5 flex h-16 w-16 items-center justify-center rounded-[1.3rem]
+            className="mb-5 flex h-16 w-16 items-center justify-center rounded-kartu-lg
                        bg-merek-600 text-white"
           >
             <Ikon nama="kasir" ukuran={30} tebal={1.9} />
@@ -262,7 +262,7 @@ export default function Beranda() {
         </div>
 
         <div className="flex gap-3">
-          <div className="flex-1 rounded-2xl bg-masuk-soft p-3">
+          <div className="flex-1 rounded-kartu bg-masuk-soft p-3">
             <p className="text-xs font-semibold uppercase tracking-wide text-masuk">
               Masuk
             </p>
@@ -270,7 +270,7 @@ export default function Beranda() {
               <Uang nilai={bulan?.income ?? ZERO} ringkas />
             </p>
           </div>
-          <div className="flex-1 rounded-2xl bg-keluar-soft p-3">
+          <div className="flex-1 rounded-kartu bg-keluar-soft p-3">
             <p className="text-xs font-semibold uppercase tracking-wide text-keluar">
               Keluar
             </p>
@@ -302,7 +302,7 @@ export default function Beranda() {
           className="kartu-tekan flex items-center gap-3 bg-tunggu-soft ring-tunggu/10"
         >
           <span
-            className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl
+            className="flex h-11 w-11 shrink-0 items-center justify-center rounded-kartu
                        bg-white/70 text-tunggu"
           >
             <Ikon nama="peringatan" ukuran={22} />
@@ -322,7 +322,7 @@ export default function Beranda() {
       {piutang && piutang.count > 0 && (
         <Link href="/utang" className="kartu-tekan flex items-center gap-3">
           <span
-            className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl
+            className="flex h-11 w-11 shrink-0 items-center justify-center rounded-kartu
                        bg-keluar-soft text-keluar"
           >
             <Ikon nama="utang" ukuran={22} />

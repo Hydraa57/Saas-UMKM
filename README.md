@@ -3,7 +3,9 @@
 **Aplikasi kasir untuk usaha yang menjual barang sekaligus menerima jasa.**
 Layani pembeli, cetak struk — pembukuan dan stok terisi sendiri.
 
-Untuk usaha mikro apa pun: warung, katering, laundry, jahit, servis, bengkel, salon. Dibuktikan pada satu pengguna nyata lebih dulu — ibu saya, yang menjual snack sekaligus menerima jahitan, dan sampai hari ini mencatat semuanya di buku tulis.
+Untuk usaha mikro Indonesia pada umumnya: warung, katering, laundry, jahit, servis, bengkel, salon, konter pulsa.
+
+Temuan lapangannya berasal dari satu usaha nyata — ibu saya, yang menjual snack sekaligus menerima jahitan dan sampai hari ini mencatat semuanya di buku tulis. Itu **asal-usul buktinya, bukan batas sasarannya.** Satu usaha yang bisa diamati dari dekat selama bertahun-tahun memberi hal yang tidak bisa diberi survei seratus responden: catatan asli yang bisa dibaca baris per baris, dan alasan sebenarnya kenapa sebuah aplikasi ditinggalkan. Tapi tiap keputusan di repo ini harus bisa dipertahankan untuk usaha mikro mana pun — kalau alasannya cuma berlaku untuk satu orang, alasannya belum selesai.
 
 ## Celah yang dituju
 
@@ -27,11 +29,13 @@ Uraian lengkapnya di [`docs/08-posisi-produk.md`](docs/08-posisi-produk.md).
 
 Bukan lahir dari riset pasar, tapi dari melihat ibu saya menjumlah rekap bulanan dengan pulpen — delapan belas bulan berturut-turut, lengkap dengan total tahunan.
 
-Kosakata aplikasinya umum; pembuktiannya spesifik. Target keberhasilan tahap pertama satu kalimat:
+Yang membuat itu layak jadi dasar produk umum bukan karena dia satu-satunya sasaran, melainkan karena perilakunya **khas**: jutaan usaha mikro di Indonesia mencatat dengan cara yang sama, gagal dengan cara yang sama, dan berhenti memakai aplikasi karena alasan yang sama. Buku tulis yang bisa dibuka dan dibaca halaman demi halaman adalah spesifikasi yang lebih jujur daripada wawancara, karena ia tidak bisa mengarang.
+
+Target keberhasilan tahap pertama tetap satu kalimat:
 
 > **Setelah 30 hari, buku tulis itu tidak dipakai lagi.**
 
-Satu pengguna yang bertahan sebulan lebih membuktikan daripada seratus pendaftar yang berhenti di minggu pertama.
+Satu pengguna yang bertahan sebulan lebih membuktikan daripada seratus pendaftar yang berhenti di minggu pertama — dan yang bertahan sebulan itulah yang menunjukkan mana bagian produk yang benar-benar tahan dipakai orang lain.
 
 ## Tiga arah yang sudah dicoba dan dibuang
 
@@ -41,11 +45,13 @@ Arah produknya berbelok dua kali, dan keduanya tercatat karena alasannya masih b
 2. **Aplikasi pencatat pemasukan/pengeluaran dua buku** (usaha & rumah tangga). Alurnya jalan, tesnya lengkap, dan tetap salah jenis: saya **sudah punya** [NayyiraAI](https://nayyiraai.online) untuk itu. Membangunnya berarti bersaing dengan produk sendiri.
 3. **Sekarang: aplikasi kasir.** Pencatatan bukan fiturnya — pencatatan adalah akibat dari melayani pembeli.
 
-Kesalahan kedua punya akar yang bisa ditunjuk. Buku tulis ibu tidak memuat stok, harga modal, maupun daftar barang, dan itu dibaca sebagai *"stok tidak dibutuhkan"*. Yang benar: **buku tulis memang tidak bisa melacak stok.** Ketiadaan di kertas adalah batas kertasnya, bukan batas kebutuhannya.
+Kesalahan kedua punya akar yang bisa ditunjuk, dan akarnya berlaku umum. Buku tulis yang diamati tidak memuat stok, harga modal, maupun daftar barang, dan itu dibaca sebagai *"stok tidak dibutuhkan"*. Yang benar: **buku tulis memang tidak bisa melacak stok.** Ketiadaan di kertas adalah batas kertasnya, bukan batas kebutuhannya — dan itu berlaku untuk setiap usaha yang catatannya masih di kertas, bukan cuma satu.
+
+Kesalahan pertama juga punya pelajaran yang masih berlaku sekarang: **"untuk semua UMKM" bukan izin membangun tanpa satu pun pengguna nyata.** Sasaran yang luas dan bukti yang tipis adalah kombinasi yang menghasilkan daftar fitur, bukan produk.
 
 ## Pelajaran dari percobaan sebelumnya
 
-Pernah dibangun pencatat keuangan lewat WhatsApp dengan AI dan spreadsheet. Ibu memakainya sebentar lalu berhenti — AI-nya sering error, dan balasannya cuma *"sudah disimpan"*. Untuk tahu pemasukan sebulan, tetap harus membuka spreadsheet.
+Pernah dibangun pencatat keuangan lewat WhatsApp dengan AI dan spreadsheet. Penggunanya memakainya sebentar lalu berhenti — AI-nya sering error, dan balasannya cuma *"sudah disimpan"*. Untuk tahu pemasukan sebulan, tetap harus membuka spreadsheet.
 
 Diagnosisnya bukan soal AI. Yang dibangun cuma separuh: pencatatannya jalan, pembacaan-kembalinya tidak ada. Aturan yang lahir dari situ, dan berlaku di seluruh aplikasi:
 
@@ -53,7 +59,7 @@ Diagnosisnya bukan soal AI. Yang dibangun cuma separuh: pencatatannya jalan, pem
 
 Di kasir, yang diterima berwujud: **struk.** Bisa dilihat, dikirim ke WhatsApp pembeli, dan nanti dicetak ke printer termal — teks lebar-tetap yang sama persis untuk ketiganya, supaya struk yang dilihat, dibagikan, dan dicetak tidak pernah berbeda.
 
-Percobaan itu juga meninggalkan bukti berharga: ibu bersedia memakai aplikasi. Yang gagal bukan kesediaannya.
+Percobaan itu juga meninggalkan bukti berharga: penggunanya bersedia memakai aplikasi. Yang gagal bukan kesediaannya — dan itu temuan yang berlaku luas, karena kesediaan justru bagian yang paling sering dikira jadi hambatan.
 
 ## Status
 
@@ -84,7 +90,9 @@ Layar yang sudah ada: pengaturan awal, beranda, barang & jasa (tab Daftar + Stok
 
 Struk bisa dicetak ke printer termal Bluetooth (Web Bluetooth + ESC/POS) — **teks yang sama persis** dengan yang tampil di layar dan yang dikirim ke WhatsApp. Penyandinya menerima string, bukan `Sale`, jadi tidak ada tempat kedua yang bisa melenceng. Kodenya sudah lengkap dan teruji; yang belum adalah pengujian dengan printer sungguhan.
 
-**Login wajib di awal.** Arahnya sempat sebaliknya — login sebagai pilihan, dengan alasan bahwa gerbang sebelum manfaat pertama adalah tempat orang berhenti. Alasan itu benar untuk produk yang dicari orang asing di internet, dan tidak berlaku di sini: penggunanya diantar langsung, dan catatan yang tidak pernah dicadangkan adalah catatan yang akan hilang.
+**Login wajib di awal.** Arahnya sempat sebaliknya — login sebagai pilihan, dengan alasan bahwa gerbang sebelum manfaat pertama adalah tempat orang berhenti.
+
+Alasan pembalikannya waktu itu: penggunanya diantar langsung, jadi gerbang tidak memakan siapa-siapa. **Alasan itu tidak berlaku lagi** begitu sasarannya usaha mikro pada umumnya — orang yang menemukan aplikasi ini sendiri memang berhenti di gerbang, dan itu terukur. Yang menahan keputusannya sekarang adalah alasan kedua, yang tidak bergantung pada bagaimana penggunanya datang: **catatan yang tidak pernah dicadangkan adalah catatan yang akan hilang**, dan yang hilang di sini penghasilan orang, bukan draf tulisan. Berapa banyak pendaftar yang berhenti di gerbang itu masuk daftar hal yang harus diukur sebelum pendaftaran dibuka untuk umum — bukan ditebak.
 
 Gerbangnya **cuma sekali**. Sesudah sebuah HP pernah berhasil masuk, ia ditandai dan tidak pernah dikunci lagi — kasir yang menolak terbuka karena sinyal mati adalah kasir yang ditinggalkan hari itu juga. Tenant dibuat di perangkat dengan UUID sendiri, dan diklaim akun saat antrean pertama kali terkirim; `create_tenant` memang menerima `p_tenant_id` dari perangkat. Antrean kirim berjalan saat aplikasi dibuka, saat sinyal kembali, saat antrean bertambah, dan berkala.
 
@@ -108,7 +116,15 @@ Satu putaran terakhir menjawab keluhan yang tidak menyebut satu layar pun: *"UI 
 - **Kendali bawaan peramban.** `<details>` menggambar segitiga yang bentuk dan warnanya ditentukan sistem operasi; `<input type="file">` telanjang menuliskan "Choose file / no file chosen" berikut nama berkas yang tidak berarti apa-apa. Keduanya tidak bisa diwarnai dan berbeda di tiap HP. Penggantinya ditulis sendiri.
 - **Foto cuma bisa dari kamera.** `capture="environment"` bukan "utamakan kamera" melainkan **paksa kamera**: di Android galerinya tidak ditawarkan sama sekali, jadi foto kiriman pemasok lewat WhatsApp tidak bisa dipakai dan tiap barang harus difoto ulang saat itu juga.
 
+Putaran berikutnya menjawab dua keluhan sekaligus: *"layout dan fontnya kayak ga simetris ukurannya, dan terlalu besar."*
+
+**Tidak simetris** ternyata bisa dihitung, bukan soal perasaan. Radiusnya diklaim "dua nilai saja" dan ternyata **enam** yang dipakai berdampingan — `rounded-2xl` (16px, 49×), `rounded-kartu` (18px, 13×), `rounded-xl` (12px), `rounded-lg`, dan dua nilai karangan. Pasangan 16px dan 18px itu yang paling merusak: bedanya terlalu kecil untuk terbaca sebagai pilihan, dan cukup besar untuk terbaca sebagai kelalaian. Jarak dalam kartu sama saja — `.kartu` memakai 20px sementara 30 tempat lain menulis `p-4` langsung, jadi tepi kiri isi kartu tidak pernah lurus dari satu kartu ke kartu berikutnya. Sekarang tiga radius dengan aturan yang bisa diperiksa (**kotak di dalam kotak memakai radius lebih kecil**) dan satu jarak dalam.
+
+**Terlalu besar** adalah akibat langsung dari menganggap produk ini milik satu orang. Seluruh skala dinaikkan satu tingkat atas nama mata yang tidak lagi sempurna, dan di layar selebar 390px itu bekerja melawan tujuannya sendiri: huruf besar membantu membaca satu baris, tapi menghambat membaca satu daftar. Sekarang base 16px dan target sentuh 48px — dan yang butuh lebih besar **memilihnya sendiri** di Pengaturan → Ukuran huruf. Seluruh skala ditulis dalam `rem`, jadi satu angka di akar menggeser huruf, tombol, dan jarak secara sepadan; huruf yang membesar sendiri di dalam tombol yang tidak ikut membesar justru lebih sulit dibaca. Pilihannya dipasang oleh skrip sebaris di `<head>` supaya sudah berlaku sebelum gambar pertama — kontrol negatifnya tegas: tanpa skrip itu pilihannya **hilang sama sekali** setelah muat ulang, bukan cuma berkedip.
+
 Belum ada: penarikan data dari peladen (untuk HP kedua).
+
+Dua hal yang baru jadi masalah **karena** sasarannya umum, dan sengaja dicatat sebagai terbuka alih-alih ditutup diam-diam: **auto-pause Supabase** (proyek gratis tertidur setelah 7 hari menganggur — pengguna harian aman, pendaftar yang mencoba lalu menghilang tidak) dan **kasir yang dijaga pegawai** (sekarang jalan satu-satunya berbagi akun, jadi tidak ada jejak siapa yang menerima uangnya; `memberships` sudah ada di skema, layarnya belum).
 
 ### Supabase
 

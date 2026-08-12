@@ -1,6 +1,7 @@
 'use client'
 
 import Link from 'next/link'
+import type { Route } from 'next'
 import { useEffect, useState } from 'react'
 import { useLiveQuery } from 'dexie-react-hooks'
 import { db, getMeta, QRIS_KEY } from '@/lib/db/local'
@@ -11,6 +12,7 @@ import { Ikon, type NamaIkon } from '@/components/Ikon'
 import { useSesi } from '@/lib/auth'
 import { periksaQris } from '@/lib/qris/payload'
 import { gantiAkun, periksaSebelumGanti } from '@/lib/akun'
+import { bacaUkuran, pakaiUkuran, LABEL_UKURAN, UKURAN, type Ukuran } from '@/lib/tampilan'
 
 /**
  * Pengaturan.
@@ -39,16 +41,16 @@ function Baris({
   ket,
   siap,
 }: {
-  href: string
+  href: Route
   ikon: NamaIkon
   judul: string
   ket: string
   siap: boolean
 }) {
   return (
-    <a href={href} className="baris">
+    <Link href={href} className="baris">
       <span
-        className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl ${
+        className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-kartu ${
           siap ? 'bg-masuk-soft text-masuk' : 'bg-slate-100 text-slate-500'
         }`}
       >
@@ -59,7 +61,7 @@ function Baris({
         <span className="block truncate text-sm text-slate-500">{ket}</span>
       </span>
       <Ikon nama="lanjut" ukuran={18} className="shrink-0 text-slate-300" />
-    </a>
+    </Link>
   )
 }
 
@@ -75,6 +77,14 @@ export default function Pengaturan() {
   const [konfirmasiGanti, setKonfirmasiGanti] = useState<number | null>(null)
   const [tersimpan, setTersimpan] = useState(false)
   const [galat, setGalat] = useState<string | null>(null)
+
+  // Dibaca sesudah komponennya terpasang, bukan saat keadaan awal
+  // disusun: `localStorage` tidak ada saat halaman disusun di peladen,
+  // dan menebaknya di sana berarti tanda terpilihnya berkedip pindah
+  // sesaat setelah halaman hidup. Ukuran hurufnya sendiri sudah dipasang
+  // jauh sebelum ini oleh skrip sebaris di `<head>`.
+  const [ukuran, setUkuran] = useState<Ukuran | null>(null)
+  useEffect(() => setUkuran(bacaUkuran()), [])
 
   // Kolomnya diisi dari yang tersimpan begitu pembacaan pertama selesai.
   // Sebelum itu `businessName` masih bawaan "Usaha", dan menuliskannya ke
@@ -213,6 +223,52 @@ export default function Pengaturan() {
                 : 'Belum aktif — baru ada di HP ini'
           }
         />
+      </section>
+
+      {/* Ukuran huruf, dan sengaja bukan angka melainkan dua pilihan
+          yang bisa langsung dilihat akibatnya. Penggeser dengan sembilan
+          tingkat menuntut orang membandingkan sesuatu yang belum
+          dilihatnya; dua contoh yang sudah tertulis dalam ukurannya
+          masing-masing tidak menuntut apa-apa.
+
+          Ini juga jawaban atas ketegangan yang selama ini diselesaikan
+          dengan cara yang salah: aplikasinya dulu memakai huruf besar
+          untuk semua orang demi sebagian orang. Akibatnya tiap layar
+          cuma memuat separuh isinya bagi semua yang lain. */}
+      <section className="flex flex-col gap-2">
+        <h2 className="label px-1">Tampilan</h2>
+
+        <div className="kartu">
+          <span className="label">Ukuran huruf</span>
+          <div role="radiogroup" aria-label="Ukuran huruf" className="mt-2 flex gap-2">
+            {UKURAN.map((u) => (
+              <button
+                key={u}
+                type="button"
+                role="radio"
+                aria-checked={ukuran === u}
+                onClick={() => {
+                  pakaiUkuran(u)
+                  setUkuran(u)
+                }}
+                className={`flex min-h-touch flex-1 items-center justify-center rounded-kartu
+                            border font-semibold transition active:scale-95 ${
+                              u === 'besar' ? 'text-lg' : 'text-base'
+                            } ${
+                              ukuran === u
+                                ? 'border-merek-600 bg-merek-600 text-white'
+                                : 'border-garis bg-white text-slate-700'
+                            }`}
+              >
+                {LABEL_UKURAN[u]}
+              </button>
+            ))}
+          </div>
+          <span className="mt-2 block text-sm text-slate-500">
+            Berlaku di HP ini saja. Tombol dan jaraknya ikut membesar, bukan
+            cuma hurufnya.
+          </span>
+        </div>
       </section>
 
       <section className="flex flex-col gap-2">

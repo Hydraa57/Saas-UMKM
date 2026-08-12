@@ -2,6 +2,7 @@ import type { Metadata, Viewport } from 'next'
 import './globals.css'
 import { TabBar } from '@/components/TabBar'
 import { Gerbang } from '@/components/Gerbang'
+import { SKRIP_HURUF } from '@/lib/tampilan'
 
 export const metadata: Metadata = {
   title: 'Ezura',
@@ -26,6 +27,13 @@ export default function RootLayout({
 }: Readonly<{ children: React.ReactNode }>) {
   return (
     <html lang="id">
+      <head>
+        {/* Ukuran huruf pilihan pengguna dipasang **sebelum** gambar
+            pertama. Kalau menunggu React, halaman tergambar sekejap
+            dengan ukuran bawaan lalu melompat — dan lompatan itu paling
+            mengganggu justru bagi yang memilih huruf besar. */}
+        <script dangerouslySetInnerHTML={{ __html: SKRIP_HURUF }} />
+      </head>
       {/* Lebar dibatasi karena ini aplikasi HP. Di layar lebar ia tetap
           selebar HP dan berada di tengah, bukan melar jadi tata letak
           yang tidak pernah dirancang. */}

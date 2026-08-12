@@ -147,7 +147,7 @@ export default function Kulakan() {
                   type="button"
                   aria-label={`Hapus ${b.item.name}`}
                   onClick={() => hapus(index)}
-                  className="flex h-10 w-10 items-center justify-center rounded-xl
+                  className="flex h-10 w-10 items-center justify-center rounded-kartu-kecil
                              bg-slate-100 text-slate-500 active:scale-95"
                 >
                   <Ikon nama="silang" ukuran={18} tebal={2.2} />
@@ -155,7 +155,7 @@ export default function Kulakan() {
               </div>
 
               <div className="flex gap-3">
-                <label className="flex-1 rounded-2xl bg-slate-50 px-3 py-2">
+                <label className="flex-1 rounded-kartu bg-slate-50 px-3 py-2">
                   <span className="label">Jumlah</span>
                   <input
                     type="number"
@@ -166,7 +166,7 @@ export default function Kulakan() {
                     className="kolom font-semibold"
                   />
                 </label>
-                <label className="flex-1 rounded-2xl bg-slate-50 px-3 py-2">
+                <label className="flex-1 rounded-kartu bg-slate-50 px-3 py-2">
                   <span className="label">Harga modal / {b.item.unit}</span>
                   <input
                     type="number"
@@ -247,7 +247,7 @@ export default function Kulakan() {
                     </span>
                     <span
                       className="flex h-9 w-9 shrink-0 items-center justify-center
-                                 rounded-xl bg-merek-50 text-merek-600"
+                                 rounded-kartu-kecil bg-merek-50 text-merek-600"
                     >
                       <Ikon nama="tambah" ukuran={18} tebal={2.4} />
                     </span>

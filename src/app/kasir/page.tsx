@@ -155,7 +155,7 @@ export default function Kasir() {
           </div>
 
           {M.isPositive(kembalian) && (
-            <div className="mt-3 flex items-center justify-between rounded-2xl bg-white/10 px-4 py-3">
+            <div className="mt-3 flex items-center justify-between rounded-kartu bg-white/10 px-4 py-3">
               <span className="font-semibold">Kembali</span>
               <span className="text-xl font-bold">
                 <Uang nilai={kembalian} />
@@ -163,7 +163,7 @@ export default function Kasir() {
             </div>
           )}
           {M.isPositive(kurang) && (
-            <div className="mt-3 flex items-center justify-between rounded-2xl bg-keluar/25 px-4 py-3">
+            <div className="mt-3 flex items-center justify-between rounded-kartu bg-keluar/25 px-4 py-3">
               <span className="font-semibold">Kurang</span>
               <span className="text-xl font-bold">
                 <Uang nilai={kurang} />
@@ -245,7 +245,7 @@ export default function Kasir() {
       {katalog.length === 0 ? (
         <div className="kartu text-center">
           <span
-            className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl
+            className="mx-auto flex h-14 w-14 items-center justify-center rounded-kartu
                        bg-merek-50 text-merek-600"
           >
             <Ikon nama="katalog" ukuran={26} />
@@ -349,12 +349,12 @@ export default function Kasir() {
                   </span>
                 </span>
 
-                <span className="flex shrink-0 items-center gap-0.5 rounded-2xl bg-slate-100 p-1">
+                <span className="flex shrink-0 items-center gap-0.5 rounded-kartu bg-slate-100 p-1">
                   <button
                     type="button"
                     aria-label={`Kurangi ${line.itemName}`}
                     onClick={() => setKeranjang((isi) => setQty(isi, index, line.qty - 1))}
-                    className="flex h-9 w-9 items-center justify-center rounded-xl
+                    className="flex h-9 w-9 items-center justify-center rounded-kartu-kecil
                                bg-white text-slate-700 border border-garis active:scale-95"
                   >
                     <Ikon nama="kurang" ukuran={18} tebal={2.4} />
@@ -364,7 +364,7 @@ export default function Kasir() {
                     type="button"
                     aria-label={`Tambah ${line.itemName}`}
                     onClick={() => setKeranjang((isi) => setQty(isi, index, line.qty + 1))}
-                    className="flex h-9 w-9 items-center justify-center rounded-xl
+                    className="flex h-9 w-9 items-center justify-center rounded-kartu-kecil
                                bg-white text-slate-700 border border-garis active:scale-95"
                   >
                     <Ikon nama="tambah" ukuran={18} tebal={2.4} />
@@ -383,7 +383,7 @@ export default function Kasir() {
 
           {/* Peringatan, bukan larangan. */}
           {peringatan.length > 0 && (
-            <p className="mt-4 flex gap-2 rounded-2xl bg-tunggu-soft p-3 text-sm text-tunggu">
+            <p className="mt-4 flex gap-2 rounded-kartu bg-tunggu-soft p-3 text-sm text-tunggu">
               <Ikon nama="peringatan" ukuran={18} className="mt-0.5 shrink-0" />
               <span>
                 {peringatan.map((p) => `${p.item.name} tinggal ${p.available}`).join(', ')}
@@ -410,7 +410,7 @@ export default function Kasir() {
                   justru membuat tombolnya sulit dikenali. */}
               <span
                 aria-hidden
-                className="flex h-7 min-w-7 items-center justify-center rounded-lg
+                className="flex h-7 min-w-7 items-center justify-center rounded-kartu-kecil
                            bg-white/20 px-1.5 text-base"
               >
                 {totals.itemCount}

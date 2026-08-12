@@ -127,7 +127,7 @@ function Isi() {
       {katalog.length === 0 ? (
         <div className="kartu text-center">
           <span
-            className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl
+            className="mx-auto flex h-14 w-14 items-center justify-center rounded-kartu
                        bg-merek-50 text-merek-600"
           >
             <Ikon nama="katalog" ukuran={26} />
@@ -226,7 +226,7 @@ function Isi() {
       ) : barang.length === 0 ? (
         <div className="kartu text-center">
           <span
-            className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl
+            className="mx-auto flex h-14 w-14 items-center justify-center rounded-kartu
                        bg-merek-50 text-merek-600"
           >
             <Ikon nama="stok" ukuran={26} />
@@ -245,7 +245,7 @@ function Isi() {
           {menipis.length === 0 ? (
             <div className="kartu flex items-center gap-3">
               <span
-                className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl
+                className="flex h-11 w-11 shrink-0 items-center justify-center rounded-kartu
                            bg-masuk-soft text-masuk"
               >
                 <Ikon nama="cek" ukuran={22} tebal={2.2} />
@@ -255,7 +255,7 @@ function Isi() {
           ) : (
             <div className="kartu flex items-center gap-3 bg-tunggu-soft ring-tunggu/10">
               <span
-                className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl
+                className="flex h-11 w-11 shrink-0 items-center justify-center rounded-kartu
                            bg-white/70 text-tunggu"
               >
                 <Ikon nama="peringatan" ukuran={22} />
@@ -284,7 +284,7 @@ function Isi() {
                       )}
                     </span>
                     <span
-                      className={`shrink-0 rounded-xl px-3 py-1.5 text-sm font-bold ${
+                      className={`shrink-0 rounded-kartu-kecil px-3 py-1.5 text-sm font-bold ${
                         GAYA_PIL[status] ?? GAYA_PIL.aman
                       }`}
                     >
@@ -329,7 +329,7 @@ function Isi() {
             </Link>
           </>
         ) : (
-          <Link href="/kulakan" className="btn-primer px-5">
+          <Link href="/kulakan" className="btn-primer">
             <Ikon nama="kulakan" ukuran={20} />
             Catat kulakan
           </Link>

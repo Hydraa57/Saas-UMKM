@@ -37,7 +37,7 @@ export function StatusCadangan() {
         className="kartu-tekan flex items-center gap-3 bg-tunggu-soft ring-tunggu/10"
       >
         <span
-          className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl
+          className="flex h-11 w-11 shrink-0 items-center justify-center rounded-kartu
                      bg-white/70 text-tunggu"
         >
           <Ikon nama="peringatan" ukuran={22} />
@@ -59,7 +59,7 @@ export function StatusCadangan() {
     return (
       <Link href="/masuk" className="kartu-tekan flex items-center gap-3">
         <span
-          className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl
+          className="flex h-11 w-11 shrink-0 items-center justify-center rounded-kartu
                      bg-keluar-soft text-keluar"
         >
           <Ikon nama="silang" ukuran={22} tebal={2.2} />
@@ -82,7 +82,7 @@ export function StatusCadangan() {
     return (
       <p className="kartu flex items-center gap-3 text-slate-600">
         <span
-          className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl
+          className="flex h-11 w-11 shrink-0 items-center justify-center rounded-kartu
                      bg-slate-100 text-slate-500"
         >
           <Ikon nama="riwayat" ukuran={22} />

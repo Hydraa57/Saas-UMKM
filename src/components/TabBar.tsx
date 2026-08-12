@@ -54,7 +54,7 @@ function Tombol({ tujuan, pathname }: { tujuan: Tujuan; pathname: string }) {
       href={tujuan.href}
       aria-current={sedang ? 'page' : undefined}
       className={`flex min-h-[3.25rem] flex-1 flex-col items-center justify-center gap-1
-                  rounded-2xl text-xs font-semibold transition ${
+                  rounded-kartu text-xs font-semibold transition ${
                     sedang ? 'text-merek-600' : 'text-slate-400'
                   }`}
     >
@@ -97,7 +97,7 @@ export function TabBar() {
           className="-mt-7 flex w-[4.5rem] shrink-0 flex-col items-center gap-1"
         >
           <span
-            className="flex h-14 w-14 items-center justify-center rounded-[1.15rem]
+            className="flex h-14 w-14 items-center justify-center rounded-kartu
                        bg-merek-600 text-white transition
                        active:scale-95 active:bg-merek-700"
           >

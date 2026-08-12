@@ -216,7 +216,7 @@ function Isi() {
               {satuan}. Berubah lewat penjualan, kulakan, dan koreksi.
             </p>
           ) : (
-            <label className="block rounded-2xl bg-slate-50 px-4 py-3">
+            <label className="kolom-kotak">
               <span className="label">Stok sekarang</span>
               <input
                 type="number"
@@ -228,7 +228,7 @@ function Isi() {
               />
             </label>
           )}
-          <label className="block rounded-2xl bg-slate-50 px-4 py-3">
+          <label className="kolom-kotak">
             <span className="label">Ingatkan kalau tinggal (boleh kosong)</span>
             <input
               type="number"
@@ -239,7 +239,7 @@ function Isi() {
               className="kolom mt-1 font-semibold"
             />
           </label>
-          <label className="block rounded-2xl bg-slate-50 px-4 py-3">
+          <label className="kolom-kotak">
             <span className="label">Satuan</span>
             <input
               type="text"
@@ -254,7 +254,7 @@ function Isi() {
 
       <Lipatan judul="Harga modal & foto (boleh dilewati)" ikon="foto">
         <div className="flex flex-col gap-3">
-          <label className="block rounded-2xl bg-slate-50 px-4 py-3">
+          <label className="kolom-kotak">
             <span className="label">Harga modal</span>
             <input
               type="text"
@@ -266,7 +266,7 @@ function Isi() {
             />
           </label>
 
-          <div className="rounded-kartu bg-slate-50 px-4 py-3">
+          <div className="kolom-kotak">
             <span className="label mb-2 block">Foto</span>
             <PilihFoto
               pratinjau={pratinjau}

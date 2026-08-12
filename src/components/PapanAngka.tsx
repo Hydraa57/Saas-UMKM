@@ -53,15 +53,26 @@ export function PapanAngka({ nilai, onChange, pintasan = [] }: PapanAngkaProps) 
 
   return (
     <div className="space-y-3">
+      {/* Petak, bukan baris yang membungkus sendiri.
+          Sebelumnya `flex flex-wrap`, jadi lebar tiap pintasan mengikuti
+          panjang angkanya: "Rp 10.000" lebih sempit daripada
+          "Rp 100.000", dan barisnya berhenti di tempat yang berbeda-beda
+          — tepat di atas papan angka yang justru petak sempurna tiga
+          kolom. Dua susunan berbeda yang bertumpuk itulah yang terbaca
+          sebagai "ukurannya tidak simetris".
+
+          Dua kolom, bukan tiga: nominalnya panjang, dan tiga kolom
+          membuat "Rp 100.000" pecah jadi dua baris di layar tersempit. */}
       {pintasan.length > 0 && (
-        <div className="flex flex-wrap gap-2">
+        <div className="grid grid-cols-2 gap-2">
           {pintasan.map((jumlah) => (
             <button
               key={jumlah}
               type="button"
               onClick={() => onChange(M.rupiah(jumlah))}
-              className="min-h-touch rounded-xl bg-slate-200 px-5 font-semibold
-                         text-slate-800 active:bg-slate-300"
+              className="flex min-h-touch items-center justify-center rounded-kartu-kecil
+                         bg-slate-200 px-2 font-semibold text-slate-800
+                         transition active:scale-95 active:bg-slate-300"
             >
               {M.format(M.rupiah(jumlah))}
             </button>

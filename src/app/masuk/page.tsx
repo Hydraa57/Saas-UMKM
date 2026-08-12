@@ -85,7 +85,7 @@ export default function Masuk() {
 
         <div className="kartu-gelap animate-naik">
           <span
-            className="flex h-14 w-14 items-center justify-center rounded-2xl
+            className="flex h-14 w-14 items-center justify-center rounded-kartu
                        bg-masuk/30 text-emerald-300"
           >
             <Ikon nama="cek" ukuran={28} tebal={2.4} />
@@ -137,7 +137,7 @@ export default function Masuk() {
 
       <div className="kartu animate-naik">
         <span
-          className="flex h-12 w-12 items-center justify-center rounded-2xl
+          className="flex h-12 w-12 items-center justify-center rounded-kartu
                      bg-tunggu-soft text-tunggu"
         >
           <Ikon nama="peringatan" ukuran={24} />

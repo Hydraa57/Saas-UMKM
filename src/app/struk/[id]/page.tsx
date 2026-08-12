@@ -140,7 +140,7 @@ export default function LayarStruk({
 
       <div className="kartu-gelap animate-naik text-center">
         <span
-          className={`mx-auto flex h-14 w-14 items-center justify-center rounded-2xl ${
+          className={`mx-auto flex h-14 w-14 items-center justify-center rounded-kartu ${
             dibatalkan ? 'bg-white/10 text-slate-300' : 'bg-masuk/30 text-emerald-300'
           }`}
         >
@@ -153,7 +153,7 @@ export default function LayarStruk({
           <Uang nilai={ringkas.total} />
         </p>
         {!dibatalkan && M.isPositive(ringkas.change) && (
-          <p className="mt-4 flex items-center justify-between rounded-2xl bg-white/10 px-4 py-3 text-left">
+          <p className="mt-4 flex items-center justify-between rounded-kartu bg-white/10 px-4 py-3 text-left">
             <span className="font-semibold">Kembali</span>
             <span className="text-xl font-bold">
               <Uang nilai={ringkas.change} />
@@ -161,7 +161,7 @@ export default function LayarStruk({
           </p>
         )}
         {!dibatalkan && M.isPositive(ringkas.outstanding) && (
-          <p className="mt-4 flex items-center justify-between rounded-2xl bg-keluar/25 px-4 py-3 text-left">
+          <p className="mt-4 flex items-center justify-between rounded-kartu bg-keluar/25 px-4 py-3 text-left">
             <span className="font-semibold">Kurang</span>
             <span className="text-xl font-bold">
               <Uang nilai={ringkas.outstanding} />

@@ -23,9 +23,9 @@ Dan pembanding yang paling dekat: **bot WhatsApp yang sudah pernah dicoba dan di
 
 **Sasarannya usaha mikro yang melayani pembeli langsung**, satu orang merangkap pemilik dan kasir, sering menjual barang dan jasa sekaligus.
 
-**Pengguna nomor satu, yang membuktikan: Ibu.** Satu orang nyata, HP Android, yang menjual snack sekaligus menerima jahitan, dan sudah mencatat rapi di buku tulis selama bertahun-tahun. Kosakata aplikasinya umum; pembuktiannya lewat dia.
+Buktinya dimulai dari satu usaha nyata: ibu saya — HP Android, menjual snack sekaligus menerima jahitan, sudah mencatat rapi di buku tulis selama bertahun-tahun. Dia bukan batas sasarannya melainkan **alat ukurnya**: fitur yang tidak lolos di usaha yang bisa diamati tiap hari tidak akan lolos di usaha yang tidak bisa diamati sama sekali. Aturannya satu — kalau alasan sebuah keputusan cuma berlaku untuk dia, alasan itu belum selesai.
 
-Yang penting dari profilnya, dan semuanya terbaca dari bukunya:
+Yang penting dari profilnya justru karena **tidak istimewa**; tiap butir di bawah ini berlaku untuk sebagian besar usaha mikro, dan semuanya terbaca dari bukunya:
 
 - **Sudah disiplin mencatat.** Delapan belas bulan rekap bulanan berturut-turut. Masalahnya media, bukan kebiasaan.
 - **Sudah pernah mencoba aplikasi dan berhenti.** Itu bukti kesediaannya, sekaligus daftar hal yang tidak boleh diulang.
@@ -101,7 +101,7 @@ Tiga hal yang mengalir dari sini:
 | Varian, satuan bertingkat, diskon per item | Beban input di depan pembeli, untuk kasus yang belum terbukti ada |
 | Barcode scanner | Menyusul; grid foto lebih cepat untuk katalog puluhan item |
 | Logo usaha di struk | Printer termal mencetaknya sebagai bitmap, dan bitmap adalah satu-satunya bagian struk yang tidak bisa dibagikan sebagai teks — ia akan membuat yang dicetak berbeda dari yang dikirim |
-| Multi-cabang, RBAC | Satu orang yang melayani |
+| Multi-cabang, RBAC | Di usaha mikro pemiliknya adalah kasirnya. Ditinjau ulang kalau ada yang kasirnya dijaga pegawai |
 | WhatsApp Business API | Berbayar per pesan, perlu verifikasi Meta. Tautan `wa.me` sudah cukup untuk mengirim struk |
 | Redis, BullMQ, WebSocket | Tidak dibutuhkan untuk skala ini |
 
@@ -227,6 +227,25 @@ Keluhan berikutnya tidak menyebut satu layar pun: *"UI nya msh ga smooth, msh bn
 
 **Foto hanya bisa dari kamera.** Masukan berkasnya memakai `capture="environment"`, yang dibaca seperti "utamakan kamera" padahal artinya **paksa kamera**: di Android pemilih galerinya tidak ditawarkan sama sekali. Foto barang yang sudah ada di HP — kiriman pemasok lewat WhatsApp, atau yang difoto kemarin malam — tidak bisa dipakai, dan tiap barang harus difoto ulang saat itu juga. Untuk katalog lima puluh barang, itu pekerjaan yang membuat orang berhenti di barang kelima. Sekarang ada dua masukan tersembunyi dengan tombolnya masing-masing, dan **ikonnya sengaja berbeda**: dua tombol bergambar kamera hanya bisa dibedakan lewat tulisannya, persis pembedaan yang gagal saat dilihat sekilas sambil melayani pembeli.
 
+### 5.1j Ukuran: turun, lalu jadi pilihan
+
+Keluhan ketiga menyusul segera: *"layout dan fontnya kayak ga simetris ukurannya, dan terlalu besar."* Dua hal, dan keduanya punya sebab yang sama — **keputusan yang dibuat untuk satu orang lalu terbawa ke semua layar.**
+
+**Terlalu besar.** Seluruh skala dinaikkan satu tingkat (base 17px, angka uang 40px dan 52px, target sentuh 56px) atas nama mata yang tidak lagi sempurna. Di layar selebar 390px hasilnya bekerja melawan tujuannya sendiri: makin sedikit yang muat, makin sering digulir, dan makin sulit melihat satu hari penjualan sebagai satu gambaran. Huruf besar membantu membaca **satu baris**; ia menghambat membaca **satu daftar**. Sekarang base 16px, angka uang 32px/40px, target sentuh 48px — ambang yang dipakai pedoman sentuh Android maupun WCAG 2.2.
+
+**Dan yang butuh besar tetap dapat besar — tapi dengan memilihnya sendiri.** Pengaturan → Ukuran huruf, dua pilihan. Karena seluruh skala ditulis dalam `rem`, satu angka di akar menggeser huruf, tombol, dan jarak **secara sepadan**; huruf yang membesar sendiri di dalam tombol yang tidak ikut membesar akan tertabrak tepinya dan justru lebih sulit dibaca. Pilihannya disimpan per perangkat, bukan per usaha: HP anak yang ikut menjaga kasir tidak seharusnya berubah karena pemiliknya memperbesar huruf di HP-nya sendiri.
+
+**Tidak simetris.** Ini bukan perasaan, dan angkanya bisa dihitung dengan `grep`:
+
+| Yang diklaim | Yang sebenarnya dipakai |
+|---|---|
+| Radius: "dua nilai saja" | **Enam** — `rounded-2xl` (16px, 49×), `rounded-kartu` (18px, 13×), `rounded-xl` (12px, 11×), `rounded-lg`, `[1.15rem]`, `[1.3rem]` |
+| Kartu: satu jarak dalam | **Empat** — `p-5` di `.kartu`, tapi 30× `p-4`, 7× `p-3`, 3× `p-6` ditulis langsung |
+
+Pasangan 16px dan 18px yang berdampingan itu yang paling merusak: bedanya terlalu kecil untuk terbaca sebagai pilihan, dan cukup besar untuk terbaca sebagai kelalaian. Begitu juga empat jarak dalam yang berbeda — tepi kiri isi kartu tidak pernah lurus dari satu kartu ke kartu di bawahnya, dan garis vertikal yang goyang beberapa piksel persis yang terbaca "tidak simetris" tanpa bisa ditunjuk bagian mananya.
+
+Aturannya sekarang satu kalimat yang bisa diperiksa: **kotak di dalam kotak memakai radius yang lebih kecil.** Tiga tingkat, dan pemakaiannya ditentukan kedalaman, bukan selera per komponen.
+
 ### 5.2 Aturan timbal balik
 
 > **Setiap kali pengguna memasukkan sesuatu, dia harus langsung menerima sesuatu.**
@@ -309,7 +328,7 @@ Lihat rekap
 | # | Kriteria | Cara ukur |
 |---|---|---|
 | 1 | Dari buka aplikasi sampai struk keluar < 20 detik (3 item) | Stopwatch, 10 percobaan, ambil median |
-| 2 | Ibu menyelesaikan satu transaksi tanpa dibantu | Amati, jangan dibantu, catat di mana macet |
+| 2 | Pengguna pertama menyelesaikan satu transaksi tanpa dibantu | Amati, jangan dibantu, catat di mana macet |
 | 3 | Stok aplikasi cocok dengan hitung fisik | Hitung fisik akhir minggu, 4 minggu berturut |
 | 4 | Uang di tangan cocok dengan isi laci | Hitung fisik akhir hari, 7 hari berturut |
 | 5 | Jalan penuh tanpa internet | Mode pesawat, 5 transaksi, nyalakan, pastikan tersinkron sekali |

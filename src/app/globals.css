@@ -9,6 +9,24 @@
     -webkit-tap-highlight-color: transparent;
   }
 
+  /**
+   * Ukuran huruf seluruh aplikasi, dari satu angka.
+   *
+   * Seluruh skala huruf dan seluruh target sentuh ditulis dalam `rem`,
+   * jadi mengubah ukuran akar di sini mengubah semuanya **secara
+   * sepadan** — huruf ikut besar, tombol ikut besar, jarak antar kartu
+   * ikut besar. Itu bedanya dengan sekadar memperbesar hurufnya:
+   * huruf yang membesar sendiri di dalam kotak yang tidak ikut membesar
+   * akan tertabrak tepinya, dan justru jadi lebih sulit dibaca.
+   *
+   * Bawaannya "normal". Yang matanya butuh lebih besar memilihnya
+   * sendiri sekali di Pengaturan — bukan dipaksakan ke semua orang atas
+   * nama sebagian orang.
+   */
+  html[data-huruf='besar'] {
+    font-size: 112.5%; /* 18px */
+  }
+
   body {
     @apply bg-latar text-slate-900 antialiased;
     /* Aplikasi dipakai satu tangan sambil berdiri; tarik-untuk-muat-ulang
@@ -47,8 +65,30 @@
   /* Kartu dipisahkan dari latarnya oleh beda warna saja — tanpa
      bayangan dan tanpa garis. Alasannya di tailwind.config.ts pada
      token `latar`. */
+  /**
+   * Jarak dalam semua kartu **sama**: 1rem.
+   *
+   * Sebelumnya tidak: `.kartu` memakai 20px sementara tiga puluh tempat
+   * lain menulis `p-4` (16px) langsung, tujuh menulis `p-3`, dan tiga
+   * menulis `p-6`. Empat jarak berbeda untuk benda yang sama membuat
+   * tepi kiri isi kartu tidak pernah lurus dari satu kartu ke kartu di
+   * bawahnya — dan garis vertikal yang goyang beberapa piksel persis
+   * yang terbaca sebagai "tidak simetris".
+   */
   .kartu {
-    @apply rounded-kartu bg-white p-5;
+    @apply rounded-kartu bg-white p-4;
+  }
+
+  /**
+   * Kotak isian di **dalam** kartu.
+   *
+   * Sebelumnya ditulis ulang sebagai `rounded-2xl bg-slate-50 px-4 py-3`
+   * di sepuluh tempat, dan tiap kali ada satu yang tertinggal saat
+   * angkanya diubah. Radiusnya lebih kecil dari kartu induknya — itu
+   * aturan radius bertingkat di tailwind.config.ts.
+   */
+  .kolom-kotak {
+    @apply block rounded-kartu-kecil bg-slate-50 px-3.5 py-2.5;
   }
 
   /* Kartu yang bisa ditekan. Umpan baliknya menyusut sedikit, bukan
@@ -63,14 +103,14 @@
      sebagai kotoran di layar HP murah, dan membuat satu-satunya
      permukaan gelap di aplikasi ini terasa tidak sengaja. */
   .kartu-gelap {
-    @apply rounded-kartu-lg bg-gelap p-6 text-white;
+    @apply rounded-kartu-lg bg-gelap p-5 text-white;
   }
 
   /* ── Tombol ─────────────────────────────────────────────────────── */
 
   .btn {
     @apply flex min-h-touch items-center justify-center gap-2 rounded-kartu
-           px-5 text-lg font-semibold transition
+           px-4 text-base font-semibold transition
            active:scale-[0.98] disabled:pointer-events-none;
   }
 
@@ -90,20 +130,24 @@
   }
 
   /* Tombol aksi besar di beranda dan di akhir alur. Besar dengan
-     sengaja: salah tekan lebih mahal daripada ruang layar yang terpakai. */
+     sengaja: salah tekan lebih mahal daripada ruang layar yang terpakai.
+     Yang dinaikkan cuma **tingginya**; hurufnya tetap satu tingkat di
+     atas teks biasa. Tombol setinggi 56px dengan huruf 22px terlihat
+     seperti tombol yang kehabisan tempat. */
   .btn-besar {
-    @apply btn min-h-touch-lg w-full rounded-kartu-lg px-6 text-xl;
+    @apply btn min-h-touch-lg w-full rounded-kartu-lg px-5 text-lg;
   }
 
   .btn-angka {
     @apply flex min-h-touch items-center justify-center rounded-kartu
-           bg-white text-2xl font-semibold text-slate-900
+           bg-white text-xl font-semibold text-slate-900
            transition active:scale-95 active:bg-slate-100;
   }
 
-  /* Tombol ikon persegi di kepala halaman. */
+  /* Tombol ikon persegi di kepala halaman. Persegi betulan, dan sisinya
+     sama dengan target sentuh — bukan angka tersendiri. */
   .btn-ikon {
-    @apply flex h-12 w-12 shrink-0 items-center justify-center rounded-kartu
+    @apply flex h-touch w-touch shrink-0 items-center justify-center rounded-kartu
            bg-white text-slate-700
            transition active:scale-95 active:bg-slate-100;
   }
@@ -120,8 +164,8 @@
   }
 
   .tab {
-    @apply flex min-h-[2.75rem] flex-1 items-center justify-center
-           rounded-[0.8rem] text-base font-semibold text-slate-600 transition;
+    @apply flex min-h-[2.5rem] flex-1 items-center justify-center
+           rounded-kartu-kecil text-base font-semibold text-slate-600 transition;
   }
 
   .tab-aktif {
@@ -130,7 +174,7 @@
 
   .chip {
     @apply flex min-h-touch items-center justify-center rounded-kartu
-           bg-white px-5 font-semibold text-slate-700
+           bg-white px-4 font-semibold text-slate-700
            transition active:scale-95;
   }
 
@@ -141,7 +185,7 @@
   /* ── Isian ──────────────────────────────────────────────────────── */
 
   .kolom {
-    @apply w-full bg-transparent text-lg text-slate-900 outline-none
+    @apply w-full bg-transparent text-base text-slate-900 outline-none
            placeholder:text-slate-400;
   }
 

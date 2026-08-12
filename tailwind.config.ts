@@ -18,23 +18,55 @@ export default {
   theme: {
     extend: {
       spacing: {
-        // Target sentuh minimum. Jari, bukan kursor — dan jari yang
-        // sedang buru-buru.
-        touch: '3.5rem', // 56px
-        'touch-lg': '5rem', // 80px
+        /**
+         * Target sentuh minimum. Jari, bukan kursor — dan jari yang
+         * sedang buru-buru.
+         *
+         * 48px, bukan 56px seperti sebelumnya. Angka 56 dipilih waktu
+         * aplikasi ini masih dianggap cuma untuk satu orang yang matanya
+         * tidak lagi sempurna, dan akibatnya terbawa ke mana-mana: enam
+         * tombol saja sudah menghabiskan satu layar penuh, dan daftar
+         * yang isinya cuma empat baris terlihat seperti daftar kosong
+         * yang dijarangkan. 48px adalah ambang yang dipakai pedoman
+         * sentuh Android maupun WCAG 2.2 — cukup untuk jari, tanpa
+         * membuat tiap layar cuma memuat separuh isinya.
+         *
+         * Yang benar-benar butuh lebih besar tidak dinaikkan lewat token
+         * ini melainkan disebut satu per satu (`btn-besar`), supaya
+         * "besar" tetap berarti sesuatu.
+         */
+        touch: '3rem', // 48px
+        'touch-lg': '3.5rem', // 56px
         // Tinggi bilah navigasi bawah + ruang aman iPhone.
-        bilah: '4.75rem',
+        bilah: '4.25rem',
       },
+      /**
+       * Skala huruf.
+       *
+       * Diturunkan dari versi sebelumnya, yang naik satu tingkat di
+       * seluruh skala (base 17px, angka uang 40px) atas nama
+       * keterbacaan. Di layar selebar 390px hasilnya justru bekerja
+       * melawan keterbacaan: makin sedikit yang muat, makin sering
+       * digulir, dan makin sulit melihat satu hari penjualan sebagai
+       * satu gambaran utuh. Huruf besar membantu membaca **satu baris**;
+       * ia menghambat membaca **satu daftar**.
+       *
+       * Yang matanya butuh lebih besar tetap terlayani, tapi lewat
+       * pilihan yang mereka tekan sendiri sekali di awal (Pengaturan →
+       * Ukuran huruf), bukan lewat memaksakan ukuran itu ke semua orang.
+       * Karena itu semua ukuran di sini ditulis dalam `rem`: mengubah
+       * satu angka di akar mengubah seluruh aplikasi secara sepadan.
+       */
       fontSize: {
-        // Ukuran dasar dinaikkan dari 16px.
-        base: ['1.0625rem', { lineHeight: '1.6' }],
-        lg: ['1.1875rem', { lineHeight: '1.5' }],
-        xl: ['1.375rem', { lineHeight: '1.35', letterSpacing: '-0.01em' }],
-        '2xl': ['1.75rem', { lineHeight: '1.25', letterSpacing: '-0.02em' }],
+        base: ['1rem', { lineHeight: '1.55' }],
+        lg: ['1.125rem', { lineHeight: '1.5' }],
+        xl: ['1.25rem', { lineHeight: '1.35', letterSpacing: '-0.01em' }],
+        '2xl': ['1.5rem', { lineHeight: '1.25', letterSpacing: '-0.02em' }],
+        '3xl': ['1.875rem', { lineHeight: '1.2', letterSpacing: '-0.02em' }],
         // Angka uang: harus terbaca dari jarak sekilas. Huruf dirapatkan
         // karena angka besar yang renggang terlihat seperti dua angka.
-        money: ['2.5rem', { lineHeight: '1.05', fontWeight: '700', letterSpacing: '-0.03em' }],
-        'money-lg': ['3.25rem', { lineHeight: '1', fontWeight: '700', letterSpacing: '-0.035em' }],
+        money: ['2rem', { lineHeight: '1.1', fontWeight: '700', letterSpacing: '-0.025em' }],
+        'money-lg': ['2.5rem', { lineHeight: '1.05', fontWeight: '700', letterSpacing: '-0.03em' }],
       },
       colors: {
         /**
@@ -107,13 +139,33 @@ export default {
         garis: { DEFAULT: '#dce2ed', kuat: '#c3cbdb' },
         gelap: '#111726',
       },
+      /**
+       * Tiga nilai, dan pemakaiannya ditentukan **kedalaman**, bukan
+       * selera per komponen.
+       *
+       * Versi sebelumnya mengaku "dua nilai saja" dan ternyata tidak:
+       * dihitung dengan grep, ada enam yang dipakai berdampingan —
+       * `rounded-2xl` (16px, 49 kali), `rounded-kartu` (18px, 13 kali),
+       * `rounded-xl` (12px), `rounded-lg`, dan dua nilai karangan
+       * `[1.15rem]` serta `[1.3rem]`. Yang paling merusak justru pasangan
+       * 16px dan 18px: bedanya terlalu kecil untuk terbaca sebagai
+       * pilihan, dan cukup besar untuk terbaca sebagai kelalaian. Itulah
+       * yang membuat satu layar terlihat "tidak simetris" tanpa bisa
+       * ditunjuk bagian mananya.
+       *
+       * Aturannya sekarang satu kalimat: **kotak di dalam kotak memakai
+       * radius yang lebih kecil.** Radius dalam yang sama besar dengan
+       * radius luar membuat celah di keempat sudutnya menyempit, dan
+       * mata membaca penyempitan itu sebagai kotak yang miring.
+       *
+       *   dalam  (kolom isian di dalam kartu)  →  kartu-kecil
+       *   kartu  (kartu, tombol, baris daftar) →  kartu
+       *   luar   (kartu utama, tombol besar)   →  kartu-lg
+       */
       borderRadius: {
-        // Dua nilai saja. Sebelumnya tiap komponen memilih sendiri
-        // antara `rounded-2xl`, `rounded-kartu`, dan `rounded-kartu-lg`,
-        // dan tepian yang tidak sepadan di satu layar terbaca sebagai
-        // rakitan potongan — bukan sebagai satu produk.
-        kartu: '1.125rem',
-        'kartu-lg': '1.5rem',
+        'kartu-kecil': '0.625rem', // 10px
+        kartu: '1rem', // 16px
+        'kartu-lg': '1.375rem', // 22px
       },
       boxShadow: {
         /**
