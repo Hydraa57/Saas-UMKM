@@ -6,6 +6,7 @@ import { Ikon } from '@/components/Ikon'
 import { daftar, keluar, masuk, useSesi } from '@/lib/auth'
 import { isConfigured } from '@/lib/supabase/client'
 import { useSync } from '@/lib/sync/useSync'
+import { pesanGalat } from '@/lib/galat'
 
 /**
  * Masuk atau daftar.
@@ -55,7 +56,7 @@ export default function Masuk() {
       }
       setSandi('')
     } catch (e) {
-      setGalat(e instanceof Error ? e.message : 'Gagal. Coba lagi.')
+      setGalat(pesanGalat(e))
     } finally {
       setSibuk(false)
     }

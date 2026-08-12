@@ -40,7 +40,12 @@ const page = await browser.newPage({
 const BERKAS_EKSPOR = join(mkdtempSync(join(tmpdir(), 'ezura-')), 'ekspor.xlsx')
 const errs = []
 page.on('pageerror', (e) => errs.push(String(e)))
-page.on('response', (r) => { if (r.status() === 404) errs.push('404 ' + r.url()) })
+// Satu alamat sengaja dikecualikan: uji "halaman yang tidak ada" memang
+// harus meminta halaman yang tidak ada, dan 404-nya justru yang benar.
+const PROBE_404 = '/halaman-yang-tidak-pernah-ada'
+page.on('response', (r) => {
+  if (r.status() === 404 && !r.url().includes(PROBE_404)) errs.push('404 ' + r.url())
+})
 
 const step = async (label, fn) => {
   try { await fn(); console.log('  ok  ' + label) }
@@ -864,6 +869,106 @@ await step('ukuran huruf besar membesarkan tombolnya juga, bukan cuma hurufnya',
   await pilih('Normal')
   if ((await tinggiBilah()) !== sebelum) {
     throw new Error('kembali ke Normal tidak mengembalikan ukurannya')
+  }
+})
+
+await step('catatan yang ditolak bisa dilihat dan diurus, bukan cuma dihitung', async () => {
+  // Antreannya diisi langsung dengan satu baris `failed`, karena tidak
+  // ada cara membuat peladen menolak sesuatu dari sini — peladennya
+  // memang tidak terjangkau. Yang diuji bukan bagaimana ia jadi tertolak,
+  // melainkan **apa yang bisa dilakukan pemiliknya sesudah itu.**
+  await page.evaluate(
+    () =>
+      new Promise((selesai, gagal) => {
+        const minta = indexedDB.open('ezura')
+        minta.onsuccess = () => {
+          const tx = minta.result.transaction('outbox', 'readwrite')
+          tx.objectStore('outbox').put({
+            id: 'uji-tertolak',
+            tenant_id: 'x',
+            rpc: 'record_sale',
+            args: { p_paid: 45000, p_customer_name: 'Bu Sri', p_items: [{}, {}] },
+            created_at: new Date().toISOString(),
+            attempts: 9,
+            next_attempt_at: new Date().toISOString(),
+            status: 'failed',
+            last_error: 'duplicate key value violates unique constraint',
+          })
+          tx.oncomplete = () => selesai(undefined)
+          tx.onerror = () => gagal(tx.error)
+        }
+        minta.onerror = () => gagal(minta.error)
+      }),
+  )
+
+  // Dimasuki lewat Pengaturan, bukan lewat peringatan di beranda.
+  // Peringatan beranda cuma muncul kalau sudah pernah masuk akun, dan
+  // dari sini peladennya tidak terjangkau — jadi yang bisa diuji di
+  // peramban adalah pintu kedua. Pintu itu justru yang lebih penting
+  // diperiksa: ia ada karena peringatan beranda kalah urutan dengan
+  // peringatan "belum dicadangkan", dan tanpanya catatan tertolak tidak
+  // bisa diurus sama sekali dalam keadaan itu.
+  await page.goto(BASE + '/pengaturan')
+  await page.waitForTimeout(900)
+
+  const pengaturan = (await page.locator('main').innerText()).replace(/\n+/g, ' | ')
+  if (!pengaturan.includes('Catatan yang ditolak')) {
+    throw new Error('pengaturan tidak menyebut catatan tertolak: ' + pengaturan)
+  }
+
+  await page.getByRole('link', { name: /Catatan yang ditolak/ }).click()
+  await page.waitForURL('**/tertolak', { timeout: 15000 })
+  await page.waitForTimeout(700)
+
+  const layar = (await page.locator('main').innerText()).replace(/\n+/g, ' | ')
+
+  // Catatannya harus bisa dikenali: nominal dan nama pembelinya, bukan
+  // tulisan `record_sale`.
+  if (!layar.includes('Rp 45.000') || !layar.includes('Bu Sri')) {
+    throw new Error('catatannya tidak bisa dikenali: ' + layar)
+  }
+  if (layar.includes('record_sale')) {
+    throw new Error('nama RPC bocor ke layar: ' + layar)
+  }
+  // Sebab penolakannya diterjemahkan, bukan ditampilkan mentah.
+  if (/duplicate key|constraint/i.test(layar)) {
+    throw new Error('pesan Postgres bocor mentah ke layar: ' + layar)
+  }
+  // Dan yang paling menentukan: pemiliknya harus tahu catatannya tidak hilang.
+  if (!layar.includes('tetap ada di HP ini')) {
+    throw new Error('layar tidak menjamin catatannya aman: ' + layar)
+  }
+
+  await page.getByRole('button', { name: 'Buang', exact: true }).click()
+  await page.waitForTimeout(400)
+  await page.getByRole('button', { name: /Ya, berhenti mengirim/ }).click()
+  await page.waitForTimeout(700)
+
+  const sesudah = (await page.locator('main').innerText()).replace(/\n+/g, ' | ')
+  if (!sesudah.includes('Tidak ada yang tertolak')) {
+    throw new Error('yang dibuang tidak hilang dari daftar: ' + sesudah)
+  }
+
+  // Barisnya juga harus hilang dari pengaturan. Peringatan yang menetap
+  // sesudah dituntaskan adalah peringatan yang berhenti dipercaya.
+  await page.goto(BASE + '/pengaturan')
+  await page.waitForTimeout(900)
+  const pengaturanAkhir = (await page.locator('main').innerText()).replace(/\n+/g, ' | ')
+  if (pengaturanAkhir.includes('Catatan yang ditolak')) {
+    throw new Error('peringatan masih ada padahal sudah diurus: ' + pengaturanAkhir)
+  }
+})
+
+await step('halaman yang tidak ada tidak menampilkan 404 mentah', async () => {
+  await page.goto(BASE + '/halaman-yang-tidak-pernah-ada')
+  await page.waitForTimeout(700)
+
+  const layar = (await page.locator('body').innerText()).replace(/\n+/g, ' | ')
+  if (/404|not found/i.test(layar)) {
+    throw new Error('layar 404 bawaan masih tergambar: ' + layar)
+  }
+  if (!layar.includes('Buka kasir')) {
+    throw new Error('tidak ada jalan keluar dari halaman yang tidak ada: ' + layar)
   }
 })
 

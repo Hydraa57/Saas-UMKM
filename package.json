@@ -15,7 +15,8 @@
     "db:reset": "supabase db reset",
     "db:types": "supabase gen types typescript --local > src/lib/supabase/database.types.ts",
     "smoke": "node scripts/smoke.mjs",
-    "shots": "node scripts/shots.mjs"
+    "shots": "node scripts/shots.mjs",
+    "uji:galat": "node scripts/galat.mjs"
   },
   "dependencies": {
     "@supabase/ssr": "^0.7.0",

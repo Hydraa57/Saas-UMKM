@@ -84,6 +84,8 @@ Alur pokoknya sudah jalan dari ujung ke ujung: pengaturan awal → isi katalog �
 | Unggah foto ke Storage (termasuk jalur gagalnya) | 10 |
 | Antrean kirim luring + penggolongan kegagalan | 30 |
 | Tarik dua arah: watermark, gagal di tengah, aturan bentrok | 13 |
+| Pesan galat yang bisa ditindaklanjuti | 14 |
+| Menyebut isi antrean dengan kata pemiliknya | 8 |
 | Aksi tulis (tulis lokal + antre, tanpa menunggu jaringan) | 40 |
 | Skema, RLS, jalur tulis (PostgreSQL sungguhan) | 92 penegasan |
 
@@ -135,6 +137,14 @@ Dua keputusan kecil yang menentukan benar-tidaknya, dan keduanya punya kontrol n
 Yang bentrok ternyata hampir tidak ada, dan itu bukan keberuntungan: antreannya mengangkut **maksud**, bukan baris. Yang dikirim `record_sale`, bukan "tulis nilai stok jadi 8" — jadi dua HP yang menjual barang yang sama menghasilkan dua penjualan berbeda dan peladen yang menjumlahkan akibatnya. Sisanya tiga aturan: rollup selalu milik peladen, yang diketik manusia dipilih dari `updated_at`, dan tidak ada yang dihapus keras sehingga tarikan tidak pernah perlu menghapus. Rincian di [`docs/04-arsitektur.md`](docs/04-arsitektur.md) §2.
 
 Satu aturan menahan tarikan: **ia tidak berjalan selama antrean kirim masih berisi.** Kalau dilanggar, baris yang perubahannya masih di antrean akan ditimpa keadaan lama dari peladen — suntingan terlihat kembali seperti semula, lalu berubah lagi beberapa detik kemudian.
+
+**Kalau ada yang rusak, aplikasinya tidak lagi menakuti.** Tiga lubang, dan ketiganya cuma terlihat kalau dicari:
+
+- **Tidak ada satu pun error boundary.** Layar yang gagal digambar menampilkan layar bawaan Next.js: *"Application error: a client-side exception has occurred"*, latar putih, tanpa satu pun tombol. Sekarang yang muncul jaminan lebih dulu — *"Catatannya aman"* — lalu tombol buka-lagi, lalu **sekoci**: unduh semua ke Excel, langsung dari layar galat itu. Sekocinya ada di sana justru karena layar laporan mungkin yang sedang rusak. Bilah navigasi sengaja tetap hidup, jadi satu layar rusak tidak menghentikan jualan hari itu.
+- **Peringatan "N catatan ditolak" mengantar ke jalan buntu** — ia menuju layar cadangan, yang tidak menyebut catatan tertolak sama sekali. `retryFailed` dan `discardFailed` sudah ada di kode sejak lama dan **tidak pernah dipanggil dari layar mana pun.** Sekarang ada layarnya: tiap catatan disebut dengan hal yang menandainya di ingatan ("Penjualan · dibayar Rp 45.000 — 2 baris · atas nama Bu Sri"), bukan dengan tulisan `record_sale`. Dan dinyatakan terang-terangan bahwa **membuang berarti berhenti mengirim, bukan menghapus** — kalau tidak, tombol itu tidak akan pernah ditekan siapa pun, dan peringatannya menetap sampai berhenti dilihat.
+- **Pesan Postgres bocor mentah ke layar.** *"duplicate key value violates unique constraint"* sekarang jadi *"Catatan ini sudah pernah tersimpan sebelumnya, jadi tidak ditulis dua kali"* — dan itu bukan sekadar terjemahan: yang aslinya terbaca sebagai kegagalan sebenarnya kabar baik, dan menampilkannya sebagai galat membuat pemiliknya mencatat ulang penjualan yang sudah tercatat.
+
+Layar galat adalah satu-satunya bagian aplikasi yang tidak pernah terlihat selama semuanya berjalan benar — jadi ia bisa rusak berbulan-bulan tanpa gejala, dan yang menemukannya pertama kali adalah pemilik warung yang aplikasinya baru saja mati di depan pembeli. Karena itu ada `npm run uji:galat`: ia **benar-benar merusak satu halaman**, membangun ulang, lalu memeriksa layar galatnya muncul, pesan aslinya tidak bocor, dan sekocinya menghasilkan `.xlsx` yang benar-benar bisa dibuka pustaka di luar repo ini.
 
 Dua hal yang baru jadi masalah **karena** sasarannya umum, dan sengaja dicatat sebagai terbuka alih-alih ditutup diam-diam: **auto-pause Supabase** (proyek gratis tertidur setelah 7 hari menganggur — pengguna harian aman, pendaftar yang mencoba lalu menghilang tidak) dan **kasir yang dijaga pegawai** (sekarang jalan satu-satunya berbagi akun, jadi tidak ada jejak siapa yang menerima uangnya; `memberships` sudah ada di skema, layarnya belum).
 

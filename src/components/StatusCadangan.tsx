@@ -56,8 +56,12 @@ export function StatusCadangan() {
   }
 
   if (gagal > 0) {
+    // Menuju layar yang benar-benar menyebutnya. Sebelumnya ini
+    // mengantar ke layar cadangan, yang tidak menyinggung catatan
+    // tertolak sama sekali — peringatan yang tidak bisa dituntaskan akan
+    // menetap di beranda sampai ia berhenti dilihat.
     return (
-      <Link href="/masuk" className="kartu-tekan flex items-center gap-3">
+      <Link href="/tertolak" className="kartu-tekan flex items-center gap-3">
         <span
           className="flex h-11 w-11 shrink-0 items-center justify-center rounded-kartu
                      bg-keluar-soft text-keluar"

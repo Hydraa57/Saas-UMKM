@@ -10,6 +10,8 @@ import { updateIdentity } from '@/lib/actions/pos'
 import { AppBar } from '@/components/AppBar'
 import { Ikon, type NamaIkon } from '@/components/Ikon'
 import { useSesi } from '@/lib/auth'
+import { useSync } from '@/lib/sync/useSync'
+import { pesanGalat } from '@/lib/galat'
 import { periksaQris } from '@/lib/qris/payload'
 import { gantiAkun, periksaSebelumGanti } from '@/lib/akun'
 import { bacaUkuran, pakaiUkuran, LABEL_UKURAN, UKURAN, type Ukuran } from '@/lib/tampilan'
@@ -68,6 +70,7 @@ function Baris({
 export default function Pengaturan() {
   const { tenantId, businessName, businessPhone, ready } = useApp()
   const { status, email } = useSesi()
+  const { gagal } = useSync()
 
   const qris = useLiveQuery(() => getMeta<string>(db(), QRIS_KEY), [], undefined)
 
@@ -109,7 +112,7 @@ export default function Pengaturan() {
       setTersimpan(true)
       setTimeout(() => setTersimpan(false), 2500)
     } catch (e) {
-      setGalat(e instanceof Error ? e.message : 'Gagal menyimpan.')
+      setGalat(pesanGalat(e))
     } finally {
       setMenyimpan(false)
     }
@@ -209,6 +212,22 @@ export default function Pengaturan() {
               : 'Belum dipasang — pembeli belum bisa bayar QRIS'
           }
         />
+
+        {/* Muncul cuma kalau memang ada. Pintu kedua ke layar yang sama,
+            dan itu bukan kelebihan: pintu pertamanya adalah peringatan di
+            beranda, yang kalah urutan dengan peringatan "belum
+            dicadangkan" saat pemiliknya sedang keluar dari akun. Tanpa
+            baris ini, catatan tertolak jadi tidak bisa diurus sama sekali
+            dalam keadaan itu. */}
+        {gagal > 0 && (
+          <Baris
+            href="/tertolak"
+            ikon="peringatan"
+            judul="Catatan yang ditolak"
+            siap={false}
+            ket={`${gagal} catatan belum tersalin — perlu diputuskan`}
+          />
+        )}
 
         <Baris
           href="/masuk"

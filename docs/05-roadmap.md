@@ -32,11 +32,13 @@ Dan satu urutan yang tidak boleh dibalik: **struk sebelum laporan.** Laporan ada
 | Foto: pengecilan sebelum disimpan | 5 |
 | Unggah foto ke Storage (termasuk jalur gagalnya) | 10 |
 | Antrean kirim luring + penggolongan kegagalan | 30 |
+| Pesan galat yang bisa ditindaklanjuti | 14 |
+| Menyebut isi antrean dengan kata pemiliknya | 8 |
 | Tarik dua arah: watermark, gagal di tengah, aturan bentrok | 13 |
 | Aksi tulis (tulis lokal + antre, tanpa menunggu jaringan) | 40 |
 | Skema, RLS, jalur tulis (PostgreSQL sungguhan) | 92 penegasan |
 
-Layar: pengaturan awal, beranda, barang & jasa (tab Daftar + Stok, termasuk tambah/ubah/arsip), kasir, struk, riwayat struk, kulakan, koreksi hitung fisik, piutang, uang keluar, cadangan, laporan, pengaturan. Alur lengkapnya diuji di peramban sungguhan lewat `npm run smoke` — 47 langkah, termasuk mengunduh berkas ekspor dan membacanya kembali dengan pembaca `.xlsx` di luar repo ini.
+Layar: pengaturan awal, beranda, barang & jasa (tab Daftar + Stok, termasuk tambah/ubah/arsip), kasir, struk, riwayat struk, kulakan, koreksi hitung fisik, piutang, uang keluar, cadangan, laporan, pengaturan. Alur lengkapnya diuji di peramban sungguhan lewat `npm run smoke` — 49 langkah, termasuk mengunduh berkas ekspor dan membacanya kembali dengan pembaca `.xlsx` di luar repo ini.
 
 ---
 
@@ -106,8 +108,9 @@ Penyandi ESC/POS menerima **string**, bukan `Sale`. Kalau ia menyusun sendiri ba
 
 Tidak ada fitur baru.
 
-- [ ] Ekspor cadangan otomatis ke luar Supabase
-- [ ] Penanganan error yang tidak menakutkan
+- [ ] Ekspor cadangan otomatis ke luar Supabase — **ditunda dengan sengaja.** Yang tersedia sekarang unduh sekali tekan; otomatisasinya menuntut akun pihak ketiga dan OAuth, dan belum ada satu pun kejadian nyata yang menuntutnya
+- [x] **Penanganan error yang tidak menakutkan.** Tiga lubang, dan ketiganya baru terlihat saat dicari: (1) tidak ada satu pun error boundary, jadi layar yang rusak menampilkan layar bawaan Next.js — *"Application error: a client-side exception has occurred"*, latar putih, tanpa satu pun tombol; (2) peringatan "N catatan ditolak" mengantar ke layar cadangan yang tidak menyebut catatan tertolak sama sekali — `retryFailed` dan `discardFailed` sudah ada di kode dan tidak pernah dipanggil dari mana pun; (3) dua layar menampilkan pesan Postgres berbahasa Inggris apa adanya
+- [x] **Sekoci di layar galat.** Tombol unduh-semua-ke-Excel ada di layar galat, bukan cuma di layar laporan — kalau rusaknya berulang, itu satu-satunya cara mengeluarkan catatannya dari HP itu, dan layar laporan mungkin justru yang sedang rusak
 - [ ] Uji di HP pengguna pilot yang sebenarnya, bukan emulator
 - [ ] **Isi katalog bersama-sama** — ini bagian dari uji, bukan persiapan sebelum uji. Pengisian katalog adalah gerbang terbesar produk ini, dan kalau ia terlalu berat, itu temuan
 - [ ] **Pendampingan hari pertama** — duduk bersama penggunanya, jangan bantu, catat di mana dia macet
