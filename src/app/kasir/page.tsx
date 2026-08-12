@@ -21,6 +21,7 @@ import { Uang } from '@/components/Uang'
 import { ItemThumb } from '@/components/ItemThumb'
 import { AppBar } from '@/components/AppBar'
 import { Ikon } from '@/components/Ikon'
+import { KartuQris } from '@/components/KartuQris'
 
 /**
  * Kasir.
@@ -73,6 +74,20 @@ export default function Kasir() {
 
   function tambah(item: Item) {
     setKeranjang((isi) => addLine(isi, lineFromItem(item)))
+  }
+
+  /**
+   * Memilih QRIS berarti membayar pas.
+   *
+   * Kodenya harus memuat nominal, dan nominal yang dimuatnya adalah yang
+   * nanti tercatat sebagai dibayar — kalau keduanya boleh berbeda, akan
+   * ada hari di mana pembeli memindai satu angka dan buku mencatat angka
+   * lain. Jadi nominalnya diisikan begitu QRIS dipilih. Masih bisa
+   * diubah sesudahnya lewat papan angka, dan kodenya ikut berubah.
+   */
+  function pilihMetode(pilihan: PaymentMethod) {
+    setMetode(pilihan)
+    if (pilihan === 'qris' && M.isZero(dibayar)) setDibayar(totals.total)
   }
 
   async function bayar() {
@@ -176,7 +191,7 @@ export default function Kasir() {
                 key={pilihan}
                 type="button"
                 aria-pressed={metode === pilihan}
-                onClick={() => setMetode(pilihan)}
+                onClick={() => pilihMetode(pilihan)}
                 className={`chip flex-1 ${metode === pilihan ? 'chip-aktif' : ''}`}
               >
                 {PAYMENT_LABELS[pilihan]}
@@ -184,6 +199,10 @@ export default function Kasir() {
             ))}
           </div>
         </section>
+
+        {/* Kodenya muncul begitu QRIS dipilih, tanpa ketukan tambahan:
+            di depan pembeli, setiap ketukan berarti menunggu. */}
+        {metode === 'qris' && <KartuQris nominal={dibayar} />}
 
         {/* Nama pembeli hanya perlu kalau uangnya kurang — piutang tanpa
             nama tidak bisa ditagih. */}

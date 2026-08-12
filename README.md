@@ -72,13 +72,14 @@ Alur pokoknya sudah jalan dari ujung ke ujung: pengaturan awal → isi katalog �
 | Laporan penjualan: terlaris, untung kotor, jam ramai | 28 |
 | Penyandi `.xlsx` (ZIP + OOXML, tanpa pustaka) | 26 |
 | Isi berkas ekspor | 19 |
+| Muatan QRIS: TLV, CRC-16, statis→dinamis | 24 |
 | Utang & piutang | 17 |
 | Foto: pengecilan sebelum disimpan | 5 |
 | Antrean kirim luring + penggolongan kegagalan | 30 |
 | Aksi tulis (tulis lokal + antre, tanpa menunggu jaringan) | 40 |
 | Skema, RLS, jalur tulis (PostgreSQL sungguhan) | 82 penegasan |
 
-Layar yang sudah ada: pengaturan awal, beranda, barang & jasa (tab Daftar + Stok), tambah/ubah/arsip, kasir, struk, riwayat struk, kulakan, koreksi hitung fisik, piutang, uang keluar, cadangan, laporan.
+Layar yang sudah ada: pengaturan awal, beranda, barang & jasa (tab Daftar + Stok), tambah/ubah/arsip, kasir, struk, riwayat struk, kulakan, koreksi hitung fisik, piutang, uang keluar, cadangan, laporan, pasang QRIS.
 
 Struk bisa dicetak ke printer termal Bluetooth (Web Bluetooth + ESC/POS) — **teks yang sama persis** dengan yang tampil di layar dan yang dikirim ke WhatsApp. Penyandinya menerima string, bukan `Sale`, jadi tidak ada tempat kedua yang bisa melenceng. Kodenya sudah lengkap dan teruji; yang belum adalah pengujian dengan printer sungguhan.
 
@@ -87,6 +88,12 @@ Login sudah ada, dan **bukan sebagai gerbang**: seluruh aplikasi jalan penuh tan
 Laporan bulanan sudah ada: rekap per bulan, total tahunan, barang terlaris, untung kotor dari harga modal yang disalin saat transaksi, dan jam paling ramai. Seluruh catatan bisa diunduh jadi satu berkas `.xlsx` — **penyandinya ditulis sendiri**, tanpa pustaka: `.xlsx` cuma ZIP berisi XML, dan `exceljs` membawa lebih dari satu megabita untuk tabel datar. Ekspor dipakai sebulan sekali; kasir dibuka puluhan kali sehari.
 
 Penyandi buatan sendiri punya satu bahaya khas: tes yang ditulis di repo yang sama membaca hasilnya dengan anggapan yang sama, jadi keduanya bisa sama-sama salah dan tetap cocok. Karena itu ada satu berkas tes yang menyerahkan hasilnya ke **`openpyxl`** — pustaka Python yang menerapkan OOXML secara terpisah — dengan peringatan dinaikkan jadi galat. Uji asap melangkah lebih jauh lagi: ia menekan tombolnya di Chromium sungguhan, menangkap berkas yang benar-benar terunduh, lalu membacanya dengan `openpyxl`. Bagian `<cellStyles>` yang hilang tertangkap justru oleh pemeriksaan itu, dan tidak oleh satu pun tes di repo ini.
+
+**QRIS dengan nominal sudah terisi**, tanpa penyedia jasa pembayaran dan tanpa biaya tambahan. Caranya memakai QRIS statis yang **sudah dimiliki** usahanya — yang tertempel di meja: muatannya mengikuti spesifikasi EMVCo, jadi nominalnya bisa disisipkan di HP (ubah tag `01` jadi `12`, sisipkan tag `54`, hitung ulang CRC-16). Murni komputasi lokal, jalan tanpa sinyal. QRIS dinamis dari PJP menuntut badan usaha terdaftar dan potongan tiap transaksi; ini tidak.
+
+Batasnya ditulis di layarnya sendiri dan tidak dikaburkan: **aplikasi tidak pernah tahu uangnya sudah masuk.** Tidak ada jalur balik dari bank, jadi penjualannya baru tercatat setelah pemiliknya menekan tombol — bukan otomatis begitu QR-nya tampil.
+
+Diuji dengan cara yang sama kerasnya seperti ekspor: CRC dan muatan pembandingnya dihitung `binascii.crc_hqx` milik Python, dan uji asap **memotret QR yang tergambar di layar lalu memindainya balik** dengan `jsqr`, memastikan yang akan dilihat kamera pembeli benar-benar berisi nominal yang tepat dengan data merchant yang tidak tergeser. Pemeriksaan itu langsung menangkap satu bug tata letak nyata: bilah tombol di dasar layar menutupi seperempat bagian bawah kodenya, dan QR yang terpotong gagal dipindai sama sekali.
 
 Belum ada: penarikan data dari peladen (untuk HP kedua), unggah foto ke Storage.
 
@@ -128,7 +135,7 @@ npm run dev
 ### Pengujian
 
 ```bash
-npm test          # 346 tes unit
+npm test          # 370 tes unit
 npm run typecheck
 npm run db:test   # 82 penegasan: migrasi, RLS, jalur tulis
 
@@ -139,7 +146,7 @@ npm run shots     # tangkapan layar tiap halaman, dengan data yang masuk akal
 
 `npm run shots` mengisi katalog, menjual, kulakan, dan menagih lebih dulu, lalu memotret seluruh halaman ke `shots/`. Dipakai untuk melihat rancangannya sebagai satu kesatuan: kebanyakan kejanggalan tata letak baru terlihat saat sepuluh layar dijejerkan, bukan saat dilihat satu per satu.
 
-`npm run smoke` menjalankan satu hari kerja lengkap di Chromium — 35 langkah: buka usaha, isi katalog dengan satu barang dan satu jasa, jual keduanya dalam satu struk, kulakan, koreksi hitung fisik, jual berutang, terima pelunasan, batalkan satu struk, baca laporannya, lalu unduh seluruh catatan ke Excel. Yang diperiksa bukan "layarnya muncul" melainkan angkanya: kulakan **ikut mengurangi kas**, pembatalan **menarik uangnya kembali** dan mengembalikan stok lewat retur, penjumlahan riwayat stok tetap cocok setelah semuanya, dan **stok jasa tidak pernah berkurang.**
+`npm run smoke` menjalankan satu hari kerja lengkap di Chromium — 40 langkah: buka usaha, isi katalog dengan satu barang dan satu jasa, jual keduanya dalam satu struk, kulakan, koreksi hitung fisik, jual berutang, terima pelunasan, batalkan satu struk, baca laporannya, unduh seluruh catatan ke Excel, lalu pasang QRIS dan bayar dengannya. Yang diperiksa bukan "layarnya muncul" melainkan angkanya: kulakan **ikut mengurangi kas**, pembatalan **menarik uangnya kembali** dan mengembalikan stok lewat retur, penjumlahan riwayat stok tetap cocok setelah semuanya, dan **stok jasa tidak pernah berkurang.**
 
 Ia menangkap hal yang tidak bisa ditangkap tes unit. Empat bug lolos dari seluruh tes unit dan baru ketahuan di sana: pilihan yang hilang saat kembali dari layar lain, ikon PWA yang tidak ada, **stok awal yang tidak pernah tercatat sebagai mutasi** (sehingga penjumlahan riwayat selamanya meleset sebesar stok awal tiap barang), dan laporan yang **terus menagih pembeli yang sudah melunasi** — karena sisa tagihannya dihitung dari `total − paid` di struk, padahal pelunasan tercatat di daftar utang dan tidak pernah mengubah `paid`. Yang terakhir cuma muncul kalau ada penjualan berutang **dan** pelunasan **dan** laporan dibuka sesudahnya; tidak ada tes unit yang kebetulan menyusun ketiganya.
 

@@ -219,5 +219,36 @@ await page.goto(BASE + '/laporan')
 await jeda(1000)
 await potret('18-laporan', true)
 
+// ── QRIS ────────────────────────────────────────────────────────────────
+// Kamera tidak ada di peramban tanpa kepala, jadi kodenya ditempel.
+// Muatan contoh; CRC-nya dihitung di luar aplikasi (lihat payload.test.ts).
+await page.goto(BASE + '/qris')
+await jeda(900)
+await potret('19-pasang-qris', true)
+
+await page.getByText('Tempel kodenya sebagai teks').click()
+await jeda(300)
+await page.getByLabel('Kode QRIS').fill(
+  '00020101021126430014ID.CO.QRIS.WWW0215ID1024300000000303UMI5204549953033605802ID5913WARUNG BU ANI6007BANDUNG61054012363041459',
+)
+await jeda(200)
+await page.getByRole('button', { name: 'Baca kode ini' }).click()
+await jeda(600)
+await potret('20-qris-terbaca', true)
+await page.getByRole('button', { name: 'Ya, simpan' }).click()
+await jeda(700)
+
+await page.goto(BASE + '/kasir')
+await jeda(900)
+await page.locator('.grid button', { hasText: 'Biskuit Roma' }).click()
+await page.locator('.grid button', { hasText: 'Indomie Goreng' }).click()
+await jeda(400)
+await page.getByRole('button', { name: /^Bayar/ }).click()
+await jeda(500)
+await page.getByRole('button', { name: 'QRIS', exact: true }).click()
+await page.waitForSelector('#qris-qr svg', { timeout: 15000 })
+await jeda(900)
+await potret('21-bayar-qris', true)
+
 console.log('\nselesai → ' + DIR)
 await browser.close()

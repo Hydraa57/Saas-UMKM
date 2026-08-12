@@ -71,7 +71,7 @@ Tiga hal yang mengalir dari sini:
 
 **Katalog barang & jasa** — nama dan harga wajib; foto, stok, satuan, dan harga modal boleh menyusul. Kolom stok **hilang** dari formulir jasa, bukan dinonaktifkan.
 
-**Kasir** — grid foto diurutkan menurut frekuensi terjual, bukan kotak pencarian. Ketuk = masuk keranjang. Bayar tunai/QRIS/transfer, uang pas sekali tap, kembalian dihitung.
+**Kasir** — grid foto diurutkan menurut frekuensi terjual, bukan kotak pencarian. Ketuk = masuk keranjang. Bayar tunai/QRIS/transfer, uang pas sekali tap, kembalian dihitung. Memilih QRIS memunculkan kodenya di layar **dengan nominal sudah terisi** (§5.1e).
 
 **Struk** — teks lebar-tetap yang sama persis untuk yang dilihat di layar, yang dikirim ke WhatsApp, dan yang dicetak ke printer termal Bluetooth. Bisa dibuka ulang dari riwayat, dicetak ulang, dan dibatalkan.
 
@@ -165,6 +165,21 @@ Dua keputusan bentuk di dalam berkasnya:
 - **Tanggal ditulis sebagai teks `YYYY-MM-DD`.** Penanggalan asli Excel disimpan sebagai bilangan hari dan ditampilkan menurut setelan wilayah pembacanya, jadi berkas yang sama bisa terbaca 8 November di satu HP dan 11 Agustus di HP lain. Untuk catatan keuangan, ambiguitas itu tidak sepadan dengan kemudahan mengurutkannya.
 
 Dan satu hal yang harus selamat sampai ke sini: **kolom stok kosong untuk jasa, bukan nol.** Itu pembeda utama produknya, dan berkas ekspor adalah perjalanan terpanjang yang harus dilaluinya.
+
+### 5.1e QRIS: pakai yang sudah ada, isikan nominalnya sendiri
+
+Memilih "QRIS" di layar bayar langsung memunculkan kodenya, **dengan nominal sudah terisi** — tanpa ketukan tambahan, karena di depan pembeli setiap ketukan berarti menunggu. Memilih QRIS juga mengisi "uang diterima" dengan totalnya: kode yang dipindai dan angka yang tercatat tidak boleh bisa berbeda.
+
+Yang dipakai adalah **QRIS statis milik usahanya sendiri**, dipasang sekali lewat pindai kamera, ambil dari galeri, atau tempel teks. Tiga jalan karena masing-masing gagal di keadaan berbeda; yang paling sering terlupakan adalah bahwa banyak QRIS tidak pernah dicetak — dikirim banknya sebagai gambar lewat WhatsApp.
+
+Nominalnya disisipkan di perangkat: muatan QRIS mengikuti EMVCo, jadi tinggal ubah tag `01` jadi `12`, sisipkan tag `54`, hitung ulang CRC-16. Tidak ada penyedia jasa pembayaran, tidak ada pendaftaran, tidak ada potongan tambahan, dan tidak ada jaringan yang perlu dihubungi.
+
+Dua hal yang dijaga ketat:
+
+1. **Nama merchant ditampilkan sebelum kodenya disimpan.** Satu-satunya kesempatan menangkap kode yang salah — sesudah tersimpan, yang salah akan ditunjukkan ke pembeli tanpa ada yang curiga.
+2. **Aplikasi tidak pernah menandai lunas sendiri.** Tidak ada jalur balik dari bank, jadi ia tidak tahu uangnya sudah masuk; yang tahu cuma pemiliknya, dari notifikasi banknya. Menebak-nebak soal ini berarti menandai lunas transaksi yang gagal — dan kekeliruan itu baru ketahuan saat menghitung laci malam hari, ketika pembelinya sudah lama pulang.
+
+Kalau penyisipan nominalnya gagal karena apa pun, kodenya **tetap tampil apa adanya** dengan keterangan bahwa pembeli harus mengetik sendiri. Layar galat saat ada orang menunggu jauh lebih buruk daripada satu langkah tambahan.
 
 ### 5.2 Aturan timbal balik
 

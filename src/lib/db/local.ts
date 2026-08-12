@@ -163,6 +163,16 @@ export const TENANT_KEY = 'tenant_id'
 export const BUSINESS_NAME_KEY = 'business_name'
 export const BUSINESS_PHONE_KEY = 'business_phone'
 
+/**
+ * Muatan QRIS statis milik usaha, apa adanya seperti yang tercetak.
+ *
+ * Disimpan di perangkat, tidak ikut dikirim ke peladen: ini identitas
+ * pembayaran, dan tempat teraman untuknya adalah HP pemiliknya sendiri.
+ * Kalau HP-nya ganti, memindai ulang stiker QRIS-nya lebih murah daripada
+ * risiko menyimpannya di tempat lain.
+ */
+export const QRIS_KEY = 'qris_payload'
+
 export class LocalDatabase extends Dexie {
   wallets!: EntityTable<LocalWallet, 'id'>
   items!: EntityTable<LocalItem, 'id'>

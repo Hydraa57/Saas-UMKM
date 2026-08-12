@@ -28,7 +28,15 @@ import { join } from 'node:path'
 
 const BASE = 'http://localhost:3311'
 const browser = await chromium.launch({ executablePath: '/opt/pw-browsers/chromium' })
-const page = await browser.newPage({ viewport: { width: 390, height: 844 } })
+// `deviceScaleFactor: 3` menyamai HP Android kelas menengah, dan itu
+// bukan hiasan: langkah yang memindai balik QR di layar membaca piksel
+// sungguhan, dan pada DPR 1 hasilnya lebih kasar daripada yang akan
+// dilihat kamera pembeli mana pun. Uji yang lebih buruk dari kenyataan
+// menolak rancangan yang sebenarnya baik.
+const page = await browser.newPage({
+  viewport: { width: 390, height: 844 },
+  deviceScaleFactor: 3,
+})
 const BERKAS_EKSPOR = join(mkdtempSync(join(tmpdir(), 'ezura-')), 'ekspor.xlsx')
 const errs = []
 page.on('pageerror', (e) => errs.push(String(e)))
@@ -550,6 +558,127 @@ print(json.dumps({
   }
   if (barang[5] !== 26) {
     throw new Error('sisa stok barang meleset di berkas ekspor: ' + JSON.stringify(barang))
+  }
+})
+
+// ── QRIS ────────────────────────────────────────────────────────────────
+
+// Muatan QRIS statis untuk uji. Susunan dan CRC-nya dihitung di luar kode
+// aplikasi (lihat `payload.test.ts`), jadi kalau penyisipan nominalnya
+// keliru, hasilnya tidak akan cocok dengan apa pun.
+const QRIS_STATIS =
+  '00020101021126430014ID.CO.QRIS.WWW0215ID1024300000000303UMI5204549953033605802ID5913WARUNG BU ANI6007BANDUNG61054012363041459'
+
+await step('pasang QRIS usaha dengan menempel kodenya', async () => {
+  // Kamera tidak ada di peramban tanpa kepala, dan itu bukan alasan
+  // melewatkan alurnya: jalan tempel memang ada justru untuk keadaan
+  // ketika pindai tidak bisa dipakai.
+  await page.goto(BASE + '/qris')
+  await page.waitForTimeout(800)
+  await page.getByText('Tempel kodenya sebagai teks').click()
+  await page.waitForTimeout(300)
+  await page.getByLabel('Kode QRIS').fill(QRIS_STATIS)
+  await page.waitForTimeout(200)
+  await page.getByRole('button', { name: 'Baca kode ini' }).click()
+  await page.waitForTimeout(600)
+})
+
+await step('nama merchant ditampilkan sebelum disimpan', async () => {
+  // Satu-satunya kesempatan menangkap kode yang salah. Sesudah disimpan,
+  // yang salah akan ditunjukkan ke pembeli tanpa ada yang curiga.
+  const layar = (await page.locator('main').innerText()).replace(/\n+/g, ' | ')
+  if (!layar.includes('WARUNG BU ANI')) {
+    throw new Error('nama merchant tidak ditampilkan: ' + layar)
+  }
+  await page.getByRole('button', { name: 'Ya, simpan' }).click()
+  await page.waitForTimeout(700)
+})
+
+await step('kode QRIS muncul sendiri begitu cara bayar dipilih', async () => {
+  await page.goto(BASE + '/kasir')
+  await page.waitForTimeout(800)
+  await page.locator('.grid button', { hasText: 'Biskuit Uji' }).click()
+  await page.waitForTimeout(300)
+  await page.getByRole('button', { name: /^Bayar/ }).click()
+  await page.waitForTimeout(500)
+  await page.getByRole('button', { name: 'QRIS', exact: true }).click()
+  // Penggambar QR dimuat saat dibutuhkan, jadi perlu jeda sedikit.
+  await page.waitForSelector('#qris-qr svg', { timeout: 15000 })
+  await page.waitForTimeout(600)
+
+  const layar = (await page.locator('main').innerText()).replace(/\n+/g, ' | ')
+  // Memilih QRIS berarti membayar pas: nominalnya terisi sendiri.
+  if (!layar.includes('Pembeli memindai ini') || !layar.includes('Rp 5.000')) {
+    throw new Error('kartu QRIS tidak muncul dengan nominalnya: ' + layar)
+  }
+  if (!layar.includes('Nominalnya sudah terisi')) {
+    throw new Error('nominal gagal disisipkan ke kodenya: ' + layar)
+  }
+})
+
+await step('QR yang tergambar benar-benar berisi QRIS dengan nominalnya', async () => {
+  // Pemeriksaan yang paling berarti dari seluruh fitur ini: bukan
+  // memeriksa string di memori, melainkan **piksel yang akan dilihat
+  // kamera pembeli.** Gambarnya difoto dari halaman, disandi balik jadi
+  // teks, lalu isinya dibongkar. Kalau ada satu langkah antara muatan dan
+  // layar yang keliru — penyandi QR, ukuran, warna, apa pun — tempat
+  // inilah yang menangkapnya.
+  // Digeser ke tengah dulu, seperti yang dilakukan kartunya sendiri saat
+  // dipakai. Tanpa itu Playwright menggulir seperlunya saja dan bagian
+  // bawah kodenya berhenti tepat di balik bilah tombol.
+  await page.locator('#qris-qr').scrollIntoViewIfNeeded()
+  await page.evaluate(() =>
+    document.querySelector('#qris-qr')?.scrollIntoView({ block: 'center' }),
+  )
+  await page.waitForTimeout(400)
+  const gambar = await page.locator('#qris-qr').screenshot()
+
+  const { PNG } = await import('pngjs')
+  const jsQRmod = await import('jsqr')
+  const jsQR = jsQRmod.default ?? jsQRmod
+
+  const png = PNG.sync.read(gambar)
+  const kode = jsQR(new Uint8ClampedArray(png.data), png.width, png.height)
+  if (!kode) throw new Error('QR di layar tidak bisa dipindai balik')
+
+  const muatan = kode.data
+  if (muatan === QRIS_STATIS) {
+    throw new Error('yang tergambar masih kode statis, nominalnya tidak disisipkan')
+  }
+
+  // Bongkar TLV-nya di sini juga, tanpa memakai kode aplikasi.
+  const ruas = {}
+  for (let i = 0; i < muatan.length; ) {
+    const tag = muatan.slice(i, i + 2)
+    const panjang = Number(muatan.slice(i + 2, i + 4))
+    ruas[tag] = muatan.slice(i + 4, i + 4 + panjang)
+    i += 4 + panjang
+  }
+
+  if (ruas['54'] !== '5000') {
+    throw new Error('nominal di dalam QR salah: ' + JSON.stringify(ruas['54']))
+  }
+  if (ruas['01'] !== '12') {
+    throw new Error('kode tidak ditandai sekali pakai: ' + JSON.stringify(ruas['01']))
+  }
+  // Data merchant tidak boleh tergeser sedikit pun — uangnya bisa
+  // mendarat di tempat lain.
+  if (ruas['26'] !== '0014ID.CO.QRIS.WWW0215ID1024300000000303UMI') {
+    throw new Error('data merchant berubah: ' + JSON.stringify(ruas['26']))
+  }
+  if (ruas['59'] !== 'WARUNG BU ANI') {
+    throw new Error('nama merchant berubah: ' + JSON.stringify(ruas['59']))
+  }
+})
+
+await step('penjualan lewat QRIS tercatat sebagai lunas', async () => {
+  await page.getByRole('button', { name: /Selesai & cetak struk/ }).click()
+  await page.waitForURL('**/struk/**', { timeout: 15000 })
+  await page.waitForTimeout(800)
+
+  const isi = await page.locator('pre').innerText()
+  if (!isi.includes('QRIS')) {
+    throw new Error('struk tidak menyebut cara bayarnya: ' + isi)
   }
 })
 
