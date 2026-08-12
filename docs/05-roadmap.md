@@ -35,7 +35,7 @@ Dan satu urutan yang tidak boleh dibalik: **struk sebelum laporan.** Laporan ada
 | Aksi tulis (tulis lokal + antre, tanpa menunggu jaringan) | 40 |
 | Skema, RLS, jalur tulis (PostgreSQL sungguhan) | 92 penegasan |
 
-Layar: pengaturan awal, beranda, barang & jasa (tab Daftar + Stok, termasuk tambah/ubah/arsip), kasir, struk, riwayat struk, kulakan, koreksi hitung fisik, piutang, uang keluar, cadangan, laporan, pengaturan. Alur lengkapnya diuji di peramban sungguhan lewat `npm run smoke` — 45 langkah, termasuk mengunduh berkas ekspor dan membacanya kembali dengan pembaca `.xlsx` di luar repo ini.
+Layar: pengaturan awal, beranda, barang & jasa (tab Daftar + Stok, termasuk tambah/ubah/arsip), kasir, struk, riwayat struk, kulakan, koreksi hitung fisik, piutang, uang keluar, cadangan, laporan, pengaturan. Alur lengkapnya diuji di peramban sungguhan lewat `npm run smoke` — 46 langkah, termasuk mengunduh berkas ekspor dan membacanya kembali dengan pembaca `.xlsx` di luar repo ini.
 
 ---
 

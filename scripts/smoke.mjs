@@ -789,6 +789,31 @@ await step('nama baru langsung dipakai di kepala struk', async () => {
   }
 })
 
+await step('ganti akun memperingatkan sebelum mengosongkan HP', async () => {
+  // Keluar dari akun saja tidak cukup: sesinya hilang tapi seluruh isi HP
+  // masih milik akun lama. Yang diuji di sini bukan penghapusannya —
+  // melainkan bahwa peringatannya menyebut **berapa catatan yang hilang**
+  // kalau diteruskan. Angka itu yang membedakan konfirmasi sungguhan dari
+  // tombol "yakin?" yang selalu ditekan tanpa dibaca.
+  await page.goto(BASE + '/pengaturan')
+  await page.waitForTimeout(900)
+  await page.getByRole('button', { name: 'Ganti akun' }).click()
+  await page.waitForTimeout(600)
+
+  const layar = (await page.locator('main').innerText()).replace(/\n+/g, ' | ')
+  if (!layar.includes('Kosongkan HP ini')) {
+    throw new Error('konfirmasi ganti akun tidak muncul: ' + layar)
+  }
+  // Seluruh uji ini berjalan tanpa peladen terjangkau, jadi antreannya
+  // pasti berisi. Peringatan yang tidak menyebutkannya berarti bohong.
+  if (!/\d+ catatan belum sempat terkirim/.test(layar)) {
+    throw new Error('peringatan tidak menyebut catatan yang belum terkirim: ' + layar)
+  }
+
+  await page.getByRole('button', { name: 'Batal' }).click()
+  await page.waitForTimeout(400)
+})
+
 console.log('\nSTRUK:\n' + struk.split('\n').map((l) => '  ' + l).join('\n'))
 console.log('\nKATALOG :', daftar)
 console.log('BERANDA :', beranda)

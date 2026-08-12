@@ -9,6 +9,7 @@ import { AppBar } from '@/components/AppBar'
 import { Ikon, type NamaIkon } from '@/components/Ikon'
 import { useSesi } from '@/lib/auth'
 import { periksaQris } from '@/lib/qris/payload'
+import { gantiAkun, periksaSebelumGanti } from '@/lib/akun'
 
 /**
  * Pengaturan.
@@ -70,6 +71,7 @@ export default function Pengaturan() {
   const [nama, setNama] = useState('')
   const [telepon, setTelepon] = useState('')
   const [menyimpan, setMenyimpan] = useState(false)
+  const [konfirmasiGanti, setKonfirmasiGanti] = useState<number | null>(null)
   const [tersimpan, setTersimpan] = useState(false)
   const [galat, setGalat] = useState<string | null>(null)
 
@@ -221,6 +223,62 @@ export default function Pengaturan() {
           siap
           ket="Rekap bulanan, terlaris, unduh salinan"
         />
+      </section>
+
+      {/* Ganti akun, dan sengaja di paling bawah dengan peringatan penuh.
+          Keluar dari akun saja tidak cukup: sesinya hilang tapi seluruh
+          isi HP masih milik akun lama, jadi orang berikutnya melihat
+          dagangan orang lain lalu penjualannya menempel ke tenant yang
+          bukan miliknya — tanpa gejala apa pun sampai angkanya tidak
+          masuk akal. Jadi berganti akun berarti mengosongkan HP ini. */}
+      <section className="flex flex-col gap-2">
+        <h2 className="label px-1">Akun</h2>
+
+        {konfirmasiGanti === null ? (
+          <button
+            type="button"
+            onClick={async () => {
+              const { belumTerkirim } = await periksaSebelumGanti()
+              setKonfirmasiGanti(belumTerkirim)
+            }}
+            className="btn-sekunder"
+          >
+            Ganti akun
+          </button>
+        ) : (
+          <div className="kartu animate-naik">
+            <p className="font-semibold">Kosongkan HP ini dan masuk akun lain?</p>
+            <p className="mt-1 text-slate-600">
+              Seluruh katalog, penjualan, dan utang di HP ini dihapus. Yang
+              sudah terkirim tetap aman di peladen dan bisa ditarik lagi
+              nanti.
+            </p>
+
+            {konfirmasiGanti > 0 && (
+              <p className="mt-3 font-semibold text-keluar">
+                {konfirmasiGanti} catatan belum sempat terkirim. Kalau
+                diteruskan sekarang, yang itu hilang.
+              </p>
+            )}
+
+            <div className="mt-4 flex flex-col gap-2">
+              <button
+                type="button"
+                onClick={() => void gantiAkun()}
+                className="btn-bahaya"
+              >
+                Ya, kosongkan dan ganti akun
+              </button>
+              <button
+                type="button"
+                onClick={() => setKonfirmasiGanti(null)}
+                className="btn-sekunder"
+              >
+                Batal
+              </button>
+            </div>
+          </div>
+        )}
       </section>
     </main>
   )

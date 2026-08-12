@@ -28,10 +28,16 @@ import { useSesi } from '@/lib/auth'
  * sambil ibu mencari sinyal. Pemeriksaan sesi ke peladen tidak pernah
  * jadi syarat untuk membuka aplikasinya.
  *
- * **Tanpa peladen, tidak ada yang dijaga.** Kalau Supabase belum
- * dikonfigurasi sama sekali, mengunci aplikasi berarti mengunci semua
- * orang tanpa satu pun jalan keluar — termasuk saat pengembangan. Dalam
- * keadaan itu gerbangnya membuka sendiri.
+ * **Tanpa peladen, gerbangnya tidak membuka diam-diam.** Versi pertama
+ * berkas ini melakukan itu — kalau Supabase belum dikonfigurasi, aplikasi
+ * dibiarkan jalan penuh tanpa akun. Niatnya supaya pengembangan tidak
+ * terkunci; akibatnya sebuah pemasangan yang lupa memasang kunci
+ * lingkungannya terlihat **jalan sempurna** sambil diam-diam tidak
+ * mencadangkan apa pun. Persis kegagalan yang gerbang ini dibuat untuk
+ * mencegahnya, cuma lebih licin karena tidak ada gejalanya.
+ *
+ * Sekarang keadaan itu berhenti di layarnya sendiri, dengan sebab yang
+ * disebut terang-terangan. Yang membacanya pengembang, bukan ibu.
  */
 
 /** Halaman yang justru harus terbuka saat gerbangnya tertutup. */
@@ -65,9 +71,9 @@ export function Gerbang({ children }: { readonly children: React.ReactNode }) {
     return <main className="flex-1 p-4" aria-busy="true" />
   }
 
-  const terbuka =
-    !isConfigured() || pernah === true || status === 'masuk' || BEBAS.includes(pathname)
+  if (!isConfigured()) return <PeladenBelumDisetel />
 
+  const terbuka = pernah === true || status === 'masuk' || BEBAS.includes(pathname)
   if (terbuka) return <>{children}</>
 
   return <Ajakan />
@@ -112,6 +118,59 @@ function Ajakan() {
         Mulai
       </a>
     </main>
+  )
+}
+
+/**
+ * Berhenti terang-terangan alih-alih jalan setengah.
+ *
+ * Pesannya ditujukan ke pengembang, dan sengaja menyebut nama kuncinya:
+ * yang menemui layar ini butuh tahu **apa yang harus dipasang**, bukan
+ * bahwa ada sesuatu yang salah.
+ */
+function PeladenBelumDisetel() {
+  return (
+    <main className="flex flex-1 flex-col justify-center gap-4 p-6">
+      <span
+        className="flex h-14 w-14 items-center justify-center rounded-kartu-lg
+                   bg-tunggu-soft text-tunggu"
+      >
+        <IkonPeringatan />
+      </span>
+      <h1 className="text-2xl font-bold">Peladen belum disetel</h1>
+      <p className="text-slate-600">
+        Aplikasi ini menyimpan catatan penjualan, jadi ia tidak dijalankan
+        tanpa tempat mencadangkannya. Pasang dua kunci lingkungan berikut
+        lalu muat ulang:
+      </p>
+      <ul className="kartu flex flex-col gap-2 font-mono text-sm">
+        <li>NEXT_PUBLIC_SUPABASE_URL</li>
+        <li>NEXT_PUBLIC_SUPABASE_ANON_KEY</li>
+      </ul>
+      <p className="text-sm text-slate-500">
+        Keduanya ada di dasbor Supabase → Project Settings → API. Di Vercel,
+        pasang di Project Settings → Environment Variables, lalu deploy ulang.
+      </p>
+    </main>
+  )
+}
+
+function IkonPeringatan() {
+  return (
+    <svg
+      aria-hidden="true"
+      width={26}
+      height={26}
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth={1.9}
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    >
+      <path d="M12 3.5 22 20H2z" />
+      <path d="M12 10v4.5M12 17.2v.1" />
+    </svg>
   )
 }
 
