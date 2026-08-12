@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { rupiah, ZERO } from '@/lib/money'
+import type { CartLine, Item } from '@/lib/domain/types'
 import {
   addLine,
   calculateCart,
@@ -9,6 +10,7 @@ import {
   lineSubtotal,
   outstanding,
   overStock,
+  sisaBisaDijual,
   qtyInCart,
   removeLine,
   setQty,
@@ -241,5 +243,70 @@ describe('konsistensi', () => {
     expect(Number.isInteger(totals.subtotal)).toBe(true)
     expect(Number.isInteger(totals.cost)).toBe(true)
     expect(Number.isInteger(totals.profit)).toBe(true)
+  })
+})
+
+describe('sisa yang masih boleh dijual', () => {
+  const biskuit: Item = {
+    id: 'i1',
+    kind: 'barang',
+    name: 'Biskuit',
+    price: rupiah(5000),
+    costPrice: rupiah(3000),
+    unit: 'pcs',
+    stockQty: 2,
+    minStock: 0,
+    photoPath: null,
+    barcode: null,
+    soldCount: 0,
+    archivedAt: null,
+  }
+  const jasa: Item = {
+    id: 'i2',
+    kind: 'jasa',
+    name: 'Potong celana',
+    price: rupiah(30000),
+    costPrice: rupiah(0),
+    unit: 'pcs',
+    photoPath: null,
+    barcode: null,
+    soldCount: 0,
+    archivedAt: null,
+  }
+
+  const baris = (itemId: string, qty: number): CartLine => ({
+    itemId,
+    itemKind: 'barang',
+    itemName: 'Biskuit',
+    qty,
+    unitPrice: rupiah(5000),
+    unitCost: rupiah(3000),
+  })
+
+  it('keranjang kosong menyisakan seluruh stok', () => {
+    expect(sisaBisaDijual([], biskuit)).toBe(2)
+  })
+
+  it('yang sudah di keranjang ikut dikurangkan', () => {
+    expect(sisaBisaDijual([baris('i1', 1)], biskuit)).toBe(1)
+    expect(sisaBisaDijual([baris('i1', 2)], biskuit)).toBe(0)
+  })
+
+  it('tidak pernah negatif, walau keranjangnya terlanjur melebihi', () => {
+    // Bisa terjadi kalau stoknya berubah dari HP lain sesudah barangnya
+    // masuk keranjang. Angka negatif di sini akan terbaca layar sebagai
+    // "masih boleh".
+    expect(sisaBisaDijual([baris('i1', 5)], biskuit)).toBe(0)
+  })
+
+  it('jasa tidak pernah dibatasi', () => {
+    expect(sisaBisaDijual([], jasa)).toBe(Number.POSITIVE_INFINITY)
+    expect(sisaBisaDijual([{ ...baris('i2', 99), itemKind: 'jasa' }], jasa)).toBe(
+      Number.POSITIVE_INFINITY,
+    )
+  })
+
+  it('barang lain di keranjang tidak ikut memotong', () => {
+    expect(sisaBisaDijual([baris('lain', 5)], biskuit)).toBe(2)
   })
 })

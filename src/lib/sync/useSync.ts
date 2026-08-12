@@ -8,6 +8,8 @@ import { failedItems, flush, pendingCount } from './outbox'
 import { fotoBelumTurun, fotoTertunda, unduhFoto, unggahFoto } from './foto'
 import { createTransport } from './transport'
 import { tarik } from './tarik'
+import { sambungkanUsaha } from '@/lib/tenant'
+import { USAHA_BENTROK_KEY, setMeta } from '@/lib/db/local'
 import { useSesi } from '@/lib/auth'
 
 /**
@@ -71,6 +73,20 @@ export function useSync(): StatusSync {
     sedangJalan.current = true
     setSedangMengirim(true)
     try {
+      // Paling depan, sebelum apa pun dikirim: **usaha yang mana?**
+      // Tanpa ini, HP kedua mengirim `create_tenant` dengan UUID
+      // buatannya sendiri, dan peladen membuat usaha kedua untuk akun
+      // yang sama. Bertanya lebih dulu jauh lebih murah daripada
+      // memisahkan dua warung yang sudah terlanjur bercabang.
+      const sambung = await sambungkanUsaha(db(), supabase())
+      if (sambung.jenis === 'bentrok') {
+        await setMeta(db(), USAHA_BENTROK_KEY, {
+          lokal: sambung.lokal,
+          peladen: sambung.peladen,
+        })
+        return
+      }
+
       // Antrean panggilan lebih dulu, foto menyusul. Yang harus segera
       // aman adalah penjualannya; foto katalog yang menyusul semenit
       // kemudian tidak merugikan siapa pun.

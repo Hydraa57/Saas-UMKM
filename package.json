@@ -18,7 +18,8 @@
     "shots": "node scripts/shots.mjs",
     "uji:galat": "node scripts/galat.mjs",
     "audit": "node scripts/audit.mjs",
-    "uji:pasang": "node scripts/pasang.mjs"
+    "uji:pasang": "node scripts/pasang.mjs",
+    "uji:stok": "node scripts/stok.mjs"
   },
   "dependencies": {
     "@supabase/ssr": "^0.7.0",

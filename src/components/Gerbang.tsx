@@ -2,8 +2,9 @@
 
 import Link from 'next/link'
 import { useLiveQuery } from 'dexie-react-hooks'
+import { PilihUsaha } from './PilihUsaha'
 import { usePathname } from 'next/navigation'
-import { db, getMeta, PERNAH_MASUK_KEY } from '@/lib/db/local'
+import { db, getMeta, PERNAH_MASUK_KEY, USAHA_BENTROK_KEY } from '@/lib/db/local'
 import { isConfigured, NAMA_ENV } from '@/lib/supabase/client'
 import { useSesi } from '@/lib/auth'
 
@@ -59,6 +60,16 @@ export function Gerbang({ children }: { readonly children: React.ReactNode }) {
    * melainkan layar kosong. Ketahuan oleh uji asap, bukan oleh
    * pembacaan ulang.
    */
+  const bentrok = useLiveQuery(
+    async () =>
+      (await getMeta<{ lokal: string; peladen: { id: string; nama: string } }>(
+        db(),
+        USAHA_BENTROK_KEY,
+      )) ?? null,
+    [],
+    null,
+  )
+
   const pernah = useLiveQuery(
     async () => (await getMeta<boolean>(db(), PERNAH_MASUK_KEY)) === true,
     [],
@@ -73,6 +84,11 @@ export function Gerbang({ children }: { readonly children: React.ReactNode }) {
   }
 
   if (!isConfigured()) return <PeladenBelumDisetel />
+
+  // Berhenti terang-terangan: perangkat dan akun memegang usaha yang
+  // berbeda, dan meneruskan berarti mencatat penjualan ke warung yang
+  // salah tanpa ada yang menyadarinya.
+  if (bentrok) return <PilihUsaha bentrok={bentrok} />
 
   const terbuka = pernah === true || status === 'masuk' || BEBAS.includes(pathname)
   if (terbuka) return <>{children}</>

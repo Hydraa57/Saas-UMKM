@@ -150,13 +150,40 @@ export function qtyInCart(lines: readonly CartLine[], itemId: string): number {
 }
 
 /**
+ * Berapa lagi sebuah barang masih boleh masuk keranjang.
+ *
+ * `Infinity` untuk jasa: "Potong celana" tidak pernah habis, dan
+ * membatasinya berarti menolak pekerjaan yang jelas-jelas bisa
+ * dikerjakan.
+ *
+ * **Ini larangan, bukan peringatan lagi.** Arahnya dibalik setelah
+ * dicoba: sebelumnya keranjang boleh melewati stok dengan alasan bahwa
+ * hitungan di aplikasi sering tertinggal dari isi rak, jadi lebih baik
+ * memberi tahu lalu tetap melayani. Yang terlihat pemiliknya bukan
+ * kelonggaran melainkan **kesalahan hitung**: stok tertulis 2, terjual
+ * 3, dan angkanya jadi −1 tanpa ada yang pernah memutuskan itu boleh.
+ *
+ * Yang menggantikan kelonggaran itu bukan jalan buntu: barang yang stok
+ * aplikasinya salah dikoreksi lewat hitung fisik, dan kasir mengantar ke
+ * sana. Satu ketukan lebih panjang, dengan imbalan angka stok yang tidak
+ * pernah berbohong.
+ */
+export function sisaBisaDijual(
+  lines: readonly CartLine[],
+  item: Item,
+): number {
+  if (item.kind !== 'barang') return Number.POSITIVE_INFINITY
+  return Math.max(0, item.stockQty - qtyInCart(lines, item.id))
+}
+
+/**
  * Barang yang jumlahnya di keranjang melebihi stok.
  *
- * **Peringatan, bukan larangan.** Stok di aplikasi sering tertinggal dari
- * kenyataan — ada barang yang terlanjur terjual tanpa dicatat, atau
- * kulakan yang belum sempat dimasukkan. Menolak penjualan karena angka
- * stok akan membuat kasir berhenti dipakai tepat saat ada pembeli
- * menunggu; yang benar adalah memberi tahu, lalu tetap melayani.
+ * Sesudah penjagaannya ditegakkan, ini seharusnya selalu kosong pada
+ * keranjang yang disusun lewat layar kasir. Ia tetap ada karena
+ * keranjang bisa juga berisi baris yang lahir sebelum penjagaannya ada,
+ * dan karena stok bisa berubah dari HP lain **sesudah** barangnya masuk
+ * keranjang — dan yang seperti itu harus tetap terlihat, bukan diam.
  *
  * Jasa tidak pernah muncul di sini, apa pun jumlahnya.
  */

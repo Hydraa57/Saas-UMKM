@@ -79,7 +79,11 @@ Tiga hal yang mengalir dari sini:
 
 **Stok otomatis** — berkurang saat terjual, bertambah saat kulakan, bisa dikoreksi lewat hitung fisik. Tiap perubahan meninggalkan satu baris mutasi, jadi angkanya selalu bisa dijelaskan.
 
-**Peringatan stok menipis** — muncul sendiri di beranda dan katalog. Tidak pernah melarang penjualan.
+**Peringatan stok menipis** — muncul sendiri di beranda dan katalog.
+
+**Penjualan melebihi stok ditolak.** Arahnya dibalik setelah ditunjukkan pemiliknya: sebelumnya keranjang boleh melewati stok, dengan alasan bahwa hitungan di aplikasi sering tertinggal dari isi rak dan menolak melayani karena angka yang salah lebih merugikan. Yang terlihat pemiliknya bukan kelonggaran melainkan **kesalahan hitung** — stok tertulis 2, terjual 3, dan angkanya jadi −1 tanpa ada yang pernah memutuskan itu boleh.
+
+Yang menggantikan kelonggaran itu bukan jalan buntu. Penolakannya menyebut sisanya dan **mengantar ke koreksi hitung fisik di layar yang sama**, karena yang paling sering terjadi memang bukan pembeli meminta lebih banyak dari yang ada, melainkan angka stok yang tertinggal. Satu ketukan lebih panjang, dengan imbalan angka stok yang tidak pernah berbohong. Jasa tidak pernah dibatasi.
 
 **Kulakan** — menambah stok dan mengurangi kas dalam satu operasi.
 

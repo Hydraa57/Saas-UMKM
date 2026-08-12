@@ -183,6 +183,17 @@ export const QRIS_KEY = 'qris_payload'
  */
 export const PERNAH_MASUK_KEY = 'pernah_masuk'
 
+/**
+ * Perangkat dan akun memegang usaha yang berbeda.
+ *
+ * Disimpan, bukan cuma ditahan di memori, karena aplikasinya harus tetap
+ * berhenti dan bertanya walau layarnya berpindah atau ditutup. Keadaan
+ * ini tidak boleh diputuskan diam-diam: memilih sendiri berarti entah
+ * menelantarkan catatan yang ada di HP ini, atau membuat usaha kedua di
+ * akun yang sama.
+ */
+export const USAHA_BENTROK_KEY = 'usaha_bentrok'
+
 export class LocalDatabase extends Dexie {
   wallets!: EntityTable<LocalWallet, 'id'>
   items!: EntityTable<LocalItem, 'id'>

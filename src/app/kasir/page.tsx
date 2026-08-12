@@ -13,6 +13,7 @@ import {
   overStock,
   qtyInCart,
   setQty,
+  sisaBisaDijual,
 } from '@/lib/domain/cart'
 import { isBarang, PAYMENT_LABELS, type CartLine, type Item, type PaymentMethod } from '@/lib/domain/types'
 import { statusStok } from '@/lib/domain/stock'
@@ -65,6 +66,7 @@ export default function Kasir() {
   const [metode, setMetode] = useState<PaymentMethod>('tunai')
   const [pembeli, setPembeli] = useState('')
   const [menyimpan, setMenyimpan] = useState(false)
+  const [stokKurang, setStokKurang] = useState<Item | null>(null)
 
   const totals = calculateCart(keranjang)
   const peringatan = overStock(keranjang, katalog)
@@ -75,7 +77,24 @@ export default function Kasir() {
     (item) => saring === 'semua' || item.kind === saring,
   )
 
+  /**
+   * Menambah ke keranjang, dan **menolak** kalau stoknya tidak cukup.
+   *
+   * Penolakannya menyebut nama barangnya dan mengantar ke koreksi stok,
+   * bukan sekadar berkata tidak. Yang paling sering terjadi bukan
+   * pembeli meminta lebih banyak dari yang ada, melainkan **angka stok
+   * di aplikasi yang tertinggal** — ada yang terjual tanpa dicatat, atau
+   * kulakan yang belum sempat dimasukkan. Jalan keluarnya harus ada di
+   * layar yang sama, karena yang menemuinya sedang berdiri di depan
+   * pembeli.
+   */
   function tambah(item: Item) {
+    const sisa = sisaBisaDijual(keranjang, item)
+    if (sisa <= 0) {
+      setStokKurang(item)
+      return
+    }
+    setStokKurang(null)
     setKeranjang((isi) => addLine(isi, lineFromItem(item)))
   }
 
@@ -242,6 +261,44 @@ export default function Kasir() {
     <main className="flex flex-1 flex-col gap-3 px-4 pb-40">
       <AppBar judul="Kasir" kembali="/" />
 
+      {/* Penolakan yang membawa jalan keluarnya sendiri. Yang paling
+          sering bukan pembeli meminta lebih banyak dari yang ada,
+          melainkan angka stok yang tertinggal — jadi tautan koreksinya
+          ada di dalam pesan yang sama, bukan di menu lain. */}
+      {stokKurang && (
+        <div
+          role="alert"
+          className="kartu animate-naik border border-keluar/20 bg-keluar-soft"
+        >
+          <p className="flex items-start gap-2 font-semibold text-keluar">
+            <Ikon nama="peringatan" ukuran={20} className="mt-0.5 shrink-0" />
+            <span>
+              Stok {stokKurang.name} tidak mencukupi
+              {stokKurang.kind === 'barang' && ` — tinggal ${stokKurang.stockQty}`}
+            </span>
+          </p>
+          <p className="mt-1 text-sm text-keluar-kuat">
+            Kalau di rak sebenarnya masih ada, perbarui stoknya dulu lewat
+            hitung fisik.
+          </p>
+          <div className="mt-3 flex gap-2">
+            <button
+              type="button"
+              onClick={() => setStokKurang(null)}
+              className="btn-sekunder flex-1"
+            >
+              Tutup
+            </button>
+            <Link
+              href={`/stok/${stokKurang.id}`}
+              className="btn-primer flex-1"
+            >
+              Perbarui stok
+            </Link>
+          </div>
+        </div>
+      )}
+
       {katalog.length === 0 ? (
         <div className="kartu text-center">
           <span
@@ -364,10 +421,20 @@ export default function Kasir() {
                   <button
                     type="button"
                     aria-label={`Tambah ${line.itemName}`}
+                    disabled={
+                      line.itemId !== null &&
+                      sisaBisaDijual(
+                        keranjang,
+                        katalog.find((i) => i.id === line.itemId) ?? {
+                          kind: 'jasa',
+                        } as Item,
+                      ) <= 0
+                    }
                     onClick={() => setKeranjang((isi) => setQty(isi, index, line.qty + 1))}
                     className="flex h-11 w-11 items-center justify-center rounded-kartu-kecil
                                border border-garis bg-white text-slate-700 transition
-                               active:scale-90 active:bg-slate-100"
+                               active:scale-90 active:bg-slate-100
+                               disabled:bg-slate-100 disabled:text-slate-300"
                   >
                     <Ikon nama="tambah" ukuran={18} tebal={2.4} />
                   </button>
