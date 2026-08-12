@@ -80,7 +80,7 @@ export function Gerbang({ children }: { readonly children: React.ReactNode }) {
   // baik daripada mengedipkan formulir masuk ke orang yang sebenarnya
   // sudah masuk — kedipan itu terbaca sebagai "aku dikeluarkan lagi".
   if (pernah === null) {
-    return <main className="flex-1 p-4" aria-busy="true" />
+    return <main className="layar flex-1 p-4" aria-busy="true" />
   }
 
   if (!isConfigured()) return <PeladenBelumDisetel />
@@ -107,7 +107,7 @@ export function Gerbang({ children }: { readonly children: React.ReactNode }) {
  */
 function Ajakan() {
   return (
-    <main className="flex flex-1 flex-col justify-center gap-6 p-4">
+    <main className="layar flex flex-1 flex-col justify-center gap-6 p-4">
       <div className="animate-naik">
         <span
           className="mb-5 flex h-16 w-16 items-center justify-center rounded-kartu-lg
@@ -147,7 +147,7 @@ function Ajakan() {
  */
 function PeladenBelumDisetel() {
   return (
-    <main className="flex flex-1 flex-col justify-center gap-4 p-4">
+    <main className="layar flex flex-1 flex-col justify-center gap-4 p-4">
       <span
         className="flex h-14 w-14 items-center justify-center rounded-kartu-lg
                    bg-tunggu-soft text-tunggu"

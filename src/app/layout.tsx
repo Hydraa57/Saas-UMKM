@@ -40,18 +40,20 @@ export default function RootLayout({
             itu — React belum hidup pada detik itu. */}
         <script dangerouslySetInnerHTML={{ __html: SKRIP_PASANG }} />
       </head>
-      {/* Lebar dibatasi karena ini aplikasi HP. Di layar lebar ia tetap
-          selebar HP dan berada di tengah, bukan melar jadi tata letak
-          yang tidak pernah dirancang. */}
-      <body className="mx-auto flex min-h-dvh max-w-md flex-col bg-latar">
+      {/* Di HP: satu kolom, bilah navigasi di dasar layar. Di layar
+          lebar: bilahnya pindah ke samping dan isinya mengisi sisanya.
+          Lebar tiap layar diatur kelas `.layar` masing-masing, bukan
+          dipaku di sini — dulu `max-w-md` di badan ini membuat laptop
+          menampilkan pita selebar HP di tengah layar kosong. */}
+      <body className="flex min-h-dvh flex-col bg-latar lg:flex-row">
         {/* Bilah navigasi ikut di dalam gerbang, bukan di sebelahnya:
             kalau di luar, ia tetap tergambar di atas layar ajakan
             mendaftar — dan menu yang terlihat tapi mengantar ke layar
             "belum selesai" lebih buruk daripada menu yang belum ada. */}
         <DaftarSW />
         <Gerbang>
-          {children}
           <TabBar />
+          <div className="flex min-w-0 flex-1 flex-col">{children}</div>
         </Gerbang>
       </body>
     </html>

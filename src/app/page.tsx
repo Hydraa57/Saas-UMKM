@@ -150,12 +150,12 @@ export default function Beranda() {
   const piutang = data?.piutang
 
   if (!ready) {
-    return <main className="flex-1 p-4" aria-busy="true" />
+    return <main className="layar flex-1 p-4" aria-busy="true" />
   }
 
   if (!tenantId) {
     return (
-      <main className="flex flex-1 flex-col justify-center gap-6 p-4">
+      <main className="layar flex flex-1 flex-col justify-center gap-6 p-4">
         <div className="animate-naik">
           <span
             className="mb-5 flex h-16 w-16 items-center justify-center rounded-kartu-lg
@@ -177,7 +177,7 @@ export default function Beranda() {
   }
 
   return (
-    <main className="ruang-bilah flex flex-1 flex-col gap-4 px-4 pt-4">
+    <main className="layar ruang-bilah flex flex-1 flex-col gap-4 px-4 pt-4">
       {/* Satu-satunya jalan ke pengaturan, dan sengaja cuma ikon di
           pojok. Yang dikerjakan di sana — ganti nama usaha, pasang QRIS —
           dilakukan sekali lalu tidak pernah lagi, jadi ia tidak pantas

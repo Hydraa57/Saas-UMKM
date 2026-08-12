@@ -148,10 +148,10 @@ function Isi() {
     router.replace('/katalog')
   }
 
-  if (!ready || memuat) return <main className="flex-1 p-4" aria-busy="true" />
+  if (!ready || memuat) return <main className="layar flex-1 p-4" aria-busy="true" />
 
   return (
-    <main className="flex flex-1 flex-col gap-3 px-4 pb-32">
+    <main className="layar flex flex-1 flex-col gap-3 px-4 pb-32">
       <AppBar judul={idLama ? 'Ubah' : 'Tambah ke katalog'} kembali="/katalog" />
 
       {/* Jenisnya dikunci saat mengubah. Mengubah barang menjadi jasa
@@ -301,7 +301,7 @@ function Isi() {
 
 export default function KatalogBaru() {
   return (
-    <Suspense fallback={<main className="flex-1 p-4" aria-busy="true" />}>
+    <Suspense fallback={<main className="layar flex-1 p-4" aria-busy="true" />}>
       <Isi />
     </Suspense>
   )

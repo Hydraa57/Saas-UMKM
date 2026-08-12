@@ -77,7 +77,7 @@ function toEntry(row: LocalCashEntry): CashEntry {
 
 function Kosong() {
   return (
-    <main className="flex flex-1 flex-col gap-4 px-4 pb-8">
+    <main className="layar flex flex-1 flex-col gap-4 px-4 pb-8">
       <AppBar judul="Laporan" kembali="/" />
       <div className="kartu text-center">
         <span
@@ -150,12 +150,12 @@ export default function Laporan() {
   }, [])
 
   if (!ready || data === undefined) {
-    return <main className="flex-1 p-4" aria-busy="true" />
+    return <main className="layar flex-1 p-4" aria-busy="true" />
   }
 
   if (!tenantId) {
     return (
-      <main className="flex flex-1 flex-col gap-4 p-4">
+      <main className="layar flex flex-1 flex-col gap-4 p-4">
         <p className="kartu">Pengaturan awal belum selesai.</p>
         <Link href="/mulai" className="btn-primer btn-besar">
           Buka pengaturan
@@ -199,7 +199,7 @@ export default function Laporan() {
   const strukTertinggi = jam.reduce((max, row) => Math.max(max, row.strukCount), 0)
 
   return (
-    <main className="flex flex-1 flex-col gap-4 px-4 pb-8">
+    <main className="layar flex flex-1 flex-col gap-4 px-4 pb-8">
       <AppBar judul="Laporan" kembali="/" />
 
       {/* Pemilih bulan. Digeser, bukan dilipat ke dalam menu: bulan lalu

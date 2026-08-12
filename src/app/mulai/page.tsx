@@ -62,7 +62,7 @@ export default function Mulai() {
   }
 
   return (
-    <main className="flex flex-1 flex-col gap-5 p-4 pb-32">
+    <main className="layar flex flex-1 flex-col gap-5 p-4 pb-32">
       <header className="animate-naik pt-4">
         <span
           className="mb-4 flex h-14 w-14 items-center justify-center rounded-kartu

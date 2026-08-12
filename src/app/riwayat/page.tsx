@@ -65,12 +65,12 @@ export default function Riwayat() {
   }, [])
 
   if (!ready || data === undefined) {
-    return <main className="flex-1 p-4" aria-busy="true" />
+    return <main className="layar flex-1 p-4" aria-busy="true" />
   }
 
   if (!tenantId) {
     return (
-      <main className="flex flex-1 flex-col gap-4 p-4">
+      <main className="layar flex flex-1 flex-col gap-4 p-4">
         <p className="kartu">Pengaturan awal belum selesai.</p>
         <Link href="/mulai" className="btn-primer btn-besar">
           Buka pengaturan
@@ -90,7 +90,7 @@ export default function Riwayat() {
   }
 
   return (
-    <main className="ruang-bilah flex flex-1 flex-col gap-4 px-4">
+    <main className="layar ruang-bilah flex flex-1 flex-col gap-4 px-4">
       <AppBar judul="Riwayat struk" kembali="/" />
 
       {data.length === 0 ? (

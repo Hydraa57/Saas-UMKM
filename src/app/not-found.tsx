@@ -17,7 +17,7 @@ import Link from 'next/link'
 
 export default function TidakAda() {
   return (
-    <main className="flex flex-1 flex-col justify-center gap-4 p-4">
+    <main className="layar flex flex-1 flex-col justify-center gap-4 p-4">
       <div className="kartu">
         <p className="text-xl font-bold">Halamannya sudah tidak ada</p>
         <p className="mt-1 text-slate-600">

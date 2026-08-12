@@ -63,12 +63,12 @@ export default function Tertolak() {
   }
 
   if (gagal === undefined) {
-    return <main className="flex-1 p-4" aria-busy="true" />
+    return <main className="layar flex-1 p-4" aria-busy="true" />
   }
 
   if (gagal.length === 0) {
     return (
-      <main className="flex flex-1 flex-col justify-center gap-4 p-4">
+      <main className="layar flex flex-1 flex-col justify-center gap-4 p-4">
         <div className="kartu text-center">
           <span
             className="mx-auto flex h-12 w-12 items-center justify-center rounded-kartu
@@ -84,7 +84,7 @@ export default function Tertolak() {
   }
 
   return (
-    <main className="flex flex-1 flex-col gap-3 px-4 pb-8">
+    <main className="layar flex flex-1 flex-col gap-3 px-4 pb-8">
       <AppBar judul="Catatan yang ditolak" kembali="/" />
 
       <div className="kartu">

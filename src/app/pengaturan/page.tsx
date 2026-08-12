@@ -120,11 +120,11 @@ export default function Pengaturan() {
     }
   }
 
-  if (!ready) return <main className="flex-1 p-4" aria-busy="true" />
+  if (!ready) return <main className="layar flex-1 p-4" aria-busy="true" />
 
   if (!tenantId) {
     return (
-      <main className="flex flex-1 flex-col gap-4 p-4">
+      <main className="layar flex flex-1 flex-col gap-4 p-4">
         <p className="kartu">Pengaturan awal belum selesai.</p>
         <Link href="/mulai" className="btn-primer btn-besar">
           Buka pengaturan
@@ -143,7 +143,7 @@ export default function Pengaturan() {
   })()
 
   return (
-    <main className="flex flex-1 flex-col gap-4 px-4 pb-8">
+    <main className="layar flex flex-1 flex-col gap-4 px-4 pb-8">
       <AppBar judul="Pengaturan" kembali="/" />
 
       <section className="flex flex-col gap-3">

@@ -61,7 +61,7 @@ export function LayarGalat({ galat, ulangi }: Props) {
   }
 
   return (
-    <main className="flex flex-1 flex-col justify-center gap-4 p-4">
+    <main className="layar flex flex-1 flex-col justify-center gap-4 p-4">
       <div className="kartu animate-naik">
         <span
           className="flex h-12 w-12 items-center justify-center rounded-kartu

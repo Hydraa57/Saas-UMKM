@@ -75,12 +75,12 @@ export default function DetailStok({
   }
 
   if (!ready || data === undefined) {
-    return <main className="flex-1 p-4" aria-busy="true" />
+    return <main className="layar flex-1 p-4" aria-busy="true" />
   }
 
   if (data === null || data.jasa || !data.item) {
     return (
-      <main className="flex flex-1 flex-col gap-4 p-4">
+      <main className="layar flex flex-1 flex-col gap-4 p-4">
         <p className="kartu">
           {data?.jasa
             ? 'Jasa tidak punya stok — "Potong celana" tidak pernah habis.'
@@ -99,7 +99,7 @@ export default function DetailStok({
   const selisih = hitung === '' ? null : selisihHitung(item, Number(hitung))
 
   return (
-    <main className="flex flex-1 flex-col gap-4 px-4 pb-8">
+    <main className="layar flex flex-1 flex-col gap-4 px-4 pb-8">
       <AppBar judul={item.name} kembali="/katalog?tab=stok" />
 
       <div className="kartu-gelap animate-naik">

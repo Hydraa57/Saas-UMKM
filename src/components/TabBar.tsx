@@ -3,6 +3,7 @@
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { useApp } from '@/lib/useApp'
+import type { Route } from 'next'
 import { Ikon, type NamaIkon } from './Ikon'
 
 /**
@@ -24,7 +25,7 @@ import { Ikon, type NamaIkon } from './Ikon'
  */
 
 interface Tujuan {
-  readonly href: string
+  readonly href: Route
   readonly label: string
   readonly ikon: NamaIkon
 }
@@ -81,35 +82,120 @@ export function TabBar() {
   // dengan bilah aksinya sendiri: tombol Simpan terlihat tapi tidak
   // pernah bisa ditekan. Daftar putih tidak punya cara gagal seperti itu.
   const TUJUAN = ['/', '/katalog', '/riwayat', '/utang']
-  if (!TUJUAN.includes(pathname)) return null
+  // Bilah bawah cuma di keempat rute utama: di layar dalam seperti
+  // "tambah barang" atau "bayar", tempatnya sudah dipakai bilah aksi.
+  //
+  // Bilah samping **tidak** ikut aturan itu. Di layar lebar tempatnya
+  // tidak diperebutkan siapa pun, dan navigasi yang menghilang saat
+  // masuk ke layar dalam memaksa orang menekan "kembali" untuk sesuatu
+  // yang seharusnya sekali klik. Itu juga yang membuat aplikasi terasa
+  // seperti HP yang dilebarkan, bukan aplikasi laptop.
 
   return (
-    <nav aria-label="Navigasi utama" className="bilah-bawah">
-      <div className="flex items-end gap-1">
-        {KIRI.map((t) => (
-          <Tombol key={t.href} tujuan={t} pathname={pathname} />
-        ))}
+    <>
+      {/* HP: bilah di dasar layar, Kasir di tengah dan menonjol. */}
+      {TUJUAN.includes(pathname) && (
+      <nav aria-label="Navigasi utama" className="bilah-bawah lg:hidden">
+        <div className="flex items-end gap-1">
+          {KIRI.map((t) => (
+            <Tombol key={t.href} tujuan={t} pathname={pathname} />
+          ))}
 
-        {/* Ditinggikan dan diberi warna merek: satu-satunya tombol di
-            bilah ini yang menghasilkan uang. */}
+          {/* Ditinggikan dan diberi warna merek: satu-satunya tombol di
+              bilah ini yang menghasilkan uang. */}
+          <Link
+            href="/kasir"
+            className="-mt-7 flex w-[4.5rem] shrink-0 flex-col items-center gap-1"
+          >
+            <span
+              className="flex h-14 w-14 items-center justify-center rounded-kartu
+                         bg-merek-600 text-white transition
+                         active:scale-95 active:bg-merek-700"
+            >
+              <Ikon nama="kasir" ukuran={26} tebal={1.9} />
+            </span>
+            <span className="text-xs font-semibold text-merek-700">Kasir</span>
+          </Link>
+
+          {KANAN.map((t) => (
+            <Tombol key={t.href} tujuan={t} pathname={pathname} />
+          ))}
+        </div>
+      </nav>
+      )}
+
+      {/* Layar lebar: bilahnya berdiri di samping.
+          Tonjolan tombol Kasir tidak ikut ke sini — ia menjawab jempol
+          yang memegang HP, dan di layar lebar tidak ada jempol. Yang
+          menggantikannya: petak nila terisi penuh, tetap satu-satunya
+          yang berwarna, dan tetap paling atas. */}
+      <nav
+        aria-label="Navigasi utama"
+        className="sticky top-0 hidden h-dvh w-60 shrink-0 flex-col gap-1
+                   border-r border-garis bg-white p-3 lg:flex"
+      >
+        <span className="px-3 py-4 text-xl font-bold">Ezura</span>
+
         <Link
           href="/kasir"
-          className="-mt-7 flex w-[4.5rem] shrink-0 flex-col items-center gap-1"
+          className={`flex min-h-touch items-center gap-3 rounded-kartu px-3
+                      font-semibold transition ${
+                        pathname.startsWith('/kasir')
+                          ? 'bg-merek-600 text-white'
+                          : 'bg-merek-50 text-merek-700 hover:bg-merek-100'
+                      }`}
         >
-          <span
-            className="flex h-14 w-14 items-center justify-center rounded-kartu
-                       bg-merek-600 text-white transition
-                       active:scale-95 active:bg-merek-700"
-          >
-            <Ikon nama="kasir" ukuran={26} tebal={1.9} />
-          </span>
-          <span className="text-xs font-semibold text-merek-700">Kasir</span>
+          <Ikon nama="kasir" ukuran={22} />
+          Kasir
         </Link>
 
-        {KANAN.map((t) => (
-          <Tombol key={t.href} tujuan={t} pathname={pathname} />
+        <span className="mt-3 px-3 pb-1 text-sm font-medium text-slate-400">
+          Sekarang
+        </span>
+        {KIRI.map((t) => (
+          <Samping key={t.href} tujuan={t} pathname={pathname} />
         ))}
-      </div>
-    </nav>
+
+        <span className="mt-3 px-3 pb-1 text-sm font-medium text-slate-400">
+          Yang sudah lewat
+        </span>
+        {KANAN.map((t) => (
+          <Samping key={t.href} tujuan={t} pathname={pathname} />
+        ))}
+
+        <Link
+          href="/pengaturan"
+          className={`mt-auto flex min-h-touch items-center gap-3 rounded-kartu px-3
+                      font-semibold transition ${
+                        pathname.startsWith('/pengaturan')
+                          ? 'bg-slate-100 text-slate-900'
+                          : 'text-slate-600 hover:bg-slate-50'
+                      }`}
+        >
+          <Ikon nama="setelan" ukuran={22} />
+          Pengaturan
+        </Link>
+      </nav>
+    </>
+  )
+}
+
+/** Satu baris di bilah samping. */
+function Samping({ tujuan, pathname }: { tujuan: Tujuan; pathname: string }) {
+  const sedang = aktif(pathname, tujuan.href)
+  return (
+    <Link
+      href={tujuan.href}
+      aria-current={sedang ? 'page' : undefined}
+      className={`flex min-h-touch items-center gap-3 rounded-kartu px-3
+                  font-semibold transition ${
+                    sedang
+                      ? 'bg-slate-100 text-slate-900'
+                      : 'text-slate-600 hover:bg-slate-50'
+                  }`}
+    >
+      <Ikon nama={tujuan.ikon} ukuran={22} />
+      {tujuan.label}
+    </Link>
   )
 }

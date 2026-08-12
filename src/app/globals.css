@@ -244,6 +244,38 @@
     padding-bottom: calc(var(--bilah-penuh) + 1rem);
   }
 
+  /* Di layar lebar bilahnya pindah ke samping, jadi ruang sebesar itu
+     di dasar halaman cuma jadi kekosongan yang tetap harus digulir. */
+  @media (min-width: 1024px) {
+    .ruang-bilah,
+    .ruang-bilah-aksi {
+      padding-bottom: 2rem;
+    }
+  }
+
+  /**
+   * Lebar isi tiap layar.
+   *
+   * Sebelumnya lebarnya dipaku di `<body>` sebagai `max-w-md` — selebar
+   * HP, apa pun layarnya. Di laptop hasilnya pita sempit di tengah layar
+   * kosong, dan itu bukan sekadar boros: daftar yang muat sepuluh baris
+   * di ruang yang sebenarnya cukup untuk tiga puluh membuat orang
+   * menggulir untuk sesuatu yang seharusnya terlihat sekaligus.
+   *
+   * Sekarang batasnya per layar, dan naik di layar lebar. Bukan sampai
+   * selebar layar: baris teks yang terlalu panjang justru lebih sulit
+   * dibaca, dan tidak ada yang menuntut daftar penjualan selebar 27
+   * inci.
+   */
+  .layar {
+    @apply mx-auto w-full max-w-md lg:max-w-3xl;
+  }
+
+  /** Untuk layar yang isinya memang dua kolom penuh, seperti kasir. */
+  .layar-penuh {
+    @apply mx-auto w-full max-w-md lg:max-w-6xl;
+  }
+
   /* Untuk layar yang punya bilah navigasi **dan** tombol mengambang. */
   .ruang-bilah-aksi {
     padding-bottom: calc(var(--bilah-penuh) + 4.5rem);

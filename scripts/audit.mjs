@@ -36,7 +36,12 @@
 import { chromium } from '@playwright/test'
 
 const BASE = 'http://localhost:3311'
-const HP = { width: 390, height: 844 }
+// Lebar layar bisa diberikan lewat argumen: `node scripts/audit.mjs 1440`.
+// Tata letak dua kolom punya cacat yang tidak mungkin muncul di lebar HP
+// — kolom yang tumpang tindih, bilah samping yang menutupi isi — dan
+// keduanya cuma ketahuan kalau diperiksa pada lebar yang sebenarnya.
+const LEBAR = Number(process.argv[2]) || 390
+const HP = { width: LEBAR, height: LEBAR >= 1024 ? 900 : 844 }
 
 const temuan = []
 const catat = (layar, jenis, pesan) => temuan.push({ layar, jenis, pesan })
@@ -171,7 +176,15 @@ const PEMERIKSA = () => {
   //    `p-4` di elemen yang sama menimpanya diam-diam, karena utility
   //    Tailwind menang atas kelas komponen. Diperiksa lewat nilai
   //    terhitungnya, satu-satunya yang tidak bisa berbohong.
-  for (const el of document.querySelectorAll('.ruang-bilah, .ruang-bilah-aksi')) {
+  // Cuma berlaku selama bilahnya memang tergambar di dasar layar. Di
+  // layar lebar ia pindah ke samping, dan menuntut ruang bawah di sana
+  // berarti menuntut kekosongan.
+  const adaBilahBawah = [...document.querySelectorAll('.bilah-bawah')].some(
+    (el) => terlihat(el) && getComputedStyle(el).position === 'fixed',
+  )
+  for (const el of adaBilahBawah
+    ? document.querySelectorAll('.ruang-bilah, .ruang-bilah-aksi')
+    : []) {
     const pb = parseFloat(getComputedStyle(el).paddingBottom)
     const perlu = el.classList.contains('ruang-bilah-aksi') ? 140 : 96
     if (pb < perlu) {
@@ -308,7 +321,7 @@ await page.waitForURL('**/struk/**', { timeout: 15000 })
 
 // ── Telusuri tiap layar ────────────────────────────────────────────────
 
-console.log('\nmemeriksa:')
+console.log(`\nmemeriksa pada lebar ${LEBAR}px:`)
 
 const LAYAR = [
   ['beranda', '/'],

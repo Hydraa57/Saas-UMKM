@@ -79,11 +79,11 @@ function Isi() {
   const barang: readonly Barang[] = urutkanUntukDitindak(katalog.filter(isBarang))
   const menipis = katalog.filter(stokKritis)
 
-  if (!ready) return <main className="flex-1 p-4" aria-busy="true" />
+  if (!ready) return <main className="layar flex-1 p-4" aria-busy="true" />
 
   if (!tenantId) {
     return (
-      <main className="flex flex-1 flex-col gap-4 p-4">
+      <main className="layar flex flex-1 flex-col gap-4 p-4">
         <p className="kartu">Pengaturan awal belum selesai.</p>
         <Link href="/mulai" className="btn-primer btn-besar">
           Buka pengaturan
@@ -93,7 +93,7 @@ function Isi() {
   }
 
   return (
-    <main className="ruang-bilah-aksi flex flex-1 flex-col gap-3 px-4">
+    <main className="layar ruang-bilah-aksi flex flex-1 flex-col gap-3 px-4">
       <AppBar judul="Barang & Jasa" kembali="/" />
 
       <div role="tablist" className="tab-grup">
@@ -341,7 +341,7 @@ function Isi() {
 
 export default function Katalog() {
   return (
-    <Suspense fallback={<main className="flex-1 p-4" aria-busy="true" />}>
+    <Suspense fallback={<main className="layar flex-1 p-4" aria-busy="true" />}>
       <Isi />
     </Suspense>
   )

@@ -85,12 +85,12 @@ export default function Utang() {
   }
 
   if (!ready || debts === undefined) {
-    return <main className="flex-1 p-4" aria-busy="true" />
+    return <main className="layar flex-1 p-4" aria-busy="true" />
   }
 
   if (!tenantId || !defaultWallet) {
     return (
-      <main className="flex flex-1 flex-col gap-4 p-4">
+      <main className="layar flex flex-1 flex-col gap-4 p-4">
         <p className="kartu">Pengaturan awal belum selesai.</p>
         <Link href="/mulai" className="btn-primer btn-besar">
           Buka pengaturan
@@ -102,7 +102,7 @@ export default function Utang() {
   // ── Layar terima pembayaran ────────────────────────────────────────
   if (aktif) {
     return (
-      <main className="ruang-bilah-aksi flex flex-1 flex-col gap-3 px-4">
+      <main className="layar ruang-bilah-aksi flex flex-1 flex-col gap-3 px-4">
         <AppBar judul={aktif.person} onKembali={() => setDipilih(null)} />
 
         <div className="kartu-gelap animate-naik">
@@ -162,7 +162,7 @@ export default function Utang() {
 
   // ── Daftar ─────────────────────────────────────────────────────────
   return (
-    <main className="ruang-bilah flex flex-1 flex-col gap-3 px-4">
+    <main className="layar ruang-bilah flex flex-1 flex-col gap-3 px-4">
       <AppBar judul="Belum bayar" kembali="/" />
 
       {ringkas.count === 0 ? (

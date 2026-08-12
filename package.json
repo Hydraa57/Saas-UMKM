@@ -18,6 +18,7 @@
     "shots": "node scripts/shots.mjs",
     "uji:galat": "node scripts/galat.mjs",
     "audit": "node scripts/audit.mjs",
+    "audit:lebar": "node scripts/audit.mjs 1440",
     "uji:pasang": "node scripts/pasang.mjs",
     "uji:stok": "node scripts/stok.mjs"
   },

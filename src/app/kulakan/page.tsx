@@ -112,11 +112,11 @@ export default function Kulakan() {
     }
   }
 
-  if (!ready) return <main className="flex-1 p-4" aria-busy="true" />
+  if (!ready) return <main className="layar flex-1 p-4" aria-busy="true" />
 
   if (!tenantId || !defaultWallet) {
     return (
-      <main className="flex flex-1 flex-col gap-4 p-4">
+      <main className="layar flex flex-1 flex-col gap-4 p-4">
         <p className="kartu">Pengaturan awal belum selesai.</p>
         <Link href="/mulai" className="btn-primer btn-besar">
           Buka pengaturan
@@ -126,7 +126,7 @@ export default function Kulakan() {
   }
 
   return (
-    <main className="flex flex-1 flex-col gap-3 px-4 pb-36">
+    <main className="layar flex flex-1 flex-col gap-3 px-4 pb-36">
       <AppBar judul="Kulakan" kembali="/katalog?tab=stok" />
 
       {baris.length > 0 && (

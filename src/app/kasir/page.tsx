@@ -132,11 +132,11 @@ export default function Kasir() {
     }
   }
 
-  if (!ready) return <main className="flex-1 p-4" aria-busy="true" />
+  if (!ready) return <main className="layar-penuh flex-1 p-4" aria-busy="true" />
 
   if (!tenantId || !defaultWallet) {
     return (
-      <main className="flex flex-1 flex-col gap-4 p-4">
+      <main className="layar-penuh flex flex-1 flex-col gap-4 p-4">
         <p className="kartu">Pengaturan awal belum selesai.</p>
         <Link href="/mulai" className="btn-primer btn-besar">
           Buka pengaturan
@@ -151,13 +151,13 @@ export default function Kasir() {
     if (typeof window !== 'undefined') {
       router.replace(`/struk/${fase.saleId}`)
     }
-    return <main className="flex-1 p-4" aria-busy="true" />
+    return <main className="layar-penuh flex-1 p-4" aria-busy="true" />
   }
 
   // ── Layar bayar ────────────────────────────────────────────────────
   if (fase.tahap === 'bayar') {
     return (
-      <main className="flex flex-1 flex-col gap-3 px-4 pb-32">
+      <main className="layar-penuh flex flex-1 flex-col gap-3 px-4 pb-32">
         <AppBar judul="Bayar" onKembali={() => setFase({ tahap: 'pilih' })} />
 
         <div className="kartu-gelap animate-naik">
@@ -258,7 +258,7 @@ export default function Kasir() {
 
   // ── Layar pilih barang ─────────────────────────────────────────────
   return (
-    <main className="flex flex-1 flex-col gap-3 px-4 pb-40">
+    <main className="layar-penuh flex flex-1 flex-col gap-3 px-4 pb-40">
       <AppBar judul="Kasir" kembali="/" />
 
       {/* Penolakan yang membawa jalan keluarnya sendiri. Yang paling
@@ -299,6 +299,12 @@ export default function Kasir() {
         </div>
       )}
 
+      {/* HP: satu kolom, keranjang di bawah grid, tombol bayar melayang
+          di dasar layar. Layar lebar: grid di kiri, keranjang menetap di
+          kanan — tidak perlu menggulir ke bawah untuk melihat total, dan
+          itu yang paling terasa di meja kasir yang memakai laptop. */}
+      <div className="flex flex-col gap-3 lg:flex-row lg:items-start">
+        <div className="flex min-w-0 flex-1 flex-col gap-3">
       {katalog.length === 0 ? (
         <div className="kartu text-center">
           <span
@@ -331,7 +337,7 @@ export default function Kasir() {
             ))}
           </div>
 
-          <div className="grid grid-cols-2 gap-3">
+          <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4">
             {terlihat.map((item) => {
               const diKeranjang = qtyInCart(keranjang, item.id)
               const status = isBarang(item) ? statusStok(item) : null
@@ -387,7 +393,11 @@ export default function Kasir() {
           </div>
         </>
       )}
+        </div>
 
+        <aside
+          className="flex flex-col gap-3 lg:sticky lg:top-4 lg:w-[22rem] lg:shrink-0"
+        >
       {keranjang.length > 0 && (
         <section className="kartu animate-naik">
           <h2 className="label mb-3">Keranjang</h2>
@@ -456,7 +466,8 @@ export default function Kasir() {
               <Ikon nama="peringatan" ukuran={18} className="mt-0.5 shrink-0" />
               <span>
                 {peringatan.map((p) => `${p.item.name} tinggal ${p.available}`).join(', ')}
-                . Tetap bisa dijual.
+                . Stoknya berubah setelah masuk keranjang — periksa dulu sebelum
+                dibayar.
               </span>
             </p>
           )}
@@ -464,7 +475,7 @@ export default function Kasir() {
       )}
 
       {keranjang.length > 0 && (
-        <div className="bilah-bawah">
+        <div className="bilah-bawah lg:static lg:mx-0 lg:max-w-none lg:border-0 lg:bg-transparent lg:p-0">
           <button
             type="button"
             onClick={() => {
@@ -490,6 +501,8 @@ export default function Kasir() {
           </button>
         </div>
       )}
+        </aside>
+      </div>
     </main>
   )
 }

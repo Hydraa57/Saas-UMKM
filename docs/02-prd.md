@@ -267,6 +267,24 @@ Dua hal yang ditemukan justru karena auditnya sendiri diperiksa:
 
 Auditnya sendiri diperiksa dengan mengembalikan ketiga perbaikannya sekaligus: keempat aturan menyala pada regresi yang tepat. Pemeriksa yang meloloskan semuanya tidak membuktikan apa-apa.
 
+### 5.1l Layar lebar: bilah ke samping, kasir dua kolom
+
+`max-w-md` dipaku di `<body>` — selebar HP, apa pun layarnya. Di laptop hasilnya pita sempit di tengah layar kosong, dan itu bukan sekadar boros: daftar yang muat sepuluh baris di ruang yang cukup untuk tiga puluh membuat orang menggulir untuk sesuatu yang seharusnya terlihat sekaligus.
+
+Yang berubah, dan alasannya masing-masing:
+
+**Bilah navigasi pindah ke samping.** Tonjolan tombol Kasir tidak ikut — ia menjawab jempol yang memegang HP, dan di layar lebar tidak ada jempol. Yang menggantikannya petak nila terisi penuh: tetap satu-satunya yang berwarna, tetap paling atas.
+
+**Bilah samping tidak ikut aturan "cuma di empat rute utama".** Bilah bawah memang disembunyikan di layar dalam seperti "tambah barang" atau "bayar", karena tempatnya di sana sudah dipakai bilah aksi. Di layar lebar tempat itu tidak diperebutkan siapa pun, dan navigasi yang menghilang saat masuk ke layar dalam memaksa orang menekan "kembali" untuk sesuatu yang seharusnya sekali klik — itu persis yang membuat sebuah aplikasi terasa seperti HP yang dilebarkan.
+
+**Kasir jadi dua kolom sungguhan.** Grid barang di kiri (empat kolom, bukan dua), keranjang menetap di kanan bersama tombol bayarnya. Tidak perlu menggulir ke bawah untuk melihat total, dan itu yang paling terasa di meja yang memakai laptop.
+
+**Lebar diatur per layar, bukan dipaku di badan halaman.** Kelas `.layar` naik ke `max-w-3xl` di layar lebar; `.layar-penuh` ke `max-w-6xl` untuk yang isinya memang dua kolom. Bukan selebar layar: baris teks yang terlalu panjang justru lebih sulit dibaca, dan tidak ada yang menuntut daftar penjualan selebar 27 inci.
+
+Auditnya sekarang menerima lebar layar sebagai argumen, dan dijalankan pada 390, 820, dan 1440 — cacat tata letak dua kolom tidak mungkin muncul pada lebar HP, jadi memeriksa satu lebar saja tidak membuktikan apa-apa.
+
+**Yang belum:** daftar-plus-rincian di katalog, riwayat, dan utang. Ketiganya masih satu kolom yang melebar. Itu pekerjaan berikutnya, dan bentuknya berbeda — ia menuntut keadaan "yang sedang dipilih" yang sekarang belum ada sama sekali.
+
 ### 5.2 Aturan timbal balik
 
 > **Setiap kali pengguna memasukkan sesuatu, dia harus langsung menerima sesuatu.**

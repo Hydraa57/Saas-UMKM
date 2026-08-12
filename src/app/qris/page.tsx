@@ -158,7 +158,7 @@ export default function PasangQris() {
   // ── Sedang memindai ────────────────────────────────────────────────
   if (tahap.nama === 'memindai') {
     return (
-      <main className="flex flex-1 flex-col gap-3 px-4 pb-8">
+      <main className="layar flex flex-1 flex-col gap-3 px-4 pb-8">
         <AppBar
           judul="Arahkan ke QRIS"
           onKembali={() => {
@@ -185,7 +185,7 @@ export default function PasangQris() {
   // ── Sudah terbaca, minta pengesahan ────────────────────────────────
   if (tahap.nama === 'terbaca') {
     return (
-      <main className="flex flex-1 flex-col gap-3 px-4 pb-8">
+      <main className="layar flex flex-1 flex-col gap-3 px-4 pb-8">
         <AppBar judul="Benar ini QRIS-nya?" onKembali={() => setTahap({ nama: 'diam' })} />
 
         {/* Nama merchant lebih besar dari apa pun di layar ini. Ini
@@ -244,7 +244,7 @@ export default function PasangQris() {
   })()
 
   return (
-    <main className="flex flex-1 flex-col gap-3 px-4 pb-8">
+    <main className="layar flex flex-1 flex-col gap-3 px-4 pb-8">
       <AppBar judul="QRIS usaha" kembali="/kasir" />
 
       {tersimpan && keteranganTersimpan ? (

@@ -83,12 +83,12 @@ export default function LayarStruk({
   }, [id])
 
   if (!ready || sale === undefined) {
-    return <main className="flex-1 p-4" aria-busy="true" />
+    return <main className="layar flex-1 p-4" aria-busy="true" />
   }
 
   if (sale === null) {
     return (
-      <main className="flex flex-1 flex-col gap-4 p-4">
+      <main className="layar flex flex-1 flex-col gap-4 p-4">
         <p className="kartu">Struk tidak ditemukan.</p>
         <Link href="/riwayat" className="btn-sekunder btn-besar">
           Kembali
@@ -135,7 +135,7 @@ export default function LayarStruk({
   const dibatalkan = Boolean(sale.voidedAt)
 
   return (
-    <main className="flex flex-1 flex-col gap-3 px-4 pb-8">
+    <main className="layar flex flex-1 flex-col gap-3 px-4 pb-8">
       <AppBar judul={`Struk ${sale.invoiceNo}`} kembali="/riwayat" />
 
       <div className="kartu-gelap animate-naik text-center">

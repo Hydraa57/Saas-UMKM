@@ -64,7 +64,7 @@ export default function Masuk() {
 
   if (!isConfigured()) {
     return (
-      <main className="flex flex-1 flex-col gap-4 px-4 pb-8">
+      <main className="layar flex flex-1 flex-col gap-4 px-4 pb-8">
         <AppBar judul="Cadangkan catatan" kembali="/" />
         <div className="kartu">
           <p className="font-semibold">Peladen belum disetel</p>
@@ -81,7 +81,7 @@ export default function Masuk() {
   // ── Sudah masuk ────────────────────────────────────────────────────
   if (status === 'masuk') {
     return (
-      <main className="flex flex-1 flex-col gap-3 px-4 pb-8">
+      <main className="layar flex flex-1 flex-col gap-3 px-4 pb-8">
         <AppBar judul="Cadangan" kembali="/" />
 
         <div className="kartu-gelap animate-naik">
@@ -152,7 +152,7 @@ export default function Masuk() {
 
   // ── Belum masuk ────────────────────────────────────────────────────
   return (
-    <main className="flex flex-1 flex-col gap-3 px-4 pb-8">
+    <main className="layar flex flex-1 flex-col gap-3 px-4 pb-8">
       <AppBar judul="Cadangkan catatan" kembali="/" />
 
       <div className="kartu animate-naik">
