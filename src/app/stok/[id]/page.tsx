@@ -194,7 +194,7 @@ export default function DetailStok({
               <li
                 key={m.id}
                 className="flex items-center gap-3 rounded-kartu bg-white p-3
-                           shadow-kartu ring-1 ring-slate-900/5"
+                           border border-garis"
               >
                 <span
                   className={`flex h-10 w-10 shrink-0 items-center justify-center

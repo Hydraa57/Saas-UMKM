@@ -173,7 +173,7 @@ export default function LayarStruk({
           dan yang dicetak. */}
       <pre
         className="overflow-x-auto rounded-kartu bg-white p-4 font-mono text-[13px]
-                   leading-snug text-slate-700 shadow-kartu ring-1 ring-slate-900/5"
+                   leading-snug text-slate-700 border border-garis"
       >
         {teks}
       </pre>
@@ -182,7 +182,7 @@ export default function LayarStruk({
         href={shareUrl}
         target="_blank"
         rel="noopener noreferrer"
-        className="btn btn-besar bg-emerald-600 text-white shadow-naik active:bg-emerald-700"
+        className="btn btn-besar bg-masuk text-white active:bg-masuk-kuat"
       >
         <Ikon nama="wa" ukuran={22} />
         Kirim ke WhatsApp

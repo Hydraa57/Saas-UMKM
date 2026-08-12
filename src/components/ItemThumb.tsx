@@ -23,15 +23,23 @@ import { Ikon } from './Ikon'
  * barang.
  */
 
+/**
+ * Petak pengganti foto: satu warna datar, bukan gradasi.
+ *
+ * Gradasi pada petak sekecil ini tidak terbaca sebagai gradasi melainkan
+ * sebagai warna yang kotor, dan dua puluh petak bergradasi berjejer di
+ * grid kasir membuat layarnya terlihat berisik justru pada layar yang
+ * harus paling cepat dipindai mata.
+ */
 const WARNA = [
-  'from-rose-100 to-rose-200 text-rose-800',
-  'from-amber-100 to-amber-200 text-amber-800',
-  'from-emerald-100 to-emerald-200 text-emerald-800',
-  'from-sky-100 to-sky-200 text-sky-800',
-  'from-violet-100 to-violet-200 text-violet-800',
-  'from-orange-100 to-orange-200 text-orange-800',
-  'from-teal-100 to-teal-200 text-teal-800',
-  'from-fuchsia-100 to-fuchsia-200 text-fuchsia-800',
+  'bg-rose-100 text-rose-700',
+  'bg-amber-100 text-amber-700',
+  'bg-emerald-100 text-emerald-700',
+  'bg-sky-100 text-sky-700',
+  'bg-violet-100 text-violet-700',
+  'bg-orange-100 text-orange-700',
+  'bg-teal-100 text-teal-700',
+  'bg-fuchsia-100 text-fuchsia-700',
 ] as const
 
 function warnaDari(id: string): string {
@@ -80,7 +88,7 @@ export function ItemThumb({ item }: { readonly item: Item }) {
     <span
       aria-hidden
       className={`flex aspect-square w-full items-center justify-center rounded-2xl
-                  bg-gradient-to-br text-3xl font-bold ${warnaDari(item.id)}`}
+                  text-3xl font-bold ${warnaDari(item.id)}`}
     >
       {isBarang(item) ? (
         item.name.charAt(0).toUpperCase()

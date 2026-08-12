@@ -10,7 +10,7 @@
   }
 
   body {
-    @apply bg-slate-100 text-slate-900 antialiased;
+    @apply bg-latar text-slate-900 antialiased;
     /* Aplikasi dipakai satu tangan sambil berdiri; tarik-untuk-muat-ulang
        yang tidak sengaja aktif saat menggulir daftar sangat mengganggu. */
     overscroll-behavior-y: contain;
@@ -44,23 +44,26 @@
 @layer components {
   /* ── Permukaan ──────────────────────────────────────────────────── */
 
+  /* Kartu dipisahkan dari latarnya oleh beda warna saja — tanpa
+     bayangan dan tanpa garis. Alasannya di tailwind.config.ts pada
+     token `latar`. */
   .kartu {
-    @apply rounded-kartu bg-white p-5 shadow-kartu ring-1 ring-slate-900/5;
+    @apply rounded-kartu bg-white p-5;
   }
 
   /* Kartu yang bisa ditekan. Umpan baliknya menyusut sedikit, bukan
      berubah warna: warna sudah dipakai untuk arti, dan gerakan terbaca
      lebih cepat daripada perubahan warna di layar yang silau. */
   .kartu-tekan {
-    @apply kartu transition active:scale-[0.985] active:shadow-none;
+    @apply kartu transition active:scale-[0.985] active:bg-slate-50;
   }
 
-  /* Latar gelap untuk kartu utama di beranda. Gradiennya halus — cukup
-     untuk terasa bernapas, tidak sampai mengganggu keterbacaan angka
-     putih di atasnya. */
+  /* Kartu utama di beranda. **Datar**, satu warna penuh. Sebelumnya ia
+     bergradasi dari abu tua ke nila tua; gradiennya cuma terlihat
+     sebagai kotoran di layar HP murah, dan membuat satu-satunya
+     permukaan gelap di aplikasi ini terasa tidak sengaja. */
   .kartu-gelap {
-    @apply rounded-kartu-lg bg-gradient-to-br from-slate-900 via-slate-900
-           to-merek-950 p-6 text-white shadow-naik;
+    @apply rounded-kartu-lg bg-gelap p-6 text-white;
   }
 
   /* ── Tombol ─────────────────────────────────────────────────────── */
@@ -72,19 +75,18 @@
   }
 
   .btn-primer {
-    @apply btn bg-merek-600 text-white shadow-tombol
-           active:bg-merek-700 disabled:bg-slate-200 disabled:text-slate-400
-           disabled:shadow-none;
+    @apply btn bg-merek-600 text-white
+           active:bg-merek-700 disabled:bg-garis disabled:text-slate-400;
   }
 
   .btn-sekunder {
-    @apply btn bg-white text-slate-800 shadow-kartu ring-1 ring-slate-900/5
+    @apply btn border border-garis bg-white text-slate-800
            active:bg-slate-50 disabled:text-slate-400;
   }
 
   .btn-bahaya {
-    @apply btn bg-keluar text-white active:bg-red-800
-           disabled:bg-slate-200 disabled:text-slate-400;
+    @apply btn bg-keluar text-white active:bg-keluar-kuat
+           disabled:bg-garis disabled:text-slate-400;
   }
 
   /* Tombol aksi besar di beranda dan di akhir alur. Besar dengan
@@ -94,44 +96,46 @@
   }
 
   .btn-angka {
-    @apply flex min-h-touch items-center justify-center rounded-2xl bg-white
-           text-2xl font-semibold text-slate-900 shadow-kartu
-           ring-1 ring-slate-900/5 transition
-           active:scale-95 active:bg-slate-100;
+    @apply flex min-h-touch items-center justify-center rounded-kartu
+           bg-white text-2xl font-semibold text-slate-900
+           transition active:scale-95 active:bg-slate-100;
   }
 
   /* Tombol ikon persegi di kepala halaman. */
   .btn-ikon {
-    @apply flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl
-           bg-white text-slate-700 shadow-kartu ring-1 ring-slate-900/5
+    @apply flex h-12 w-12 shrink-0 items-center justify-center rounded-kartu
+           bg-white text-slate-700
            transition active:scale-95 active:bg-slate-100;
   }
 
   /* ── Pilihan ────────────────────────────────────────────────────── */
 
-  /* Kelompok tab bergaya "pil": penanda posisinya berupa kartu putih
-     yang menyala di atas alur abu. */
+  /* Kelompok tab bergaya "pil". Penanda posisinya kartu putih penuh di
+     atas alur abu — tanpa bayangan, karena bedanya sudah cukup dari
+     warnanya sendiri. */
+  /* Alurnya harus lebih gelap dari latar halaman, bukan sama — kalau
+     sama, kelompok tabnya tidak terlihat sebagai satu benda. */
   .tab-grup {
-    @apply flex gap-1 rounded-kartu bg-slate-200/70 p-1;
+    @apply flex gap-1 rounded-kartu bg-garis-kuat/60 p-1;
   }
 
   .tab {
-    @apply flex min-h-[2.75rem] flex-1 items-center justify-center rounded-2xl
-           text-base font-semibold text-slate-600 transition;
+    @apply flex min-h-[2.75rem] flex-1 items-center justify-center
+           rounded-[0.8rem] text-base font-semibold text-slate-600 transition;
   }
 
   .tab-aktif {
-    @apply bg-white text-slate-900 shadow-kartu;
+    @apply bg-white text-slate-900;
   }
 
   .chip {
-    @apply flex min-h-touch items-center justify-center rounded-2xl bg-white
-           px-5 font-semibold text-slate-700 shadow-kartu ring-1
-           ring-slate-900/5 transition active:scale-95;
+    @apply flex min-h-touch items-center justify-center rounded-kartu
+           bg-white px-5 font-semibold text-slate-700
+           transition active:scale-95;
   }
 
   .chip-aktif {
-    @apply bg-merek-600 text-white shadow-tombol ring-merek-600;
+    @apply bg-merek-600 text-white;
   }
 
   /* ── Isian ──────────────────────────────────────────────────────── */
@@ -148,9 +152,8 @@
   /* ── Baris daftar ───────────────────────────────────────────────── */
 
   .baris {
-    @apply flex items-center gap-3 rounded-kartu bg-white p-3 shadow-kartu
-           ring-1 ring-slate-900/5 transition active:scale-[0.985]
-           active:bg-slate-50;
+    @apply flex items-center gap-3 rounded-kartu bg-white p-3 transition
+           active:scale-[0.985] active:bg-slate-50;
   }
 
   /* ── Bilah bawah ────────────────────────────────────────────────── */
@@ -164,10 +167,14 @@
     bottom: calc(theme(spacing.bilah) + 0.5rem);
   }
 
+  /* Putih penuh, bukan buram tembus pandang. Latar berbuih terlihat
+     mahal di tangkapan layar dan **mahal betulan** di HP murah: tiap
+     gulir memaksa peramban menggambar ulang seluruh bilahnya. Garis
+     tegas di atasnya memisahkan sama baiknya, tanpa biaya itu. */
   .bilah-bawah {
-    @apply fixed inset-x-0 bottom-0 z-30 mx-auto max-w-md
-           border-t border-slate-900/5 bg-white/85 px-4 pb-[max(0.75rem,env(safe-area-inset-bottom))]
-           pt-3 shadow-bilah backdrop-blur-xl;
+    @apply fixed inset-x-0 bottom-0 z-30 mx-auto max-w-md border-t
+           border-garis bg-white px-4
+           pb-[max(0.75rem,env(safe-area-inset-bottom))] pt-3;
   }
 }
 

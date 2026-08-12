@@ -43,10 +43,10 @@ export function StatusCadangan() {
         </span>
         <span className="min-w-0 flex-1">
           <span className="block font-semibold text-tunggu">
-            Catatan baru ada di HP ini
+            Belum dicadangkan
           </span>
           <span className="block text-sm text-tunggu/80">
-            Cadangkan supaya tidak ikut hilang
+            Catatan baru ada di HP ini
           </span>
         </span>
         <Ikon nama="lanjut" ukuran={20} className="shrink-0 text-tunggu/50" />

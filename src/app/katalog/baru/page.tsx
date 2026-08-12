@@ -278,7 +278,7 @@ function Isi() {
             <img
               src={pratinjau}
               alt="Pratinjau foto"
-              className="aspect-square w-32 rounded-2xl object-cover shadow-kartu"
+              className="aspect-square w-32 rounded-2xl object-cover border border-garis"
             />
           )}
         </div>

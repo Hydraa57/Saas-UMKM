@@ -173,7 +173,7 @@ await step('penjualan langsung masuk pembukuan tanpa dicatat ulang', async () =>
 await step('peringatan cadangan muncul selama belum masuk akun', async () => {
   // Kehilangan HP adalah satu-satunya cara seluruh isi aplikasi lenyap
   // sekaligus, dan pengguna tidak punya cara lain mengetahuinya.
-  if (!beranda.includes('Catatan baru ada di HP ini')) {
+  if (!beranda.includes('Belum dicadangkan')) {
     throw new Error('peringatan cadangan tidak muncul: ' + beranda)
   }
 })

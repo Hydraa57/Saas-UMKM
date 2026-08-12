@@ -64,7 +64,7 @@ export default function Mulai() {
       <header className="animate-naik pt-4">
         <span
           className="mb-4 flex h-14 w-14 items-center justify-center rounded-2xl
-                     bg-merek-600 text-white shadow-tombol"
+                     bg-merek-600 text-white"
         >
           <Ikon nama="kasir" ukuran={26} tebal={1.9} />
         </span>
@@ -98,8 +98,8 @@ export default function Mulai() {
               className={`flex min-h-touch items-center gap-3 rounded-kartu px-4 py-3
                           text-left transition active:scale-[0.985] ${
                             jenis === pilihan
-                              ? 'bg-merek-600 text-white shadow-tombol'
-                              : 'bg-white text-slate-800 shadow-kartu ring-1 ring-slate-900/5'
+                              ? 'bg-merek-600 text-white'
+                              : 'bg-white text-slate-800 border border-garis'
                           }`}
             >
               <span className="min-w-0 flex-1">

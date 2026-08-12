@@ -186,7 +186,7 @@ function Isi() {
                   </span>
                   <span className="min-w-0 flex-1">
                     <span className="block truncate font-semibold">{item.name}</span>
-                    <span className="block font-semibold text-merek-700">
+                    <span className="block font-semibold text-slate-900">
                       {M.format(item.price)}
                     </span>
                     {/* Jasa memang tidak punya baris sisa sama sekali. */}

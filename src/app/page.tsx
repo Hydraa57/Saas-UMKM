@@ -163,7 +163,7 @@ export default function Beranda() {
         <div className="animate-naik">
           <span
             className="mb-5 flex h-16 w-16 items-center justify-center rounded-[1.3rem]
-                       bg-merek-600 text-white shadow-tombol"
+                       bg-merek-600 text-white"
           >
             <Ikon nama="kasir" ukuran={30} tebal={1.9} />
           </span>
@@ -191,7 +191,7 @@ export default function Beranda() {
           bayar — jadi cuma ditemukan orang yang kebetulan sudah memilih
           QRIS di depan pembeli. */}
       <div className="flex items-center justify-between">
-        <span className="text-sm font-bold tracking-tight text-slate-400">
+        <span className="text-[1.05rem] font-extrabold tracking-tight text-slate-800">
           Ezura
         </span>
         <a href="/pengaturan" aria-label="Pengaturan" className="btn-ikon">

@@ -88,7 +88,7 @@ export function TabBar() {
         >
           <span
             className="flex h-14 w-14 items-center justify-center rounded-[1.15rem]
-                       bg-merek-600 text-white shadow-tombol transition
+                       bg-merek-600 text-white transition
                        active:scale-95 active:bg-merek-700"
           >
             <Ikon nama="kasir" ukuran={26} tebal={1.9} />

@@ -194,6 +194,18 @@ Nomor WhatsApp tersimpan di perangkat saja dan **tidak dikirim ke peladen**: ia 
 
 Yang **tidak** dipindahkan ke sini: apa pun yang punya rumah yang lebih dekat ke titik pakainya. Ekspor Excel tetap di layar laporan, karena yang mencarinya sedang melihat angkanya. Menu pengaturan yang menampung semua hal yang tidak jelas tempatnya akan berhenti bisa dibaca dalam sebulan.
 
+### 5.1g Rupa: datar, satu palet, tanpa gradasi
+
+Rombakan kedua, setelah yang pertama dinilai **masih terlalu dasar**. Tiga hal yang diubah, dan ketiganya punya alasan yang sama: yang membuat sebuah antarmuka terbaca "templat" bukan kurangnya hiasan, melainkan **keputusan yang tidak konsisten**.
+
+**Tidak ada gradasi sama sekali.** Kartu gelap di beranda dulu bergradasi dari abu tua ke nila tua, dan petak pengganti foto di kasir masing-masing bergradasi. Pada layar HP murah gradasi halus tidak terbaca sebagai gradasi melainkan sebagai warna yang kotor — dan dua puluh petak bergradasi berjejer membuat grid kasir berisik justru pada layar yang harus paling cepat dipindai mata.
+
+**Kartu dipisahkan oleh beda warna, bukan bayangan dan bukan garis.** Bayangan lembut di atas abu muda melunakkan tepi persis di layar yang sering dipakai sambil silau. Garis satu piksel dicoba sebagai gantinya dan ternyata sama lemahnya. Yang dipakai sekarang: latar yang cukup gelap sehingga putih penuh berdiri sendiri tanpa bantuan apa pun — nol tinta tambahan, tepi tetap tegas di bawah matahari. Satu-satunya bayangan yang tersisa dipakai tombol Kasir di bilah bawah, yang memang melayang di atas isi halaman.
+
+**Warna semantik dipilih dengan dihitung, bukan dikira-kira.** Nada lama diambil dari ujung gelap skala Tailwind dan hasilnya kusam. Percobaan penggantinya justru terlalu jauh ke arah sebaliknya: `#d98407` cuma mencapai **2,89** berbanding putih — gagal WCAG AA bahkan untuk teks besar — padahal warna itu yang dipakai kartu peringatan di beranda. Warna peringatan yang tidak terbaca adalah cacat, bukan pilihan gaya. Palet sekarang dihitung satu per satu, termasuk di atas nada mudanya sendiri tempat label "MASUK"/"KELUAR" berdiri; semuanya ≥ 4,5.
+
+Satu aturan lama yang ternyata dilanggar diam-diam dan sekarang ditegakkan: **harga tidak pernah memakai warna merek.** Harga di grid kasir dan daftar katalog sempat ditulis nila — warna yang di seluruh aplikasi ini berarti "bisa ditekan". Akibatnya harga terbaca seperti tautan, dan beda antara "ini tindakan" dan "ini keterangan" ikut hilang.
+
 ### 5.2 Aturan timbal balik
 
 > **Setiap kali pengguna memasukkan sesuatu, dia harus langsung menerima sesuatu.**

@@ -280,18 +280,21 @@ export default function Kasir() {
                   key={item.id}
                   type="button"
                   onClick={() => tambah(item)}
-                  className={`relative flex flex-col rounded-kartu bg-white p-2.5 text-left
-                              shadow-kartu ring-1 transition active:scale-[0.97] ${
-                                diKeranjang > 0
-                                  ? 'ring-2 ring-merek-500'
-                                  : 'ring-slate-900/5'
+                  className={`relative flex flex-col rounded-kartu bg-white p-2.5
+                              text-left transition active:scale-[0.97] ${
+                                diKeranjang > 0 ? 'ring-2 ring-merek-500' : ''
                               }`}
                 >
                   <ItemThumb item={item} />
                   <span className="mt-2 line-clamp-2 font-semibold leading-snug">
                     {item.name}
                   </span>
-                  <span className="mt-0.5 font-semibold text-merek-700">
+                  {/* Harga pakai warna tinta, bukan warna merek. Aturannya
+                      ada di tailwind.config.ts: nila menandai yang bisa
+                      ditekan, dan harga yang berwarna sama akan terbaca
+                      sebagai tautan — sekaligus menghapus beda antara
+                      "ini tindakan" dan "ini keterangan". */}
+                  <span className="mt-0.5 font-semibold text-slate-900">
                     {M.format(item.price)}
                   </span>
                   {status && (
@@ -313,7 +316,7 @@ export default function Kasir() {
                     <span
                       className="absolute right-2 top-2 flex h-8 min-w-8 items-center
                                  justify-center rounded-full bg-merek-600 px-2
-                                 font-bold text-white shadow-tombol"
+                                 font-bold text-white "
                     >
                       {diKeranjang}
                     </span>
@@ -349,7 +352,7 @@ export default function Kasir() {
                     aria-label={`Kurangi ${line.itemName}`}
                     onClick={() => setKeranjang((isi) => setQty(isi, index, line.qty - 1))}
                     className="flex h-9 w-9 items-center justify-center rounded-xl
-                               bg-white text-slate-700 shadow-kartu active:scale-95"
+                               bg-white text-slate-700 border border-garis active:scale-95"
                   >
                     <Ikon nama="kurang" ukuran={18} tebal={2.4} />
                   </button>
@@ -359,7 +362,7 @@ export default function Kasir() {
                     aria-label={`Tambah ${line.itemName}`}
                     onClick={() => setKeranjang((isi) => setQty(isi, index, line.qty + 1))}
                     className="flex h-9 w-9 items-center justify-center rounded-xl
-                               bg-white text-slate-700 shadow-kartu active:scale-95"
+                               bg-white text-slate-700 border border-garis active:scale-95"
                   >
                     <Ikon nama="tambah" ukuran={18} tebal={2.4} />
                   </button>
