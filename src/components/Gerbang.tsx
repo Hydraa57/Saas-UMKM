@@ -3,7 +3,7 @@
 import { useLiveQuery } from 'dexie-react-hooks'
 import { usePathname } from 'next/navigation'
 import { db, getMeta, PERNAH_MASUK_KEY } from '@/lib/db/local'
-import { isConfigured } from '@/lib/supabase/client'
+import { isConfigured, NAMA_ENV } from '@/lib/supabase/client'
 import { useSesi } from '@/lib/auth'
 
 /**
@@ -143,13 +143,25 @@ function PeladenBelumDisetel() {
         tanpa tempat mencadangkannya. Pasang dua kunci lingkungan berikut
         lalu muat ulang:
       </p>
-      <ul className="kartu flex flex-col gap-2 font-mono text-sm">
-        <li>NEXT_PUBLIC_SUPABASE_URL</li>
-        <li>NEXT_PUBLIC_SUPABASE_ANON_KEY</li>
+      {/* Namanya dibaca dari modul yang sama dengan yang memakainya.
+          Versi pertama layar ini menuliskan namanya sendiri dan salah
+          satu keliru — pemasangnya menuruti layar, kuncinya tetap kosong,
+          dan tidak ada petunjuk bahwa yang salah justru petunjuknya. */}
+      <ul className="kartu flex flex-col gap-2 break-all font-mono text-sm">
+        <li>{NAMA_ENV.url}</li>
+        <li>{NAMA_ENV.kunci}</li>
       </ul>
       <p className="text-sm text-slate-500">
         Keduanya ada di dasbor Supabase → Project Settings → API. Di Vercel,
-        pasang di Project Settings → Environment Variables, lalu deploy ulang.
+        pasang di Project Settings → Environment Variables, lalu{' '}
+        <strong>deploy ulang tanpa memakai cache build</strong> — kunci
+        berawalan <code>NEXT_PUBLIC_</code> disisipkan saat build, jadi
+        deploy yang memakai build lama tetap membawa nilai lama.
+      </p>
+      <p className="text-sm text-slate-500">
+        Proyek Supabase lama menamai kuncinya{' '}
+        <code className="break-all">{NAMA_ENV.kunciLama}</code>; nama itu
+        juga diterima.
       </p>
     </main>
   )
