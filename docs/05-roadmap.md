@@ -30,9 +30,10 @@ Dan satu urutan yang tidak boleh dibalik: **struk sebelum laporan.** Laporan ada
 | Muatan QRIS: TLV, CRC-16, statis→dinamis | 24 |
 | Utang & piutang | 17 |
 | Foto: pengecilan sebelum disimpan | 5 |
+| Unggah foto ke Storage (termasuk jalur gagalnya) | 10 |
 | Antrean kirim luring + penggolongan kegagalan | 30 |
 | Aksi tulis (tulis lokal + antre, tanpa menunggu jaringan) | 40 |
-| Skema, RLS, jalur tulis (PostgreSQL sungguhan) | 87 penegasan |
+| Skema, RLS, jalur tulis (PostgreSQL sungguhan) | 92 penegasan |
 
 Layar: pengaturan awal, beranda, barang & jasa (tab Daftar + Stok, termasuk tambah/ubah/arsip), kasir, struk, riwayat struk, kulakan, koreksi hitung fisik, piutang, uang keluar, cadangan, laporan, pengaturan. Alur lengkapnya diuji di peramban sungguhan lewat `npm run smoke` — 44 langkah, termasuk mengunduh berkas ekspor dan membacanya kembali dengan pembaca `.xlsx` di luar repo ini.
 
@@ -84,7 +85,7 @@ Penyandi ESC/POS menerima **string**, bukan `Sale`. Kalau ia menyusun sendiri ba
 - [x] Antrean kirim benar-benar dijalankan: saat dibuka, saat sinyal kembali, saat antrean bertambah, dan berkala
 - [x] Indikator keadaan cadangan yang menghilang sendiri kalau semuanya sudah aman
 - [ ] Penarikan data dari peladen (untuk HP kedua; risiko kehilangan sudah ditutup oleh pengiriman)
-- [ ] Unggah foto katalog ke Storage
+- [x] Unggah foto katalog ke Storage — ember privat, jalur `<tenant>/<item>`, antrean terpisah dari antrean penjualan
 - [x] Daftar rekap bulanan + total tahunan, meniru halaman buku tulisnya
 - [x] Barang terlaris & jam paling ramai — jawaban yang buku tulis tidak akan pernah bisa beri
 - [x] Untung kotor per bulan, dari harga modal yang disalin saat transaksi
@@ -138,7 +139,7 @@ Posisi lengkapnya di [`08-posisi-produk.md`](08-posisi-produk.md). Ringkasnya: a
 | Fase | Perkiraan | Hasil |
 |---|---|---|
 | 0 | selesai | Paham cara ibu mencatat, dari bukunya sendiri |
-| — | selesai | Fondasi, skema, logika, 370 tes + 87 penegasan DB |
+| — | selesai | Fondasi, skema, logika, 380 tes + 92 penegasan DB |
 | 1 | selesai | **Kasir, katalog, dan struk jalan** |
 | 2 | selesai | **Stok yang lingkarannya tertutup** |
 | 3 | selesai | **Printer termal, riwayat struk, piutang** |

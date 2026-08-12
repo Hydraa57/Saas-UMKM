@@ -5,6 +5,7 @@ import { useLiveQuery } from 'dexie-react-hooks'
 import { db } from '@/lib/db/local'
 import { isConfigured, supabase } from '@/lib/supabase/client'
 import { failedItems, flush, pendingCount } from './outbox'
+import { fotoTertunda, unggahFoto } from './foto'
 import { createTransport } from './transport'
 import { useSesi } from '@/lib/auth'
 
@@ -37,6 +38,8 @@ const JEDA_BERKALA_MS = 2 * 60 * 1000
 export interface StatusSync {
   /** Jumlah catatan yang belum sampai ke peladen. */
   readonly menunggu: number
+  /** Foto katalog yang belum tersalin. Terpisah karena bukan uang. */
+  readonly fotoMenunggu: number
   /** Catatan yang ditolak permanen dan butuh perhatian. */
   readonly gagal: number
   readonly sedangMengirim: boolean
@@ -56,6 +59,7 @@ export function useSync(): StatusSync {
   const sedangJalan = useRef(false)
 
   const menunggu = useLiveQuery(() => pendingCount(db()), [], 0)
+  const fotoMenunggu = useLiveQuery(() => fotoTertunda(db()), [], 0)
   const gagal = useLiveQuery(async () => (await failedItems(db())).length, [], 0)
 
   const kirim = useCallback(async () => {
@@ -63,7 +67,11 @@ export function useSync(): StatusSync {
     sedangJalan.current = true
     setSedangMengirim(true)
     try {
+      // Antrean panggilan lebih dulu, foto menyusul. Yang harus segera
+      // aman adalah penjualannya; foto katalog yang menyusul semenit
+      // kemudian tidak merugikan siapa pun.
       await flush(db(), createTransport(supabase()))
+      await unggahFoto(db(), supabase())
     } catch {
       // Kegagalan pengiriman tidak boleh merusak layar mana pun.
       // Antreannya tetap utuh dan akan dicoba lagi pada pemicu
@@ -74,11 +82,12 @@ export function useSync(): StatusSync {
     }
   }, [bisaMengirim])
 
-  // Saat aplikasi dibuka, dan tiap kali antrean bertambah.
+  // Saat aplikasi dibuka, dan tiap kali antrean bertambah — termasuk
+  // saat yang bertambah cuma fotonya.
   useEffect(() => {
     if (!bisaMengirim) return
     void kirim()
-  }, [bisaMengirim, kirim, menunggu])
+  }, [bisaMengirim, kirim, menunggu, fotoMenunggu])
 
   // Saat sambungan kembali ada.
   useEffect(() => {
@@ -97,6 +106,7 @@ export function useSync(): StatusSync {
 
   return {
     menunggu: menunggu ?? 0,
+    fotoMenunggu: fotoMenunggu ?? 0,
     gagal: gagal ?? 0,
     sedangMengirim,
     bisaMengirim,

@@ -59,6 +59,55 @@ alter default privileges in schema public
 alter default privileges in schema public
   grant usage, select on sequences to anon;
 
+
+-- ── Tiruan skema `storage` ───────────────────────────────────────────────
+--
+-- Supabase Storage menyimpan berkasnya di luar PostgreSQL, tapi hak
+-- aksesnya ditentukan policy pada `storage.objects` — tabel biasa. Yang
+-- perlu diuji di sini persis bagian itu, dan itu bisa diuji tanpa satu
+-- bita berkas pun.
+--
+-- `storage.foldername` ditulis sepadan dengan aslinya: memecah jalur pada
+-- garis miring lalu membuang segmen terakhir (nama berkasnya). Kalau
+-- tiruannya berbeda, policy yang lulus di sini bisa tetap membocorkan
+-- foto tenant lain di produksi.
+
+create schema if not exists storage;
+
+create table if not exists storage.buckets (
+  id     text primary key,
+  name   text not null,
+  public boolean not null default false
+);
+
+create table if not exists storage.objects (
+  id         uuid primary key default gen_random_uuid(),
+  bucket_id  text not null references storage.buckets(id),
+  name       text not null,
+  owner      uuid,
+  created_at timestamptz not null default now(),
+  unique (bucket_id, name)
+);
+
+create or replace function storage.foldername(name text)
+returns text[]
+language plpgsql immutable
+as $$
+declare
+  bagian text[];
+begin
+  bagian := string_to_array(name, '/');
+  return bagian[1 : array_length(bagian, 1) - 1];
+end;
+$$;
+
+alter table storage.objects enable row level security;
+alter table storage.objects force row level security;
+
+grant usage on schema storage to authenticated, anon;
+grant select, insert, update, delete on storage.objects to authenticated;
+grant select on storage.buckets to authenticated;
+
 -- ── Penegasan ────────────────────────────────────────────────────────────
 
 create or replace function assert(condition boolean, label text)

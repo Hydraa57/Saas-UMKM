@@ -201,3 +201,56 @@ select assert_eq(
      and array_to_string(defaclacl, ',') like '%anon=X%'),
   '', 'fungsi baru di public tidak otomatis bisa dieksekusi anon'
 );
+
+-- ── Foto barang di Storage ───────────────────────────────────────────────
+--
+-- Foto disimpan dengan nama `<tenant_id>/<item_id>`, dan seluruh
+-- keamanannya bertumpu pada satu hal: segmen folder pertama harus tenant
+-- milik pemanggil. Kalau itu meleset, foto katalog satu usaha bisa dibaca
+-- usaha lain — dan tidak ada satu pun gejala yang memberi tahu.
+
+select login_as('11111111-1111-1111-1111-111111111111');
+set role authenticated;
+
+insert into storage.objects (bucket_id, name)
+values ('foto-barang', 'aaaaaaaa-0000-0000-0000-000000000001/foto-a.webp');
+
+select assert_eq(
+  (select count(*)::int from storage.objects), 1,
+  'pemilik A bisa menyimpan foto di foldernya sendiri'
+);
+
+select assert_denied(
+  $$insert into storage.objects (bucket_id, name)
+    values ('foto-barang', 'bbbbbbbb-0000-0000-0000-000000000001/curang.webp')$$,
+  'A tidak bisa menyimpan foto ke folder tenant lain'
+);
+
+-- Berkas di akar ember, tanpa folder tenant sama sekali. `foldername`
+-- mengembalikan larik kosong, jadi tidak ada yang cocok — dan itu memang
+-- harus ditolak, bukan diloloskan karena "tidak ada yang bisa dibandingkan".
+select assert_denied(
+  $$insert into storage.objects (bucket_id, name)
+    values ('foto-barang', 'nyasar.webp')$$,
+  'foto tanpa folder tenant ditolak'
+);
+
+reset role;
+
+-- ── Tenant B tidak melihat foto tenant A ─────────────────────────────────
+
+select login_as('22222222-2222-2222-2222-222222222222');
+set role authenticated;
+
+select assert_eq(
+  (select count(*)::int from storage.objects), 0,
+  'pemilik B tidak melihat satu pun foto milik A'
+);
+
+select assert_eq(
+  (select count(*)::int from storage.objects
+   where name like 'aaaaaaaa%'), 0,
+  'menyebut jalurnya langsung pun tidak membukanya'
+);
+
+reset role;

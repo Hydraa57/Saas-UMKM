@@ -75,9 +75,10 @@ Alur pokoknya sudah jalan dari ujung ke ujung: pengaturan awal → isi katalog �
 | Muatan QRIS: TLV, CRC-16, statis→dinamis | 24 |
 | Utang & piutang | 17 |
 | Foto: pengecilan sebelum disimpan | 5 |
+| Unggah foto ke Storage (termasuk jalur gagalnya) | 10 |
 | Antrean kirim luring + penggolongan kegagalan | 30 |
 | Aksi tulis (tulis lokal + antre, tanpa menunggu jaringan) | 40 |
-| Skema, RLS, jalur tulis (PostgreSQL sungguhan) | 87 penegasan |
+| Skema, RLS, jalur tulis (PostgreSQL sungguhan) | 92 penegasan |
 
 Layar yang sudah ada: pengaturan awal, beranda, barang & jasa (tab Daftar + Stok), tambah/ubah/arsip, kasir, struk, riwayat struk, kulakan, koreksi hitung fisik, piutang, uang keluar, cadangan, laporan, pasang QRIS, pengaturan.
 
@@ -95,7 +96,11 @@ Batasnya ditulis di layarnya sendiri dan tidak dikaburkan: **aplikasi tidak pern
 
 Diuji dengan cara yang sama kerasnya seperti ekspor: CRC dan muatan pembandingnya dihitung `binascii.crc_hqx` milik Python, dan uji asap **memotret QR yang tergambar di layar lalu memindainya balik** dengan `jsqr`, memastikan yang akan dilihat kamera pembeli benar-benar berisi nominal yang tepat dengan data merchant yang tidak tergeser. Pemeriksaan itu langsung menangkap satu bug tata letak nyata: bilah tombol di dasar layar menutupi seperempat bagian bawah kodenya, dan QR yang terpotong gagal dipindai sama sekali.
 
-Belum ada: penarikan data dari peladen (untuk HP kedua), unggah foto ke Storage.
+Foto katalog ikut tersalin ke Supabase Storage. Sebelumnya foto hanya ada sebagai blob di IndexedDB satu HP — katalognya tersalin, fotonya tidak, jadi kalau HP-nya hilang yang kembali adalah daftar barang **tanpa satu pun fotonya**. Pada kasir yang seluruh cara pakainya "ketuk fotonya", itu praktis berarti mengisi ulang katalog dari nol.
+
+Embernya **tidak publik**, dan nama berkasnya `<tenant>/<item>` — seluruh keamanannya bertumpu pada policy yang memeriksa segmen folder pertama. Harness lokal sekarang punya tiruan skema `storage` supaya keempat policy itu benar-benar diuji: kontrol negatif membuktikannya sensitif — pemeriksaan foldernya dilepas, dan satu tenant langsung bisa menulis foto ke folder tenant lain.
+
+Belum ada: penarikan data dari peladen (untuk HP kedua).
 
 ### Supabase
 
@@ -135,9 +140,9 @@ npm run dev
 ### Pengujian
 
 ```bash
-npm test          # 370 tes unit
+npm test          # 380 tes unit
 npm run typecheck
-npm run db:test   # 87 penegasan: migrasi, RLS, jalur tulis
+npm run db:test   # 92 penegasan: migrasi, RLS, jalur tulis
 
 npm run build && npx next start -p 3311 &
 npm run smoke     # alur nyata di peramban sungguhan
