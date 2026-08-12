@@ -99,7 +99,7 @@ export default function DetailStok({
   const selisih = hitung === '' ? null : selisihHitung(item, Number(hitung))
 
   return (
-    <main className="flex flex-1 flex-col gap-4 px-4 pb-[calc(theme(spacing.bilah)+1rem)]">
+    <main className="flex flex-1 flex-col gap-4 px-4 pb-8">
       <AppBar judul={item.name} kembali="/katalog?tab=stok" />
 
       <div className="kartu-gelap animate-naik">

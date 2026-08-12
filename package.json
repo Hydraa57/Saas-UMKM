@@ -16,7 +16,8 @@
     "db:types": "supabase gen types typescript --local > src/lib/supabase/database.types.ts",
     "smoke": "node scripts/smoke.mjs",
     "shots": "node scripts/shots.mjs",
-    "uji:galat": "node scripts/galat.mjs"
+    "uji:galat": "node scripts/galat.mjs",
+    "audit": "node scripts/audit.mjs"
   },
   "dependencies": {
     "@supabase/ssr": "^0.7.0",

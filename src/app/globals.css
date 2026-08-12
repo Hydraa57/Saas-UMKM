@@ -3,6 +3,30 @@
 @tailwind utilities;
 
 @layer base {
+  :root {
+    /**
+     * Tinggi halangan sebenarnya di dasar layar.
+     *
+     * Bukan tinggi bilah putihnya — melainkan setinggi apa yang benar-
+     * benar menutupi isi halaman. Bedanya nyata dan diukur di peramban,
+     * bukan dihitung dari kelas: bilah putihnya 77px, tapi tombol Kasir
+     * yang ditinggikan menonjol 11px di atasnya, jadi yang tertutup 88px.
+     *
+     * Token `bilah` (68px) yang dipakai sebelumnya **sudah meleset 9px
+     * bahkan sebelum tombol Kasir dihitung**, dan tiap `calc(bilah + …)`
+     * di seluruh aplikasi ikut meleset sebanyak itu. Akibatnya dua cacat
+     * sekaligus: baris terakhir daftar tertutup di beranda, dan tombol
+     * mengambang bertabrakan dengan tombol Kasir di tiga layar.
+     *
+     * Disusun dari bagian-bagiannya, bukan dari satu angka mati, supaya
+     * ia ikut benar di HP dengan bilah gestur di dasar layar:
+     *
+     *   4.75rem  tinggi tautan Kasir — benda tertinggi di bilah ini
+     *   + ruang aman bawah, minimal 0.75rem
+     */
+    --bilah-penuh: calc(4.75rem + max(0.75rem, env(safe-area-inset-bottom)));
+  }
+
   html {
     /* Angka rupiah harus sejajar rapi di daftar transaksi. */
     font-variant-numeric: tabular-nums;
@@ -208,7 +232,21 @@
      tidak pernah bisa disentuh. Yang di layar bertab memakai bentuk ini. */
   .mengambang {
     @apply fixed inset-x-0 z-20 mx-auto flex max-w-md justify-end gap-2 px-4;
-    bottom: calc(theme(spacing.bilah) + 0.5rem);
+    bottom: calc(var(--bilah-penuh) + 0.5rem);
+  }
+
+  /* Ruang di dasar halaman supaya baris terakhir tidak tertutup bilah.
+     Dipakai sebagai kelas, bukan `calc` yang ditulis ulang tiap halaman:
+     tujuh nilai berbeda pernah dipilih dengan tangan di berkas-berkas
+     ini, dan yang paling kecil di antaranya menyembunyikan dua puluh
+     empat elemen di beranda. */
+  .ruang-bilah {
+    padding-bottom: calc(var(--bilah-penuh) + 1rem);
+  }
+
+  /* Untuk layar yang punya bilah navigasi **dan** tombol mengambang. */
+  .ruang-bilah-aksi {
+    padding-bottom: calc(var(--bilah-penuh) + 4.5rem);
   }
 
   /* Putih penuh, bukan buram tembus pandang. Latar berbuih terlihat

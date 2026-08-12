@@ -354,8 +354,9 @@ export default function Kasir() {
                     type="button"
                     aria-label={`Kurangi ${line.itemName}`}
                     onClick={() => setKeranjang((isi) => setQty(isi, index, line.qty - 1))}
-                    className="flex h-9 w-9 items-center justify-center rounded-kartu-kecil
-                               bg-white text-slate-700 border border-garis active:scale-95"
+                    className="flex h-11 w-11 items-center justify-center rounded-kartu-kecil
+                               border border-garis bg-white text-slate-700 transition
+                               active:scale-90 active:bg-slate-100"
                   >
                     <Ikon nama="kurang" ukuran={18} tebal={2.4} />
                   </button>
@@ -364,8 +365,9 @@ export default function Kasir() {
                     type="button"
                     aria-label={`Tambah ${line.itemName}`}
                     onClick={() => setKeranjang((isi) => setQty(isi, index, line.qty + 1))}
-                    className="flex h-9 w-9 items-center justify-center rounded-kartu-kecil
-                               bg-white text-slate-700 border border-garis active:scale-95"
+                    className="flex h-11 w-11 items-center justify-center rounded-kartu-kecil
+                               border border-garis bg-white text-slate-700 transition
+                               active:scale-90 active:bg-slate-100"
                   >
                     <Ikon nama="tambah" ukuran={18} tebal={2.4} />
                   </button>

@@ -93,7 +93,7 @@ function Isi() {
   }
 
   return (
-    <main className="flex flex-1 flex-col gap-3 px-4 pb-[calc(theme(spacing.bilah)+5rem)]">
+    <main className="ruang-bilah-aksi flex flex-1 flex-col gap-3 px-4">
       <AppBar judul="Barang & Jasa" kembali="/" />
 
       <div role="tablist" className="tab-grup">

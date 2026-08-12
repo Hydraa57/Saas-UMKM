@@ -246,6 +246,23 @@ Pasangan 16px dan 18px yang berdampingan itu yang paling merusak: bedanya terlal
 
 Aturannya sekarang satu kalimat yang bisa diperiksa: **kotak di dalam kotak memakai radius yang lebih kecil.** Tiga tingkat, dan pemakaiannya ditentukan kedalaman, bukan selera per komponen.
 
+### 5.1k Audit tata letak, diukur bukan dinilai
+
+Dua puluh satu layar terlalu banyak untuk diperiksa dengan mata, dan jenis cacat yang paling merugikan justru yang paling sulit dilihat sekilas: **tombol yang tertimpa tombol lain.** Ia tidak terlihat rusak — ia terlihat baik-baik saja dan ketukannya jatuh ke yang salah. Di aplikasi kasir itu mahal: yang tertimpa biasanya tombol yang lebih jarang dipakai, jadi ketahuannya baru saat dibutuhkan, di depan pembeli.
+
+Jadi `npm run audit` mengambil persegi tiap elemen dari peramban dan memeriksa aturan yang bisa dijawab benar atau salah: tumpang tindih antar yang bisa disentuh, isi yang tertutup bilah tetap, gulir mendatar, target sentuh di bawah 44px, teks yang meluber, dan kelas ruang bawah yang terpasang tapi tidak berlaku.
+
+**Yang ditemukan putaran pertama, dan akarnya satu.** Token `bilah` bernilai 68px, sementara bilah putihnya sebenarnya **77px** — jadi tiap `calc(bilah + …)` di seluruh aplikasi sudah meleset 9px sebelum menghitung apa pun. Di atasnya, tombol Kasir yang ditinggikan menonjol 11px lagi. Halangan sebenarnya 88px, dan tidak ada satu pun angka di kode yang tahu itu.
+
+Akibatnya dua cacat yang tampak tidak berhubungan: tombol "+ Jasa" bertabrakan dengan tombol Kasir di tiga layar, dan enam elemen tersembunyi permanen di dasar beranda. Keduanya hilang begitu satu nilai diperbaiki — `--bilah-penuh`, disusun dari bagian-bagiannya (tinggi tautan Kasir + ruang aman bawah) supaya ia ikut benar di HP yang punya bilah gestur.
+
+Dua hal yang ditemukan justru karena auditnya sendiri diperiksa:
+
+- **Kelas yang terpasang tapi tidak berlaku.** `.ruang-bilah` ditulis di markup beranda dan padding bawahnya tetap 16px — `p-4` di elemen yang sama menimpanya, karena utility Tailwind menang atas kelas komponen. Pembacaan kode meyakinkan; nilai terhitungnya yang tidak bisa berbohong. Sekarang itu jadi salah satu aturan yang diperiksa.
+- **Pemeriksa yang terlalu longgar melaporkan cacat palsu.** Versi pertama menghitung `<nav>` apa pun sebagai bilah bawah — dan beranda punya `<nav>` kedua di tengah halaman untuk petak pintasan, jadi seluruh isi di bawahnya dilaporkan tertutup. Dua puluh empat temuan dari satu pemilih yang salah.
+
+Auditnya sendiri diperiksa dengan mengembalikan ketiga perbaikannya sekaligus: keempat aturan menyala pada regresi yang tepat. Pemeriksa yang meloloskan semuanya tidak membuktikan apa-apa.
+
 ### 5.2 Aturan timbal balik
 
 > **Setiap kali pengguna memasukkan sesuatu, dia harus langsung menerima sesuatu.**

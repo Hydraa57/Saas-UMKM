@@ -102,7 +102,7 @@ export default function Utang() {
   // ── Layar terima pembayaran ────────────────────────────────────────
   if (aktif) {
     return (
-      <main className="flex flex-1 flex-col gap-3 px-4 pb-[calc(theme(spacing.bilah)+5rem)]">
+      <main className="ruang-bilah-aksi flex flex-1 flex-col gap-3 px-4">
         <AppBar judul={aktif.person} onKembali={() => setDipilih(null)} />
 
         <div className="kartu-gelap animate-naik">
@@ -162,7 +162,7 @@ export default function Utang() {
 
   // ── Daftar ─────────────────────────────────────────────────────────
   return (
-    <main className="flex flex-1 flex-col gap-3 px-4 pb-[calc(theme(spacing.bilah)+1rem)]">
+    <main className="ruang-bilah flex flex-1 flex-col gap-3 px-4">
       <AppBar judul="Belum bayar" kembali="/" />
 
       {ringkas.count === 0 ? (

@@ -90,7 +90,7 @@ export default function Riwayat() {
   }
 
   return (
-    <main className="flex flex-1 flex-col gap-4 px-4 pb-[calc(theme(spacing.bilah)+1rem)]">
+    <main className="ruang-bilah flex flex-1 flex-col gap-4 px-4">
       <AppBar judul="Riwayat struk" kembali="/" />
 
       {data.length === 0 ? (

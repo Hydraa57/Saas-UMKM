@@ -182,7 +182,7 @@ export default function Beranda() {
   }
 
   return (
-    <main className="flex flex-1 flex-col gap-4 p-4 pb-[calc(theme(spacing.bilah)+1rem)]">
+    <main className="ruang-bilah flex flex-1 flex-col gap-4 px-4 pt-4">
       {/* Satu-satunya jalan ke pengaturan, dan sengaja cuma ikon di
           pojok. Yang dikerjakan di sana — ganti nama usaha, pasang QRIS —
           dilakukan sekali lalu tidak pernah lagi, jadi ia tidak pantas

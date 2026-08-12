@@ -102,6 +102,8 @@ Penyandi ESC/POS menerima **string**, bukan `Sale`. Kalau ia menyusun sendiri ba
 - [x] **Skala diturunkan, radius dan jarak diseragamkan.** Enam nilai radius dipakai berdampingan (16px dan 18px sekaligus) dan empat jarak dalam kartu — itu penyebab "tidak simetris" yang bisa dihitung. Skalanya sendiri dulu dinaikkan satu tingkat atas nama satu orang, dan akibatnya tiap layar cuma memuat separuh isinya bagi semua yang lain
 - [x] **Ukuran huruf jadi pilihan (Normal/Besar), bukan paksaan.** Menyelesaikan ketegangan "umum vs mata yang tidak lagi sempurna" tanpa mengorbankan salah satunya. Terpasang sebelum gambar pertama, jadi tidak ada lompatan ukuran tiap kali aplikasi dibuka
 
+- [x] **Audit tata letak yang diukur, bukan dinilai.** `npm run audit` memeriksa 21 layar di peramban: tumpang tindih antar yang bisa disentuh, isi yang tertutup bilah, gulir mendatar, target sentuh, teks meluber, dan kelas yang terpasang tapi tidak berlaku. Delapan cacat nyata ditemukan, akarnya satu — token `bilah` meleset 9px dari bilah yang sebenarnya, dan tidak ada angka di kode yang tahu tombol Kasir menonjol 11px lagi di atasnya
+
 ---
 
 ## Fase 5 — Pengerasan (perkiraan 4 hari)
