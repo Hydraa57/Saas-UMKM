@@ -1,5 +1,7 @@
 'use client'
 
+import Link from 'next/link'
+import { useRouter } from 'next/navigation'
 import { useState } from 'react'
 import { actionContext, useApp, useCatalog } from '@/lib/useApp'
 import { recordSale } from '@/lib/actions/pos'
@@ -52,6 +54,7 @@ type Fase =
   | { tahap: 'selesai'; saleId: string }
 
 export default function Kasir() {
+  const router = useRouter()
   const { tenantId, defaultWallet, ready } = useApp()
   const katalog = useCatalog()
 
@@ -116,9 +119,9 @@ export default function Kasir() {
     return (
       <main className="flex flex-1 flex-col gap-4 p-4">
         <p className="kartu">Pengaturan awal belum selesai.</p>
-        <a href="/mulai" className="btn-primer btn-besar">
+        <Link href="/mulai" className="btn-primer btn-besar">
           Buka pengaturan
-        </a>
+        </Link>
       </main>
     )
   }
@@ -127,7 +130,7 @@ export default function Kasir() {
     // Struk dibuka sebagai halaman sendiri supaya bisa dibuka ulang dari
     // riwayat, bukan hanya sekali lewat.
     if (typeof window !== 'undefined') {
-      window.location.replace(`/struk/${fase.saleId}`)
+      router.replace(`/struk/${fase.saleId}`)
     }
     return <main className="flex-1 p-4" aria-busy="true" />
   }
@@ -251,9 +254,9 @@ export default function Kasir() {
           <p className="mt-1 text-slate-600">
             Tambahkan barang atau jasa dulu supaya bisa diketuk dari sini.
           </p>
-          <a href="/katalog/baru" className="btn-primer btn-besar mt-5">
+          <Link href="/katalog/baru" className="btn-primer btn-besar mt-5">
             Tambah barang / jasa
-          </a>
+          </Link>
         </div>
       ) : (
         <>

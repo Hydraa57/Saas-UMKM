@@ -1,5 +1,6 @@
 'use client'
 
+import { useRouter } from 'next/navigation'
 import { useState } from 'react'
 import { db } from '@/lib/db/local'
 import { setupTenant } from '@/lib/actions/pos'
@@ -36,6 +37,7 @@ const JENIS: readonly BusinessType[] = [
 ]
 
 export default function Mulai() {
+  const router = useRouter()
   const [nama, setNama] = useState('')
   const [jenis, setJenis] = useState<BusinessType>('dagang')
   const [telepon, setTelepon] = useState('')
@@ -53,7 +55,7 @@ export default function Mulai() {
       )
       // Langsung ke katalog, bukan ke beranda: tanpa satu pun barang,
       // kasirnya kosong dan beranda cuma menampilkan angka nol.
-      window.location.href = '/katalog?awal=1'
+      router.replace('/katalog?awal=1')
     } catch {
       setMenyimpan(false)
     }

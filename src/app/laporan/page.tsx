@@ -1,5 +1,6 @@
 'use client'
 
+import Link from 'next/link'
 import { useState } from 'react'
 import { useLiveQuery } from 'dexie-react-hooks'
 import { db, type LocalCashEntry } from '@/lib/db/local'
@@ -90,9 +91,9 @@ function Kosong() {
           Begitu ada penjualan atau pengeluaran pertama, rekapnya muncul di
           sini — per bulan, lengkap dengan barang paling laku.
         </p>
-        <a href="/kasir" className="btn-primer btn-besar mt-5">
+        <Link href="/kasir" className="btn-primer btn-besar mt-5">
           Buka kasir
-        </a>
+        </Link>
       </div>
     </main>
   )
@@ -156,9 +157,9 @@ export default function Laporan() {
     return (
       <main className="flex flex-1 flex-col gap-4 p-4">
         <p className="kartu">Pengaturan awal belum selesai.</p>
-        <a href="/mulai" className="btn-primer btn-besar">
+        <Link href="/mulai" className="btn-primer btn-besar">
           Buka pengaturan
-        </a>
+        </Link>
       </main>
     )
   }
@@ -334,7 +335,7 @@ export default function Laporan() {
             kas, dan satu-satunya yang tidak bisa ditebak sendiri oleh
             pembacanya. Muncul hanya kalau memang ada. */}
         {M.isPositive(belumDibayar) && (
-          <a
+          <Link
             href="/utang"
             className="mt-3 flex items-center gap-2 text-sm font-semibold text-tunggu"
           >
@@ -346,7 +347,7 @@ export default function Laporan() {
               <Uang nilai={belumDibayar} /> dari omzet ini belum dibayar
             </span>
             <Ikon nama="lanjut" ukuran={14} className="shrink-0" />
-          </a>
+          </Link>
         )}
       </section>
 

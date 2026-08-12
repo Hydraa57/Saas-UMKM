@@ -1,5 +1,7 @@
 'use client'
 
+import Link from 'next/link'
+import { useRouter } from 'next/navigation'
 import { useState } from 'react'
 import { actionContext, useApp } from '@/lib/useApp'
 import { recordExpense } from '@/lib/actions/pos'
@@ -30,6 +32,7 @@ import {
  */
 
 export default function Keluar() {
+  const router = useRouter()
   const { tenantId, defaultWallet, ready } = useApp()
 
   const [jumlah, setJumlah] = useState<Rupiah>(M.ZERO)
@@ -49,7 +52,7 @@ export default function Keluar() {
         category: kategori,
         note: catatan.trim() || null,
       })
-      window.location.href = '/'
+      router.replace('/')
     } catch {
       setMenyimpan(false)
     }
@@ -61,9 +64,9 @@ export default function Keluar() {
     return (
       <main className="flex flex-1 flex-col gap-4 p-4">
         <p className="kartu">Pengaturan awal belum selesai.</p>
-        <a href="/mulai" className="btn-primer btn-besar">
+        <Link href="/mulai" className="btn-primer btn-besar">
           Buka pengaturan
-        </a>
+        </Link>
       </main>
     )
   }

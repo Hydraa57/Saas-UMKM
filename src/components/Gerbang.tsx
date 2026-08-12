@@ -1,5 +1,6 @@
 'use client'
 
+import Link from 'next/link'
 import { useLiveQuery } from 'dexie-react-hooks'
 import { usePathname } from 'next/navigation'
 import { db, getMeta, PERNAH_MASUK_KEY } from '@/lib/db/local'
@@ -114,9 +115,9 @@ function Ajakan() {
         </p>
       </div>
 
-      <a href="/masuk" className="btn-primer btn-besar animate-naik">
+      <Link href="/masuk" className="btn-primer btn-besar animate-naik">
         Mulai
-      </a>
+      </Link>
     </main>
   )
 }

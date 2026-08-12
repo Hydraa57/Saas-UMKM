@@ -5,6 +5,7 @@ import { useLiveQuery } from 'dexie-react-hooks'
 import { db, getMeta, setMeta, QRIS_KEY } from '@/lib/db/local'
 import { AppBar } from '@/components/AppBar'
 import { Ikon } from '@/components/Ikon'
+import { Lipatan } from '@/components/Lipatan'
 import { periksaQris, QrisError, type KeteranganQris } from '@/lib/qris/payload'
 
 /**
@@ -285,28 +286,32 @@ export default function PasangQris() {
       )}
 
       <button type="button" onClick={() => void mulaiPindai()} className="btn-primer btn-besar">
-        <Ikon nama="foto" ukuran={22} />
+        <Ikon nama="kamera" ukuran={22} />
         {tersimpan ? 'Pindai QRIS lain' : 'Pindai QRIS'}
       </button>
 
       <label className="btn-sekunder cursor-pointer">
+        <Ikon nama="galeri" ukuran={20} />
         Ambil dari galeri
         <input
           type="file"
           accept="image/*"
           className="hidden"
-          onChange={(e) => void dariGaleri(e.target.files?.[0])}
+          onChange={(e) => {
+            void dariGaleri(e.target.files?.[0])
+            // Dikosongkan supaya gambar yang sama bisa dicoba lagi.
+            // Pindai gagal lalu memilih berkas yang sama sekali lagi
+            // tidak memicu apa pun tanpa ini.
+            e.target.value = ''
+          }}
         />
       </label>
 
       {/* Jalan terakhir, sengaja dilipat. Yang membutuhkannya tahu apa
           yang dicarinya; yang tidak, tidak perlu melihat kolom berisi dua
           ratus aksara acak. */}
-      <details className="kartu">
-        <summary className="cursor-pointer font-semibold">
-          Tempel kodenya sebagai teks
-        </summary>
-        <p className="mt-2 text-sm text-slate-600">
+      <Lipatan judul="Tempel kodenya sebagai teks">
+        <p className="text-sm text-slate-600">
           Untuk kalau pindai dan galeri sama-sama gagal. Kodenya diawali
           angka <code>0002</code>.
         </p>
@@ -326,7 +331,7 @@ export default function PasangQris() {
         >
           Baca kode ini
         </button>
-      </details>
+      </Lipatan>
 
       {tersimpan && (
         <button

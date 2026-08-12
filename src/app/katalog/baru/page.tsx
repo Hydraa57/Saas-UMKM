@@ -1,5 +1,6 @@
 'use client'
 
+import { useRouter } from 'next/navigation'
 import { Suspense, useEffect, useState } from 'react'
 import { useSearchParams } from 'next/navigation'
 import { actionContext, useApp } from '@/lib/useApp'
@@ -9,6 +10,8 @@ import { compressPhoto } from '@/lib/photo'
 import * as M from '@/lib/money'
 import type { Rupiah } from '@/lib/money'
 import { PapanAngka } from '@/components/PapanAngka'
+import { PilihFoto } from '@/components/PilihFoto'
+import { Lipatan } from '@/components/Lipatan'
 import { Uang } from '@/components/Uang'
 import { ITEM_KIND_LABELS, type ItemKind } from '@/lib/domain/types'
 import { AppBar } from '@/components/AppBar'
@@ -34,6 +37,7 @@ import { Ikon } from '@/components/Ikon'
  */
 
 function Isi() {
+  const router = useRouter()
   const params = useSearchParams()
   const { tenantId, ready } = useApp()
   const idLama = params.get('id')
@@ -89,6 +93,14 @@ function Isi() {
     })
   }
 
+  function hapusFoto() {
+    setFoto(null)
+    setPratinjau((lama) => {
+      if (lama) URL.revokeObjectURL(lama)
+      return null
+    })
+  }
+
   async function simpan(lanjut: boolean) {
     if (!bisaSimpan || !tenantId) return
     setMenyimpan(true)
@@ -119,7 +131,7 @@ function Isi() {
           return null
         })
       } else {
-        window.location.href = '/katalog'
+        router.replace('/katalog')
       }
     } finally {
       setMenyimpan(false)
@@ -133,7 +145,7 @@ function Isi() {
     // riwayat penjualan, dan menghapusnya membuat struk lama kehilangan
     // asal-usulnya. Yang diarsipkan hilang dari kasir dan katalog saja.
     await archiveItem(actionContext(tenantId), idLama)
-    window.location.href = '/katalog'
+    router.replace('/katalog')
   }
 
   if (!ready || memuat) return <main className="flex-1 p-4" aria-busy="true" />
@@ -240,13 +252,8 @@ function Isi() {
         </section>
       )}
 
-      <details className="kartu">
-        <summary className="flex cursor-pointer items-center gap-2 font-semibold">
-          <Ikon nama="foto" ukuran={20} className="text-slate-400" />
-          Harga modal & foto (boleh dilewati)
-        </summary>
-
-        <div className="mt-3 flex flex-col gap-3">
+      <Lipatan judul="Harga modal & foto (boleh dilewati)" ikon="foto">
+        <div className="flex flex-col gap-3">
           <label className="block rounded-2xl bg-slate-50 px-4 py-3">
             <span className="label">Harga modal</span>
             <input
@@ -259,30 +266,16 @@ function Isi() {
             />
           </label>
 
-          <label className="block rounded-2xl bg-slate-50 px-4 py-3">
-            <span className="label">Foto</span>
-            <input
-              type="file"
-              accept="image/*"
-              capture="environment"
-              onChange={(e) => {
-                const file = e.target.files?.[0]
-                if (file) void pilihFoto(file)
-              }}
-              className="mt-1 w-full text-sm"
+          <div className="rounded-kartu bg-slate-50 px-4 py-3">
+            <span className="label mb-2 block">Foto</span>
+            <PilihFoto
+              pratinjau={pratinjau}
+              onPilih={(berkas) => void pilihFoto(berkas)}
+              onHapus={hapusFoto}
             />
-          </label>
-
-          {pratinjau && (
-            // eslint-disable-next-line @next/next/no-img-element
-            <img
-              src={pratinjau}
-              alt="Pratinjau foto"
-              className="aspect-square w-32 rounded-2xl object-cover border border-garis"
-            />
-          )}
+          </div>
         </div>
-      </details>
+      </Lipatan>
 
       <div className="bilah-bawah flex gap-3">
         <button

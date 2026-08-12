@@ -1,5 +1,6 @@
 'use client'
 
+import Link from 'next/link'
 import { use, useState } from 'react'
 import { useLiveQuery } from 'dexie-react-hooks'
 import { db } from '@/lib/db/local'
@@ -89,9 +90,9 @@ export default function LayarStruk({
     return (
       <main className="flex flex-1 flex-col gap-4 p-4">
         <p className="kartu">Struk tidak ditemukan.</p>
-        <a href="/riwayat" className="btn-sekunder btn-besar">
+        <Link href="/riwayat" className="btn-sekunder btn-besar">
           Kembali
-        </a>
+        </Link>
       </main>
     )
   }
@@ -251,12 +252,12 @@ export default function LayarStruk({
         ))}
 
       <div className="flex gap-3">
-        <a href="/kasir" className="btn-primer flex-1">
+        <Link href="/kasir" className="btn-primer flex-1">
           Transaksi baru
-        </a>
-        <a href="/riwayat" className="btn-sekunder flex-1">
+        </Link>
+        <Link href="/riwayat" className="btn-sekunder flex-1">
           Riwayat
-        </a>
+        </Link>
       </div>
 
     </main>

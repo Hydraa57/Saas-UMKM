@@ -1,5 +1,6 @@
 'use client'
 
+import Link from 'next/link'
 import { use, useState } from 'react'
 import { useLiveQuery } from 'dexie-react-hooks'
 import { db } from '@/lib/db/local'
@@ -85,9 +86,9 @@ export default function DetailStok({
             ? 'Jasa tidak punya stok — "Potong celana" tidak pernah habis.'
             : 'Barang tidak ditemukan.'}
         </p>
-        <a href="/katalog?tab=stok" className="btn-sekunder btn-besar">
+        <Link href="/katalog?tab=stok" className="btn-sekunder btn-besar">
           Kembali
-        </a>
+        </Link>
       </main>
     )
   }

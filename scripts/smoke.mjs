@@ -618,7 +618,7 @@ await step('pasang QRIS usaha dengan menempel kodenya', async () => {
   // ketika pindai tidak bisa dipakai.
   await page.goto(BASE + '/qris')
   await page.waitForTimeout(800)
-  await page.getByText('Tempel kodenya sebagai teks').click()
+  await page.getByRole('button', { name: 'Tempel kodenya sebagai teks' }).click()
   await page.waitForTimeout(300)
   await page.getByLabel('Kode QRIS').fill(QRIS_STATIS)
   await page.waitForTimeout(200)

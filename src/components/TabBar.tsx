@@ -1,5 +1,6 @@
 'use client'
 
+import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { useApp } from '@/lib/useApp'
 import { Ikon, type NamaIkon } from './Ikon'
@@ -91,7 +92,7 @@ export function TabBar() {
 
         {/* Ditinggikan dan diberi warna merek: satu-satunya tombol di
             bilah ini yang menghasilkan uang. */}
-        <a
+        <Link
           href="/kasir"
           className="-mt-7 flex w-[4.5rem] shrink-0 flex-col items-center gap-1"
         >
@@ -103,7 +104,7 @@ export function TabBar() {
             <Ikon nama="kasir" ukuran={26} tebal={1.9} />
           </span>
           <span className="text-xs font-semibold text-merek-700">Kasir</span>
-        </a>
+        </Link>
 
         {KANAN.map((t) => (
           <Tombol key={t.href} tujuan={t} pathname={pathname} />

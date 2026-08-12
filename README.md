@@ -102,6 +102,12 @@ Foto katalog ikut tersalin ke Supabase Storage. Sebelumnya foto hanya ada sebaga
 
 Embernya **tidak publik**, dan nama berkasnya `<tenant>/<item>` — seluruh keamanannya bertumpu pada policy yang memeriksa segmen folder pertama. Harness lokal sekarang punya tiruan skema `storage` supaya keempat policy itu benar-benar diuji: kontrol negatif membuktikannya sensitif — pemeriksaan foldernya dilepas, dan satu tenant langsung bisa menulis foto ke folder tenant lain.
 
+Satu putaran terakhir menjawab keluhan yang tidak menyebut satu layar pun: *"UI nya msh ga smooth, msh bnyak ui2 bawaan browser."* Keluhan seperti itu mudah dijawab dengan menambah animasi, dan itu akan salah. Sebabnya ada tiga dan semuanya bisa dihitung:
+
+- **Empat puluh tautan masih `<a href>`**, dan `next/link` dipakai **nol** kali. Tiap ketukan menu karena itu memuat ulang seluruh dokumen — layar berkedip putih dan Dexie dibuka lagi dari nol. Itu bukan "kurang halus", itu memang menekan *refresh*. `window.location` tinggal di ganti akun, satu-satunya tempat yang muat ulang penuhnya memang disengaja.
+- **Kendali bawaan peramban.** `<details>` menggambar segitiga yang bentuk dan warnanya ditentukan sistem operasi; `<input type="file">` telanjang menuliskan "Choose file / no file chosen" berikut nama berkas yang tidak berarti apa-apa. Keduanya tidak bisa diwarnai dan berbeda di tiap HP. Penggantinya ditulis sendiri.
+- **Foto cuma bisa dari kamera.** `capture="environment"` bukan "utamakan kamera" melainkan **paksa kamera**: di Android galerinya tidak ditawarkan sama sekali, jadi foto kiriman pemasok lewat WhatsApp tidak bisa dipakai dan tiap barang harus difoto ulang saat itu juga.
+
 Belum ada: penarikan data dari peladen (untuk HP kedua).
 
 ### Supabase

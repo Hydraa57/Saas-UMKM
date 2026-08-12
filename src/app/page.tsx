@@ -1,5 +1,6 @@
 'use client'
 
+import Link from 'next/link'
 import { useEffect } from 'react'
 import { useLiveQuery } from 'dexie-react-hooks'
 import { db, type LocalCashEntry } from '@/lib/db/local'
@@ -173,9 +174,9 @@ export default function Beranda() {
             sendiri.
           </p>
         </div>
-        <a href="/mulai" className="btn-primer btn-besar animate-naik">
+        <Link href="/mulai" className="btn-primer btn-besar animate-naik">
           Mulai
-        </a>
+        </Link>
       </main>
     )
   }
@@ -194,16 +195,16 @@ export default function Beranda() {
         <span className="text-[1.05rem] font-extrabold tracking-tight text-slate-800">
           Ezura
         </span>
-        <a href="/pengaturan" aria-label="Pengaturan" className="btn-ikon">
+        <Link href="/pengaturan" aria-label="Pengaturan" className="btn-ikon">
           <Ikon nama="setelan" ukuran={21} />
-        </a>
+        </Link>
       </div>
 
       {/* Kartu gelap: satu-satunya di aplikasi, dan itu disengaja. Ia
           menandai angka yang paling sering dicari — dan sekaligus jadi
           tautan ke riwayat, karena pertanyaan berikutnya setelah melihat
           "4 struk" hampir selalu "struk yang mana". */}
-      <a href="/riwayat" className="kartu-gelap block animate-naik">
+      <Link href="/riwayat" className="kartu-gelap block animate-naik">
         <p className="text-sm font-medium text-slate-400">
           {businessName} · hari ini
         </p>
@@ -228,7 +229,7 @@ export default function Beranda() {
           </span>
           <Ikon nama="lanjut" ukuran={20} className="text-slate-500" />
         </div>
-      </a>
+      </Link>
 
       {/* Keadaan cadangan. Ia menghilang sendiri kalau semuanya sudah
           aman — penanda hijau yang selalu ada akan berhenti dibaca dalam
@@ -251,7 +252,7 @@ export default function Beranda() {
           bulan lalu berapa, apa yang paling laku, untungnya berapa.
           Karena itu tidak ada menu "Laporan" tersendiri; jalannya lewat
           angka yang memunculkan pertanyaannya. */}
-      <a href="/laporan" className="kartu-tekan block">
+      <Link href="/laporan" className="kartu-tekan block">
         <div className="mb-4 flex items-baseline justify-between">
           <h2 className="font-semibold">{formatMonth(bulanIni)}</h2>
           <span className="flex items-center gap-1 text-sm text-slate-500">
@@ -293,10 +294,10 @@ export default function Beranda() {
         <p className="mt-3 text-sm font-semibold text-merek-700">
           Lihat laporan lengkap
         </p>
-      </a>
+      </Link>
 
       {data && data.menipis.length > 0 && (
-        <a
+        <Link
           href="/katalog?tab=stok"
           className="kartu-tekan flex items-center gap-3 bg-tunggu-soft ring-tunggu/10"
         >
@@ -315,11 +316,11 @@ export default function Beranda() {
             </span>
           </span>
           <Ikon nama="lanjut" ukuran={20} className="shrink-0 text-tunggu/50" />
-        </a>
+        </Link>
       )}
 
       {piutang && piutang.count > 0 && (
-        <a href="/utang" className="kartu-tekan flex items-center gap-3">
+        <Link href="/utang" className="kartu-tekan flex items-center gap-3">
           <span
             className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl
                        bg-keluar-soft text-keluar"
@@ -335,7 +336,7 @@ export default function Beranda() {
             </span>
           </span>
           <Ikon nama="lanjut" ukuran={20} className="shrink-0 text-slate-300" />
-        </a>
+        </Link>
       )}
     </main>
   )

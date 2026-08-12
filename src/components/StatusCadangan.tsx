@@ -1,5 +1,6 @@
 'use client'
 
+import Link from 'next/link'
 import { useSesi } from '@/lib/auth'
 import { useSync } from '@/lib/sync/useSync'
 import { Ikon } from './Ikon'
@@ -31,7 +32,7 @@ export function StatusCadangan() {
 
   if (status === 'keluar') {
     return (
-      <a
+      <Link
         href="/masuk"
         className="kartu-tekan flex items-center gap-3 bg-tunggu-soft ring-tunggu/10"
       >
@@ -50,13 +51,13 @@ export function StatusCadangan() {
           </span>
         </span>
         <Ikon nama="lanjut" ukuran={20} className="shrink-0 text-tunggu/50" />
-      </a>
+      </Link>
     )
   }
 
   if (gagal > 0) {
     return (
-      <a href="/masuk" className="kartu-tekan flex items-center gap-3">
+      <Link href="/masuk" className="kartu-tekan flex items-center gap-3">
         <span
           className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl
                      bg-keluar-soft text-keluar"
@@ -70,7 +71,7 @@ export function StatusCadangan() {
           </span>
         </span>
         <Ikon nama="lanjut" ukuran={20} className="shrink-0 text-slate-300" />
-      </a>
+      </Link>
     )
   }
 

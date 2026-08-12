@@ -1,5 +1,6 @@
 'use client'
 
+import Link from 'next/link'
 import { useEffect, useRef, useState } from 'react'
 import { useLiveQuery } from 'dexie-react-hooks'
 import { db, getMeta, QRIS_KEY } from '@/lib/db/local'
@@ -82,7 +83,7 @@ export function KartuQris({ nominal }: Props) {
 
   if (!muatan) {
     return (
-      <a href="/qris" className="kartu-tekan flex items-center gap-3 animate-naik">
+      <Link href="/qris" className="kartu-tekan flex items-center gap-3 animate-naik">
         <span
           className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl
                      bg-merek-50 text-merek-700"
@@ -96,7 +97,7 @@ export function KartuQris({ nominal }: Props) {
           </span>
         </span>
         <Ikon nama="lanjut" ukuran={20} className="shrink-0 text-slate-300" />
-      </a>
+      </Link>
     )
   }
 
@@ -138,9 +139,9 @@ export function KartuQris({ nominal }: Props) {
         Setelah uangnya masuk ke rekening, tekan tombol di bawah.
       </p>
 
-      <a href="/qris" className="mt-3 inline-block text-sm font-semibold text-merek-700">
+      <Link href="/qris" className="mt-3 inline-block text-sm font-semibold text-merek-700">
         Ganti QRIS
-      </a>
+      </Link>
     </section>
   )
 }

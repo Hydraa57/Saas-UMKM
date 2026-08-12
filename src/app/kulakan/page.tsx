@@ -1,5 +1,7 @@
 'use client'
 
+import Link from 'next/link'
+import { useRouter } from 'next/navigation'
 import { useState } from 'react'
 import { actionContext, useApp, useCatalog } from '@/lib/useApp'
 import { recordPurchase, type PurchaseLine } from '@/lib/actions/pos'
@@ -41,6 +43,7 @@ interface Baris {
 }
 
 export default function Kulakan() {
+  const router = useRouter()
   const { tenantId, defaultWallet, ready } = useApp()
   const katalog = useCatalog()
 
@@ -103,7 +106,7 @@ export default function Kulakan() {
         walletId: defaultWallet.id,
         supplierName: pemasok.trim() || null,
       })
-      window.location.href = "/katalog?tab=stok"
+      router.replace('/katalog?tab=stok')
     } catch {
       setMenyimpan(false)
     }
@@ -115,9 +118,9 @@ export default function Kulakan() {
     return (
       <main className="flex flex-1 flex-col gap-4 p-4">
         <p className="kartu">Pengaturan awal belum selesai.</p>
-        <a href="/mulai" className="btn-primer btn-besar">
+        <Link href="/mulai" className="btn-primer btn-besar">
           Buka pengaturan
-        </a>
+        </Link>
       </main>
     )
   }

@@ -92,6 +92,9 @@ Penyandi ESC/POS menerima **string**, bukan `Sale`. Kalau ia menyusun sendiri ba
 - [x] Ekspor ke Excel — semua catatan jadi satu berkas `.xlsx`, penyandinya ditulis sendiri tanpa pustaka
 - [x] **QRIS dengan nominal terisi**, dari QRIS statis yang sudah dimiliki usahanya. Tanpa penyedia jasa pembayaran, tanpa biaya tambahan, jalan tanpa sinyal
 - [x] **Layar pengaturan**: ganti nama usaha & nomor WhatsApp, pasang/ganti QRIS, lihat keadaan cadangan. Sebelumnya nama usaha tidak bisa diubah sama sekali setelah pengaturan awal
+- [x] **Foto dari galeri, bukan cuma dari kamera.** `capture="environment"` ternyata bukan "utamakan kamera" melainkan **paksa kamera**: di Android pemilih galerinya tidak ditawarkan sama sekali, jadi foto yang sudah ada di HP — kiriman pemasok, atau yang difoto kemarin — tidak bisa dipakai dan tiap barang harus difoto ulang saat itu juga
+- [x] **Perpindahan layar tanpa muat ulang.** Keempat puluh tautan dalam aplikasi masih `<a href>`, yang berarti tiap ketukan menu memuat ulang seluruh dokumen: layar berkedip putih, dan Dexie dibuka lagi dari nol. Semuanya jadi `next/link`; `window.location` hanya tersisa di ganti akun, di mana muat ulang penuhnya memang disengaja
+- [x] **Kendali bawaan peramban dibuang.** `<details>` menggambar segitiga yang bentuknya ditentukan sistem operasi, dan `<input type="file">` menuliskan "Choose file / no file chosen" — dua hal yang tidak bisa diwarnai, berbeda di tiap HP, dan cukup untuk membuat layar di sekitarnya terbaca sebagai halaman web
 
 ---
 

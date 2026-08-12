@@ -1,5 +1,6 @@
 'use client'
 
+import Link from 'next/link'
 import { useLiveQuery } from 'dexie-react-hooks'
 import { db } from '@/lib/db/local'
 import { useApp } from '@/lib/useApp'
@@ -71,9 +72,9 @@ export default function Riwayat() {
     return (
       <main className="flex flex-1 flex-col gap-4 p-4">
         <p className="kartu">Pengaturan awal belum selesai.</p>
-        <a href="/mulai" className="btn-primer btn-besar">
+        <Link href="/mulai" className="btn-primer btn-besar">
           Buka pengaturan
-        </a>
+        </Link>
       </main>
     )
   }
@@ -104,9 +105,9 @@ export default function Riwayat() {
           <p className="mt-1 text-slate-600">
             Struk muncul di sini begitu ada penjualan pertama.
           </p>
-          <a href="/kasir" className="btn-primer btn-besar mt-5">
+          <Link href="/kasir" className="btn-primer btn-besar mt-5">
             Buka kasir
-          </a>
+          </Link>
         </div>
       ) : (
         [...perHari.entries()].map(([tanggal, struk]) => {

@@ -39,7 +39,28 @@ const potret = async (nama, full = false) => {
 
 await page.goto(BASE, { waitUntil: 'networkidle' })
 await jeda()
-await potret('00-pembuka')
+await potret('00-gerbang')
+
+// Login sungguhan tidak bisa dilakukan dari sini — peladen tidak
+// terjangkau dari sandbox ini. Yang ditulis adalah keadaan lokal yang
+// persis dihasilkan login berhasil, supaya layar-layar sesudah gerbang
+// tetap bisa dipotret.
+await page.evaluate(
+  () =>
+    new Promise((selesai, gagal) => {
+      const minta = indexedDB.open('ezura')
+      minta.onsuccess = () => {
+        const tx = minta.result.transaction('meta', 'readwrite')
+        tx.objectStore('meta').put({ key: 'pernah_masuk', value: true })
+        tx.oncomplete = () => selesai(undefined)
+        tx.onerror = () => gagal(tx.error)
+      }
+      minta.onerror = () => gagal(minta.error)
+    }),
+)
+await page.goto(BASE, { waitUntil: 'networkidle' })
+await jeda()
+await potret('00b-pembuka')
 
 await page.getByRole('link', { name: 'Mulai' }).click()
 await page.waitForURL('**/mulai')
@@ -71,7 +92,7 @@ for (const [nama, harga, modal, stok, min] of barang) {
   await ketik(harga)
   await page.getByLabel('Stok sekarang').fill(String(stok))
   await page.getByLabel(/Ingatkan kalau tinggal/).fill(String(min))
-  await page.getByText(/Harga modal & foto/).click()
+  await page.getByRole('button', { name: /Harga modal & foto/ }).click()
   await jeda(200)
   await page.getByLabel('Harga modal').fill(String(modal))
   await page.getByRole('button', { name: 'Simpan', exact: true }).click()
@@ -100,6 +121,13 @@ await jeda()
 await page.getByPlaceholder('Biskuit Roma').fill('Oreo')
 await ketik(9000)
 await potret('04-tambah-barang', true)
+
+// Bagian yang dilipat dipotret dalam keadaan terbuka: di sanalah pemilih
+// foto berada, dan itu satu-satunya tempat "galeri" dan "kamera" muncul
+// sebagai dua tombol terpisah.
+await page.getByRole('button', { name: /Harga modal & foto/ }).click()
+await jeda(400)
+await potret('04b-harga-modal-foto', true)
 
 // ── Satu transaksi lengkap ──────────────────────────────────────────────
 
@@ -226,7 +254,7 @@ await page.goto(BASE + '/qris')
 await jeda(900)
 await potret('19-pasang-qris', true)
 
-await page.getByText('Tempel kodenya sebagai teks').click()
+await page.getByRole('button', { name: 'Tempel kodenya sebagai teks' }).click()
 await jeda(300)
 await page.getByLabel('Kode QRIS').fill(
   '00020101021126430014ID.CO.QRIS.WWW0215ID1024300000000303UMI5204549953033605802ID5913WARUNG BU ANI6007BANDUNG61054012363041459',

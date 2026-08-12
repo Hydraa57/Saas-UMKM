@@ -1,5 +1,6 @@
 'use client'
 
+import Link from 'next/link'
 import { Suspense, useState } from 'react'
 import { useSearchParams } from 'next/navigation'
 import { useApp, useCatalog } from '@/lib/useApp'
@@ -84,9 +85,9 @@ function Isi() {
     return (
       <main className="flex flex-1 flex-col gap-4 p-4">
         <p className="kartu">Pengaturan awal belum selesai.</p>
-        <a href="/mulai" className="btn-primer btn-besar">
+        <Link href="/mulai" className="btn-primer btn-besar">
           Buka pengaturan
-        </a>
+        </Link>
       </main>
     )
   }
@@ -96,22 +97,22 @@ function Isi() {
       <AppBar judul="Barang & Jasa" kembali="/" />
 
       <div role="tablist" className="tab-grup">
-        <a
+        <Link
           role="tab"
           href="/katalog"
           aria-selected={tab === 'daftar'}
           className={`tab ${tab === 'daftar' ? 'tab-aktif' : ''}`}
         >
           Daftar
-        </a>
-        <a
+        </Link>
+        <Link
           role="tab"
           href="/katalog?tab=stok"
           aria-selected={tab === 'stok'}
           className={`tab ${tab === 'stok' ? 'tab-aktif' : ''}`}
         >
           Stok
-        </a>
+        </Link>
       </div>
 
       {/* Datang dari layar pembuka: katalognya pasti kosong, jadi yang
@@ -140,7 +141,7 @@ function Isi() {
       ) : tab === 'daftar' ? (
         <>
           {menipis.length > 0 && (
-            <a
+            <Link
               href="/katalog?tab=stok"
               className="kartu-tekan flex items-center gap-3 bg-tunggu-soft ring-tunggu/10"
             >
@@ -149,7 +150,7 @@ function Isi() {
                 {menipis.length} barang menipis: {menipis.map((i) => i.name).join(', ')}
               </span>
               <Ikon nama="lanjut" ukuran={18} className="shrink-0 text-tunggu/50" />
-            </a>
+            </Link>
           )}
 
           <label className="kartu flex items-center gap-3 py-3">
@@ -235,9 +236,9 @@ function Isi() {
             Stok hanya berlaku untuk barang. Jasa tidak pernah habis, jadi
             tidak ada yang perlu dihitung di sini.
           </p>
-          <a href="/katalog/baru?jenis=barang" className="btn-primer btn-besar mt-5">
+          <Link href="/katalog/baru?jenis=barang" className="btn-primer btn-besar mt-5">
             Tambah barang
-          </a>
+          </Link>
         </div>
       ) : (
         <>
@@ -310,28 +311,28 @@ function Isi() {
                 aksesibilitasnya lengkap: "Barang" saja sama persis dengan
                 label tab di bilah bawah, dan pembaca layar tidak punya
                 cara membedakan keduanya. */}
-            <a
+            <Link
               href="/katalog/baru?jenis=jasa"
               aria-label="Tambah jasa"
               className="btn-sekunder px-4 text-base"
             >
               <Ikon nama="tambah" ukuran={18} tebal={2.4} />
               Jasa
-            </a>
-            <a
+            </Link>
+            <Link
               href="/katalog/baru?jenis=barang"
               aria-label="Tambah barang"
               className="btn-primer px-4 text-base"
             >
               <Ikon nama="tambah" ukuran={18} tebal={2.4} />
               Barang
-            </a>
+            </Link>
           </>
         ) : (
-          <a href="/kulakan" className="btn-primer px-5">
+          <Link href="/kulakan" className="btn-primer px-5">
             <Ikon nama="kulakan" ukuran={20} />
             Catat kulakan
-          </a>
+          </Link>
         )}
       </div>
     </main>

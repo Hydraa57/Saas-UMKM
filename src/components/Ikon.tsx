@@ -35,12 +35,14 @@ export type NamaIkon =
   | 'cari'
   | 'jasa'
   | 'foto'
+  | 'galeri'
   | 'laporan'
   | 'piala'
   | 'jam'
   | 'unduh'
   | 'qris'
   | 'setelan'
+  | 'kamera'
 
 const JALUR: Readonly<Record<NamaIkon, React.ReactNode>> = {
   kasir: (
@@ -141,6 +143,17 @@ const JALUR: Readonly<Record<NamaIkon, React.ReactNode>> = {
       <circle cx="12" cy="12.5" r="3.2" />
     </>
   ),
+  // Galeri sengaja **tidak** berbentuk kamera. Tombol "Galeri" dan
+  // "Kamera" berdampingan, dan dua tombol bergambar kamera hanya bisa
+  // dibedakan lewat tulisannya — persis pembedaan yang gagal saat dilihat
+  // sekilas sambil melayani pembeli.
+  galeri: (
+    <>
+      <rect x="3.5" y="4.5" width="17" height="15" rx="2" />
+      <circle cx="8.8" cy="9.5" r="1.6" />
+      <path d="M4 16.5l4.5-4.2 3.4 3.1 3.4-3.6L20 16" />
+    </>
+  ),
   laporan: (
     <>
       <path d="M3.5 20.5V4M3.5 20.5H21" />
@@ -171,6 +184,12 @@ const JALUR: Readonly<Record<NamaIkon, React.ReactNode>> = {
     <>
       <path d="M3.5 3.5h6v6h-6zM14.5 3.5h6v6h-6zM3.5 14.5h6v6h-6z" />
       <path d="M14.5 14.5h2.5v2.5h-2.5zM18 18h2.5v2.5H18" />
+    </>
+  ),
+  kamera: (
+    <>
+      <path d="M3 8.5a2 2 0 0 1 2-2h2.2l1.3-2h6.9l1.3 2H19a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" />
+      <circle cx="12" cy="12.8" r="3.6" />
     </>
   ),
   setelan: (

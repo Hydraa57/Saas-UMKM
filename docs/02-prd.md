@@ -217,6 +217,16 @@ Dua pengaman menahan supaya perubahan ini tidak berbalik jadi bencana:
 
 Sekalian ditutup satu bug yang terlihat di HP sungguhan: **bilah navigasi tergambar sebelum pengaturan awal selesai.** "Barang" dan "Riwayat" terlihat siap dipakai padahal keduanya cuma mendarat di layar "pengaturan awal belum selesai" — menu yang menipu lebih buruk daripada menu yang belum ada. Bilahnya sekarang ada di dalam gerbang, dan tetap sembunyi sampai ada tenant.
 
+### 5.1i Yang membuatnya masih terasa seperti halaman web
+
+Keluhan berikutnya tidak menyebut satu layar pun: *"UI nya msh ga smooth, msh bnyak ui2 bawaan browser."* Keluhan seperti itu mudah dijawab dengan menambah animasi, dan itu akan salah. Yang dicari adalah **sebabnya**, dan sebabnya ada tiga, semuanya bisa dihitung.
+
+**Empat puluh tautan masih memuat ulang seluruh dokumen.** Setiap perpindahan layar di aplikasi ini ditulis `<a href="/kasir">`, bukan `next/link` — `grep` menghitung 40 di 15 berkas, dan **nol** pemakaian `next/link`. Akibatnya tiap ketukan menu membongkar seluruh halaman: layar berkedip putih sekejap, Dexie dibuka ulang dari nol, dan daftar yang baru saja digambar digambar lagi. Itu bukan "kurang halus" — itu memang memuat ulang, persis seperti menekan tombol *refresh*. Semuanya dipindah ke `next/link`. `window.location` tinggal satu tempat, yaitu ganti akun, dan di sana muat ulang penuhnya memang yang diinginkan: basis data lokal baru saja dihapus, dan tidak ada keadaan di memori yang layak dipertahankan.
+
+**Kendali bawaan peramban tidak bisa disamakan dengan yang lain.** Dua yang tersisa: `<details>`, yang menggambar segitiga kecil dengan bentuk, ukuran, dan warna yang ditentukan sistem operasi; dan `<input type="file">` telanjang, yang menuliskan "Choose file / no file chosen" dalam bahasa Inggris dan menampilkan nama berkas yang tidak berarti apa-apa bagi pemakainya. Keduanya tidak bisa diwarnai dan berbeda rupa di tiap HP. Satu kendali seperti itu cukup membuat layar di sekitarnya terbaca sebagai formulir web. Penggantinya ditulis sendiri (`Lipatan`, `PilihFoto`), dan yang dipertahankan dari `<details>` cuma satu: isinya tidak dirender selama tertutup.
+
+**Foto hanya bisa dari kamera.** Masukan berkasnya memakai `capture="environment"`, yang dibaca seperti "utamakan kamera" padahal artinya **paksa kamera**: di Android pemilih galerinya tidak ditawarkan sama sekali. Foto barang yang sudah ada di HP — kiriman pemasok lewat WhatsApp, atau yang difoto kemarin malam — tidak bisa dipakai, dan tiap barang harus difoto ulang saat itu juga. Untuk katalog lima puluh barang, itu pekerjaan yang membuat orang berhenti di barang kelima. Sekarang ada dua masukan tersembunyi dengan tombolnya masing-masing, dan **ikonnya sengaja berbeda**: dua tombol bergambar kamera hanya bisa dibedakan lewat tulisannya, persis pembedaan yang gagal saat dilihat sekilas sambil melayani pembeli.
+
 ### 5.2 Aturan timbal balik
 
 > **Setiap kali pengguna memasukkan sesuatu, dia harus langsung menerima sesuatu.**
