@@ -2,6 +2,18 @@
 
 import { useEffect, useState } from 'react'
 import { isConfigured, supabase } from '@/lib/supabase/client'
+import { db, PERNAH_MASUK_KEY, setMeta } from '@/lib/db/local'
+
+/**
+ * Menandai bahwa HP ini pernah berhasil masuk.
+ *
+ * Ditulis di sini, bukan di tombol masuk, supaya ia ikut tertulis pada
+ * setiap jalan yang menghasilkan sesi — termasuk pendaftaran yang
+ * langsung aktif dan sesi lama yang dipulihkan dari penyimpanan.
+ */
+function tandaiPernahMasuk(): void {
+  void setMeta(db(), PERNAH_MASUK_KEY, true).catch(() => undefined)
+}
 
 /**
  * Sesi pengguna.
@@ -45,6 +57,7 @@ export function useSesi(): Sesi {
       .getSession()
       .then(({ data }) => {
         if (dibatalkan) return
+        if (data.session) tandaiPernahMasuk()
         setSesi({
           status: data.session ? 'masuk' : 'keluar',
           email: data.session?.user.email ?? null,
@@ -58,6 +71,7 @@ export function useSesi(): Sesi {
 
     const { data: langganan } = klien.auth.onAuthStateChange((_, session) => {
       if (dibatalkan) return
+      if (session) tandaiPernahMasuk()
       setSesi({
         status: session ? 'masuk' : 'keluar',
         email: session?.user.email ?? null,

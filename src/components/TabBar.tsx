@@ -1,6 +1,7 @@
 'use client'
 
 import { usePathname } from 'next/navigation'
+import { useApp } from '@/lib/useApp'
 import { Ikon, type NamaIkon } from './Ikon'
 
 /**
@@ -64,6 +65,14 @@ function Tombol({ tujuan, pathname }: { tujuan: Tujuan; pathname: string }) {
 
 export function TabBar() {
   const pathname = usePathname()
+  const { tenantId, ready } = useApp()
+
+  // Sebelum pengaturan awal selesai, belum ada apa pun untuk dituju.
+  // Bilah yang tetap tergambar di layar pembuka membuat "Barang" dan
+  // "Riwayat" terlihat siap dipakai, padahal keduanya cuma mendarat di
+  // layar "pengaturan awal belum selesai" — menu yang menipu lebih buruk
+  // daripada menu yang belum ada.
+  if (!ready || !tenantId) return null
 
   // Hanya di keempat tujuan tab, dan **persis** di situ — bukan "semua
   // kecuali daftar hitam". Aturan daftar hitam sempat dipakai, dan

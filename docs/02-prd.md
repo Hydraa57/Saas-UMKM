@@ -206,6 +206,17 @@ Rombakan kedua, setelah yang pertama dinilai **masih terlalu dasar**. Tiga hal y
 
 Satu aturan lama yang ternyata dilanggar diam-diam dan sekarang ditegakkan: **harga tidak pernah memakai warna merek.** Harga di grid kasir dan daftar katalog sempat ditulis nila — warna yang di seluruh aplikasi ini berarti "bisa ditekan". Akibatnya harga terbaca seperti tautan, dan beda antara "ini tindakan" dan "ini keterangan" ikut hilang.
 
+### 5.1h Login jadi gerbang — dan kenapa arahnya dibalik
+
+Versi sebelumnya menempatkan login sebagai **pilihan**, dengan alasan bahwa gerbang sebelum manfaat pertama adalah tempat orang berhenti. Alasan itu masih benar untuk produk yang dicari sendiri oleh orang asing di internet. Ia tidak berlaku di sini: penggunanya diantar langsung oleh pembuatnya, dan yang lebih menentukan — **catatan yang tidak pernah dicadangkan adalah catatan yang akan hilang.** Tanpa akun, seluruh isi aplikasi cuma hidup di satu HP, dan pemiliknya baru tahu saat HP itu sudah tidak ada.
+
+Dua pengaman menahan supaya perubahan ini tidak berbalik jadi bencana:
+
+1. **Gerbangnya hanya di awal, bukan tiap kali buka.** Sekali sebuah HP pernah berhasil masuk, ia ditandai (`pernah_masuk`) dan tidak pernah dikunci lagi. Alasannya keras: kasir yang menolak terbuka karena sinyal mati adalah kasir yang ditinggalkan hari itu juga, dan pembeli tidak menunggu sambil pemiliknya mencari sinyal. **Pemeriksaan sesi ke peladen tidak pernah jadi syarat membuka aplikasinya.**
+2. **Tanpa peladen, gerbangnya membuka sendiri.** Kalau Supabase belum dikonfigurasi, mengunci aplikasi berarti mengunci semua orang tanpa jalan keluar.
+
+Sekalian ditutup satu bug yang terlihat di HP sungguhan: **bilah navigasi tergambar sebelum pengaturan awal selesai.** "Barang" dan "Riwayat" terlihat siap dipakai padahal keduanya cuma mendarat di layar "pengaturan awal belum selesai" — menu yang menipu lebih buruk daripada menu yang belum ada. Bilahnya sekarang ada di dalam gerbang, dan tetap sembunyi sampai ada tenant.
+
 ### 5.2 Aturan timbal balik
 
 > **Setiap kali pengguna memasukkan sesuatu, dia harus langsung menerima sesuatu.**

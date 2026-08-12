@@ -173,6 +173,16 @@ export const BUSINESS_PHONE_KEY = 'business_phone'
  */
 export const QRIS_KEY = 'qris_payload'
 
+/**
+ * Pernahkah HP ini berhasil masuk akun sekali saja.
+ *
+ * Dipakai gerbang masuk aplikasi, dan sengaja **bukan** sesi yang
+ * diperiksa ulang tiap kali. Kasir yang menolak terbuka karena sinyal
+ * mati adalah kasir yang ditinggalkan hari itu juga. Sekali sebuah HP
+ * pernah masuk, ia tidak pernah dikunci lagi.
+ */
+export const PERNAH_MASUK_KEY = 'pernah_masuk'
+
 export class LocalDatabase extends Dexie {
   wallets!: EntityTable<LocalWallet, 'id'>
   items!: EntityTable<LocalItem, 'id'>

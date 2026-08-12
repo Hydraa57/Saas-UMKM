@@ -1,6 +1,7 @@
 import type { Metadata, Viewport } from 'next'
 import './globals.css'
 import { TabBar } from '@/components/TabBar'
+import { Gerbang } from '@/components/Gerbang'
 
 export const metadata: Metadata = {
   title: 'Ezura',
@@ -28,9 +29,15 @@ export default function RootLayout({
       {/* Lebar dibatasi karena ini aplikasi HP. Di layar lebar ia tetap
           selebar HP dan berada di tengah, bukan melar jadi tata letak
           yang tidak pernah dirancang. */}
-      <body className="mx-auto flex min-h-dvh max-w-md flex-col bg-slate-100">
-        {children}
-        <TabBar />
+      <body className="mx-auto flex min-h-dvh max-w-md flex-col bg-latar">
+        {/* Bilah navigasi ikut di dalam gerbang, bukan di sebelahnya:
+            kalau di luar, ia tetap tergambar di atas layar ajakan
+            mendaftar — dan menu yang terlihat tapi mengantar ke layar
+            "belum selesai" lebih buruk daripada menu yang belum ada. */}
+        <Gerbang>
+          {children}
+          <TabBar />
+        </Gerbang>
       </body>
     </html>
   )

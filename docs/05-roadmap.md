@@ -35,7 +35,7 @@ Dan satu urutan yang tidak boleh dibalik: **struk sebelum laporan.** Laporan ada
 | Aksi tulis (tulis lokal + antre, tanpa menunggu jaringan) | 40 |
 | Skema, RLS, jalur tulis (PostgreSQL sungguhan) | 92 penegasan |
 
-Layar: pengaturan awal, beranda, barang & jasa (tab Daftar + Stok, termasuk tambah/ubah/arsip), kasir, struk, riwayat struk, kulakan, koreksi hitung fisik, piutang, uang keluar, cadangan, laporan, pengaturan. Alur lengkapnya diuji di peramban sungguhan lewat `npm run smoke` — 44 langkah, termasuk mengunduh berkas ekspor dan membacanya kembali dengan pembaca `.xlsx` di luar repo ini.
+Layar: pengaturan awal, beranda, barang & jasa (tab Daftar + Stok, termasuk tambah/ubah/arsip), kasir, struk, riwayat struk, kulakan, koreksi hitung fisik, piutang, uang keluar, cadangan, laporan, pengaturan. Alur lengkapnya diuji di peramban sungguhan lewat `npm run smoke` — 45 langkah, termasuk mengunduh berkas ekspor dan membacanya kembali dengan pembaca `.xlsx` di luar repo ini.
 
 ---
 
@@ -81,7 +81,7 @@ Penyandi ESC/POS menerima **string**, bukan `Sale`. Kalau ia menyusun sendiri ba
 ## Fase 4 — Laporan & sinkronisasi (perkiraan 4 hari)
 
 - [x] Proyek Supabase berdiri, keenam migrasi terpasang, advisor bersih dari temuan yang tidak disengaja
-- [x] Login — **opsional, bukan gerbang.** Aplikasi jalan penuh tanpa akun; login hanya untuk mencadangkan
+- [x] Login — **wajib di awal.** Arahnya dibalik setelah dicoba di HP sungguhan: catatan yang tidak pernah dicadangkan adalah catatan yang akan hilang. Gerbangnya cuma sekali; sesudah pernah masuk, HP itu tidak pernah dikunci lagi walau sinyal mati
 - [x] Antrean kirim benar-benar dijalankan: saat dibuka, saat sinyal kembali, saat antrean bertambah, dan berkala
 - [x] Indikator keadaan cadangan yang menghilang sendiri kalau semuanya sudah aman
 - [ ] Penarikan data dari peladen (untuk HP kedua; risiko kehilangan sudah ditutup oleh pengiriman)

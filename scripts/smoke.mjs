@@ -53,9 +53,52 @@ const ketik = async (angka) => {
   }
 }
 
-await step('buka beranda', async () => {
+await step('gerbang menahan aplikasi sebelum ada akun', async () => {
   await page.goto(BASE, { waitUntil: 'networkidle' })
-  await page.waitForTimeout(700)
+  await page.waitForTimeout(900)
+
+  const layar = (await page.locator('main').innerText()).replace(/\n+/g, ' | ')
+  if (!layar.includes('Buat akun dulu')) {
+    throw new Error('gerbang tidak menahan: ' + layar)
+  }
+  // Dan bilah navigasinya ikut tidak ada. Menu yang terlihat di balik
+  // gerbang mengantar ke layar kosong, dan itu lebih buruk daripada menu
+  // yang belum muncul.
+  if ((await page.getByRole('navigation', { name: 'Navigasi utama' }).count()) !== 0) {
+    throw new Error('bilah navigasi tergambar padahal gerbangnya tertutup')
+  }
+})
+
+await step('sesudah ada akun, gerbangnya terbuka', async () => {
+  // Login sungguhan tidak bisa dilakukan dari sini — peladen tidak
+  // terjangkau. Yang ditulis adalah **keadaan lokal yang persis
+  // dihasilkan login berhasil**, jadi yang diuji tetap perilaku
+  // gerbangnya, bukan jalan pintas yang cuma ada di pengujian.
+  await page.evaluate(
+    () =>
+      new Promise((selesai, gagal) => {
+        const minta = indexedDB.open('ezura')
+        minta.onsuccess = () => {
+          const basis = minta.result
+          const tx = basis.transaction('meta', 'readwrite')
+          tx.objectStore('meta').put({ key: 'pernah_masuk', value: true })
+          tx.oncomplete = () => selesai(undefined)
+          tx.onerror = () => gagal(tx.error)
+        }
+        minta.onerror = () => gagal(minta.error)
+      }),
+  )
+  await page.goto(BASE, { waitUntil: 'networkidle' })
+  await page.waitForTimeout(900)
+
+  // Diperiksa lewat **hilangnya** ajakan mendaftar, bukan lewat munculnya
+  // tombol "Mulai": layar gerbang punya tombol bernama sama, jadi
+  // memeriksa "Mulai" akan lulus walau gerbangnya masih tertutup.
+  const layar = (await page.locator('main').innerText()).replace(/\n+/g, ' | ')
+  if (layar.includes('Buat akun dulu')) {
+    throw new Error('gerbang masih tertutup: ' + layar)
+  }
+  if (!layar.includes('Mulai')) throw new Error('layar pembuka tidak muncul: ' + layar)
 })
 
 await step('menuju pengaturan awal', async () => {
