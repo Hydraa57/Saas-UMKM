@@ -32,9 +32,9 @@ Dan satu urutan yang tidak boleh dibalik: **struk sebelum laporan.** Laporan ada
 | Foto: pengecilan sebelum disimpan | 5 |
 | Antrean kirim luring + penggolongan kegagalan | 30 |
 | Aksi tulis (tulis lokal + antre, tanpa menunggu jaringan) | 40 |
-| Skema, RLS, jalur tulis (PostgreSQL sungguhan) | 82 penegasan |
+| Skema, RLS, jalur tulis (PostgreSQL sungguhan) | 87 penegasan |
 
-Layar: pengaturan awal, beranda, barang & jasa (tab Daftar + Stok, termasuk tambah/ubah/arsip), kasir, struk, riwayat struk, kulakan, koreksi hitung fisik, piutang, uang keluar, cadangan, laporan. Alur lengkapnya diuji di peramban sungguhan lewat `npm run smoke` — 40 langkah, termasuk mengunduh berkas ekspor dan membacanya kembali dengan pembaca `.xlsx` di luar repo ini.
+Layar: pengaturan awal, beranda, barang & jasa (tab Daftar + Stok, termasuk tambah/ubah/arsip), kasir, struk, riwayat struk, kulakan, koreksi hitung fisik, piutang, uang keluar, cadangan, laporan, pengaturan. Alur lengkapnya diuji di peramban sungguhan lewat `npm run smoke` — 44 langkah, termasuk mengunduh berkas ekspor dan membacanya kembali dengan pembaca `.xlsx` di luar repo ini.
 
 ---
 
@@ -90,6 +90,7 @@ Penyandi ESC/POS menerima **string**, bukan `Sale`. Kalau ia menyusun sendiri ba
 - [x] Untung kotor per bulan, dari harga modal yang disalin saat transaksi
 - [x] Ekspor ke Excel — semua catatan jadi satu berkas `.xlsx`, penyandinya ditulis sendiri tanpa pustaka
 - [x] **QRIS dengan nominal terisi**, dari QRIS statis yang sudah dimiliki usahanya. Tanpa penyedia jasa pembayaran, tanpa biaya tambahan, jalan tanpa sinyal
+- [x] **Layar pengaturan**: ganti nama usaha & nomor WhatsApp, pasang/ganti QRIS, lihat keadaan cadangan. Sebelumnya nama usaha tidak bisa diubah sama sekali setelah pengaturan awal
 
 ---
 
@@ -137,7 +138,7 @@ Posisi lengkapnya di [`08-posisi-produk.md`](08-posisi-produk.md). Ringkasnya: a
 | Fase | Perkiraan | Hasil |
 |---|---|---|
 | 0 | selesai | Paham cara ibu mencatat, dari bukunya sendiri |
-| — | selesai | Fondasi, skema, logika, 370 tes + 82 penegasan DB |
+| — | selesai | Fondasi, skema, logika, 370 tes + 87 penegasan DB |
 | 1 | selesai | **Kasir, katalog, dan struk jalan** |
 | 2 | selesai | **Stok yang lingkarannya tertutup** |
 | 3 | selesai | **Printer termal, riwayat struk, piutang** |

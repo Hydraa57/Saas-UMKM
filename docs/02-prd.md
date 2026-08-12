@@ -181,6 +181,19 @@ Dua hal yang dijaga ketat:
 
 Kalau penyisipan nominalnya gagal karena apa pun, kodenya **tetap tampil apa adanya** dengan keterangan bahwa pembeli harus mengetik sendiri. Layar galat saat ada orang menunggu jauh lebih buruk daripada satu langkah tambahan.
 
+### 5.1f Pengaturan: satu ikon di pojok, bukan tab
+
+Bilah bawah tetap lima tujuan. Pengaturan masuk lewat **ikon roda gigi di pojok beranda**, dan itu bukan kompromi melainkan penilaian: yang dikerjakan di sana — ganti nama usaha, pasang QRIS — dilakukan sekali lalu tidak pernah lagi, jadi ia tidak pantas menempati tempat yang bersaing dengan angka hari ini.
+
+Tapi ia **harus** ada, dan sebelumnya tidak. Dua lubang nyata yang ditutupnya:
+
+1. **Nama usaha hanya bisa ditulis sekali**, di layar pengaturan awal — sebelum pemiliknya tahu nama itu akan muncul di kepala setiap struk. Nama yang diketik terburu-buru di situ justru yang paling mungkin ingin diperbaiki.
+2. **QRIS cuma bisa dipasang lewat layar bayar**, jadi ia hanya ditemukan orang yang kebetulan sudah memilih QRIS di depan pembeli. Tempat mencarinya seharusnya di pengaturan.
+
+Nomor WhatsApp tersimpan di perangkat saja dan **tidak dikirim ke peladen**: ia cuma dipakai mencetak kepala struk, jadi tidak ada gunanya di sana — dan nomor pribadi yang tidak perlu disimpan sebaiknya memang tidak disimpan. Nama usaha ikut terkirim karena ia identitas tenant, yang nanti dilihat dari perangkat kedua.
+
+Yang **tidak** dipindahkan ke sini: apa pun yang punya rumah yang lebih dekat ke titik pakainya. Ekspor Excel tetap di layar laporan, karena yang mencarinya sedang melihat angkanya. Menu pengaturan yang menampung semua hal yang tidak jelas tempatnya akan berhenti bisa dibaca dalam sebulan.
+
 ### 5.2 Aturan timbal balik
 
 > **Setiap kali pengguna memasukkan sesuatu, dia harus langsung menerima sesuatu.**

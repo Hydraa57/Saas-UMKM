@@ -182,6 +182,23 @@ export default function Beranda() {
 
   return (
     <main className="flex flex-1 flex-col gap-4 p-4 pb-[calc(theme(spacing.bilah)+1rem)]">
+      {/* Satu-satunya jalan ke pengaturan, dan sengaja cuma ikon di
+          pojok. Yang dikerjakan di sana — ganti nama usaha, pasang QRIS —
+          dilakukan sekali lalu tidak pernah lagi, jadi ia tidak pantas
+          menempati tempat yang bersaing dengan angka hari ini. Tapi ia
+          harus ada: sebelumnya nama usaha tidak bisa diubah sama sekali
+          setelah pengaturan awal, dan QRIS cuma bisa dipasang lewat layar
+          bayar — jadi cuma ditemukan orang yang kebetulan sudah memilih
+          QRIS di depan pembeli. */}
+      <div className="flex items-center justify-between">
+        <span className="text-sm font-bold tracking-tight text-slate-400">
+          Ezura
+        </span>
+        <a href="/pengaturan" aria-label="Pengaturan" className="btn-ikon">
+          <Ikon nama="setelan" ukuran={21} />
+        </a>
+      </div>
+
       {/* Kartu gelap: satu-satunya di aplikasi, dan itu disengaja. Ia
           menandai angka yang paling sering dicari — dan sekaligus jadi
           tautan ke riwayat, karena pertanyaan berikutnya setelah melihat

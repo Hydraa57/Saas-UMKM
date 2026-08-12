@@ -250,5 +250,9 @@ await page.waitForSelector('#qris-qr svg', { timeout: 15000 })
 await jeda(900)
 await potret('21-bayar-qris', true)
 
+await page.goto(BASE + '/pengaturan')
+await jeda(900)
+await potret('22-pengaturan', true)
+
 console.log('\nselesai → ' + DIR)
 await browser.close()

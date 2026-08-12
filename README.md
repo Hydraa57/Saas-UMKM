@@ -77,9 +77,9 @@ Alur pokoknya sudah jalan dari ujung ke ujung: pengaturan awal → isi katalog �
 | Foto: pengecilan sebelum disimpan | 5 |
 | Antrean kirim luring + penggolongan kegagalan | 30 |
 | Aksi tulis (tulis lokal + antre, tanpa menunggu jaringan) | 40 |
-| Skema, RLS, jalur tulis (PostgreSQL sungguhan) | 82 penegasan |
+| Skema, RLS, jalur tulis (PostgreSQL sungguhan) | 87 penegasan |
 
-Layar yang sudah ada: pengaturan awal, beranda, barang & jasa (tab Daftar + Stok), tambah/ubah/arsip, kasir, struk, riwayat struk, kulakan, koreksi hitung fisik, piutang, uang keluar, cadangan, laporan, pasang QRIS.
+Layar yang sudah ada: pengaturan awal, beranda, barang & jasa (tab Daftar + Stok), tambah/ubah/arsip, kasir, struk, riwayat struk, kulakan, koreksi hitung fisik, piutang, uang keluar, cadangan, laporan, pasang QRIS, pengaturan.
 
 Struk bisa dicetak ke printer termal Bluetooth (Web Bluetooth + ESC/POS) — **teks yang sama persis** dengan yang tampil di layar dan yang dikirim ke WhatsApp. Penyandinya menerima string, bukan `Sale`, jadi tidak ada tempat kedua yang bisa melenceng. Kodenya sudah lengkap dan teruji; yang belum adalah pengujian dengan printer sungguhan.
 
@@ -137,7 +137,7 @@ npm run dev
 ```bash
 npm test          # 370 tes unit
 npm run typecheck
-npm run db:test   # 82 penegasan: migrasi, RLS, jalur tulis
+npm run db:test   # 87 penegasan: migrasi, RLS, jalur tulis
 
 npm run build && npx next start -p 3311 &
 npm run smoke     # alur nyata di peramban sungguhan
@@ -146,7 +146,7 @@ npm run shots     # tangkapan layar tiap halaman, dengan data yang masuk akal
 
 `npm run shots` mengisi katalog, menjual, kulakan, dan menagih lebih dulu, lalu memotret seluruh halaman ke `shots/`. Dipakai untuk melihat rancangannya sebagai satu kesatuan: kebanyakan kejanggalan tata letak baru terlihat saat sepuluh layar dijejerkan, bukan saat dilihat satu per satu.
 
-`npm run smoke` menjalankan satu hari kerja lengkap di Chromium — 40 langkah: buka usaha, isi katalog dengan satu barang dan satu jasa, jual keduanya dalam satu struk, kulakan, koreksi hitung fisik, jual berutang, terima pelunasan, batalkan satu struk, baca laporannya, unduh seluruh catatan ke Excel, lalu pasang QRIS dan bayar dengannya. Yang diperiksa bukan "layarnya muncul" melainkan angkanya: kulakan **ikut mengurangi kas**, pembatalan **menarik uangnya kembali** dan mengembalikan stok lewat retur, penjumlahan riwayat stok tetap cocok setelah semuanya, dan **stok jasa tidak pernah berkurang.**
+`npm run smoke` menjalankan satu hari kerja lengkap di Chromium — 44 langkah: buka usaha, isi katalog dengan satu barang dan satu jasa, jual keduanya dalam satu struk, kulakan, koreksi hitung fisik, jual berutang, terima pelunasan, batalkan satu struk, baca laporannya, unduh seluruh catatan ke Excel, pasang QRIS dan bayar dengannya, lalu ganti nama usaha dan pastikan namanya ikut berubah di kepala struk. Yang diperiksa bukan "layarnya muncul" melainkan angkanya: kulakan **ikut mengurangi kas**, pembatalan **menarik uangnya kembali** dan mengembalikan stok lewat retur, penjumlahan riwayat stok tetap cocok setelah semuanya, dan **stok jasa tidak pernah berkurang.**
 
 Ia menangkap hal yang tidak bisa ditangkap tes unit. Empat bug lolos dari seluruh tes unit dan baru ketahuan di sana: pilihan yang hilang saat kembali dari layar lain, ikon PWA yang tidak ada, **stok awal yang tidak pernah tercatat sebagai mutasi** (sehingga penjumlahan riwayat selamanya meleset sebesar stok awal tiap barang), dan laporan yang **terus menagih pembeli yang sudah melunasi** — karena sisa tagihannya dihitung dari `total − paid` di struk, padahal pelunasan tercatat di daftar utang dan tidak pernah mengubah `paid`. Yang terakhir cuma muncul kalau ada penjualan berutang **dan** pelunasan **dan** laporan dibuka sesudahnya; tidak ada tes unit yang kebetulan menyusun ketiganya.
 

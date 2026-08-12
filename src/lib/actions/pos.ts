@@ -869,3 +869,45 @@ export async function setupTenant(
 
   return { tenantId, walletId }
 }
+
+/**
+ * Mengubah identitas usaha: nama dan nomor WhatsApp.
+ *
+ * Nomor telepon **tidak** dikirim ke peladen, dan itu disengaja. Ia cuma
+ * dipakai untuk mencetak kepala struk, jadi tidak ada gunanya di sana —
+ * dan nomor pribadi yang tidak perlu disimpan sebaiknya memang tidak
+ * disimpan. Nama usaha ikut terkirim karena ia identitas tenant, yang
+ * nanti dilihat dari perangkat kedua.
+ *
+ * Antreannya memakai id tetap `identitas:<tenant>`, bukan id acak: kalau
+ * namanya diperbaiki tiga kali saat luring, yang perlu sampai ke peladen
+ * cuma yang terakhir. Tiga baris antrean untuk satu kolom yang sama
+ * berarti dua panggilan yang hasilnya langsung ditimpa.
+ */
+export async function updateIdentity(
+  context: ActionContext,
+  input: {
+    readonly name: string
+    readonly phone?: string | null
+  },
+): Promise<void> {
+  const { db, tenantId } = context
+  const now = nowFrom(context)
+  const nama = input.name.trim()
+  if (nama.length === 0) throw new Error('Nama usaha tidak boleh kosong')
+
+  const telepon = (input.phone ?? '').trim()
+
+  await db.transaction('rw', db.meta, async () => {
+    await setMeta(db, BUSINESS_NAME_KEY, nama)
+    await setMeta(db, BUSINESS_PHONE_KEY, telepon.length > 0 ? telepon : null)
+  })
+
+  await enqueue(db, {
+    id: `identitas:${tenantId}`,
+    tenantId,
+    rpc: 'update_tenant',
+    args: { p_tenant_id: tenantId, p_name: nama },
+    now,
+  })
+}

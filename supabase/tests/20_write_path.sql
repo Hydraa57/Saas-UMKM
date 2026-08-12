@@ -586,3 +586,61 @@ select assert_eq(
 );
 
 reset role;
+
+-- ── Mengubah identitas usaha ─────────────────────────────────────────────
+--
+-- Nama usaha muncul di kepala setiap struk, jadi ia harus bisa diperbaiki
+-- setelah pengaturan awal. Yang diuji di sini bukan "bisa diubah",
+-- melainkan **siapa yang boleh mengubahnya** — karena fungsinya berjalan
+-- sebagai pemanggil, dan yang menahannya adalah policy, bukan kode.
+
+select login_as('33333333-3333-3333-3333-333333333333');
+set role authenticated;
+
+select update_tenant('cccccccc-0000-0000-0000-000000000001', '  Warung Bu Ani  ');
+
+select assert_eq(
+  (select name from tenants where id = 'cccccccc-0000-0000-0000-000000000001'),
+  'Warung Bu Ani',
+  'nama usaha bisa diubah, dan spasi di ujungnya dibuang'
+);
+
+-- Jenis usaha tidak boleh diam-diam kembali ke bawaannya hanya karena
+-- namanya diperbaiki.
+select assert_eq(
+  (select business_type from tenants where id = 'cccccccc-0000-0000-0000-000000000001'),
+  'campuran',
+  'mengubah nama tidak mengubah jenis usaha'
+);
+
+select assert_denied(
+  $$select update_tenant('cccccccc-0000-0000-0000-000000000001', '   ')$$,
+  'nama usaha kosong ditolak'
+);
+
+reset role;
+
+-- Pemilik warung sebelah tidak boleh mengubah nama usaha orang. Fungsinya
+-- tidak `security definer`, jadi policy `tenant_update` yang
+-- menghentikannya — perintahnya tidak menemukan baris, dan fungsinya
+-- menggagalkan diri supaya antrean kirim menggolongkannya permanen alih-alih
+-- mengulanginya selamanya.
+select login_as('44444444-4444-4444-4444-444444444444');
+set role authenticated;
+
+select assert_denied(
+  $$select update_tenant('cccccccc-0000-0000-0000-000000000001', 'Diambil Alih')$$,
+  'tenant lain tidak bisa mengubah nama usaha orang'
+);
+
+reset role;
+select login_as('33333333-3333-3333-3333-333333333333');
+set role authenticated;
+
+select assert_eq(
+  (select name from tenants where id = 'cccccccc-0000-0000-0000-000000000001'),
+  'Warung Bu Ani',
+  'nama usaha tidak berubah setelah percobaan dari akun lain'
+);
+
+reset role;

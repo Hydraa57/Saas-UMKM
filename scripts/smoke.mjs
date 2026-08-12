@@ -682,6 +682,70 @@ await step('penjualan lewat QRIS tercatat sebagai lunas', async () => {
   }
 })
 
+// ── Pengaturan ──────────────────────────────────────────────────────────
+
+await step('pengaturan bisa dicapai dari beranda', async () => {
+  // Sebelum layar ini ada, nama usaha tidak bisa diubah sama sekali
+  // setelah pengaturan awal, dan QRIS cuma bisa dipasang lewat layar
+  // bayar — jadi cuma ditemukan orang yang kebetulan sudah memilih QRIS
+  // di depan pembeli.
+  await page.goto(BASE + '/')
+  await page.waitForTimeout(900)
+  await page.getByRole('link', { name: 'Pengaturan' }).click()
+  await page.waitForURL('**/pengaturan', { timeout: 15000 })
+  await page.waitForTimeout(700)
+})
+
+await step('pengaturan menunjukkan keadaan QRIS dan cadangan', async () => {
+  const layar = (await page.locator('main').innerText()).replace(/\n+/g, ' | ')
+  // QRIS sudah dipasang di langkah sebelumnya, jadi barisnya harus
+  // menyebut nama merchantnya — bukan sekadar "terpasang".
+  if (!layar.includes('WARUNG BU ANI')) {
+    throw new Error('keadaan QRIS tidak muncul di pengaturan: ' + layar)
+  }
+  // Belum masuk akun, dan itu harus terbaca sebagai peringatan.
+  if (!layar.includes('Belum aktif')) {
+    throw new Error('keadaan cadangan tidak muncul di pengaturan: ' + layar)
+  }
+})
+
+await step('nama usaha bisa diperbaiki', async () => {
+  const simpan = page.getByRole('button', { name: 'Simpan perubahan' })
+  // Tanpa perubahan, tombolnya harus mati: menyimpan yang sama persis
+  // cuma menambah satu panggilan ke antrean tanpa mengubah apa pun.
+  if (!(await simpan.isDisabled())) {
+    throw new Error('tombol simpan aktif padahal belum ada yang berubah')
+  }
+
+  await page.getByLabel('Nama usaha').fill('Warung Uji Baru')
+  await page.waitForTimeout(300)
+  await simpan.click()
+  await page.waitForTimeout(900)
+
+  const layar = await page.locator('main').innerText()
+  if (!layar.includes('Tersimpan')) {
+    throw new Error('tidak ada tanda tersimpan: ' + layar)
+  }
+})
+
+await step('nama baru langsung dipakai di kepala struk', async () => {
+  // Ini alasan sesungguhnya nama itu harus bisa diubah: ia tercetak di
+  // setiap struk. Struk lama pun ikut memakai nama baru, karena namanya
+  // dibaca dari pengaturan, bukan disalin ke tiap penjualan.
+  await page.goto(BASE + '/riwayat')
+  await page.waitForTimeout(900)
+  await page.locator('a[href^="/struk/"]').first().click()
+  await page.waitForURL('**/struk/**', { timeout: 15000 })
+  await page.waitForTimeout(800)
+
+  // Kepala struk dikapitalkan — kebiasaan struk termal, dan memang
+  // disengaja. Jadi dicocokkan tanpa peduli besar-kecil hurufnya.
+  const isi = await page.locator('pre').innerText()
+  if (!isi.toUpperCase().includes('WARUNG UJI BARU')) {
+    throw new Error('struk masih memakai nama lama: ' + isi.split('\n')[0])
+  }
+})
+
 console.log('\nSTRUK:\n' + struk.split('\n').map((l) => '  ' + l).join('\n'))
 console.log('\nKATALOG :', daftar)
 console.log('BERANDA :', beranda)
