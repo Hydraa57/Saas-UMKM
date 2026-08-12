@@ -1,0 +1,151 @@
+# Membangun `.apk` (dan `.aab`) dari PWA yang sudah tayang.
+#
+# Kenapa di CI dan bukan di komputer: yang dibutuhkan Bubblewrap adalah
+# Android SDK dan JDK, dan memasang keduanya di komputer sendiri
+# berarti berpuluh gigabita untuk sesuatu yang dijalankan sebulan sekali.
+# Runner GitHub sudah membawa keduanya.
+#
+# Yang dihasilkan **bukan aplikasi kedua.** Isinya persis PWA yang sama,
+# dibungkus Trusted Web Activity — jadi tidak ada kode yang harus dijaga
+# tetap sepadan di dua tempat, dan pembaruan aplikasi sampai ke pengguna
+# lewat deploy web biasa tanpa membangun ulang `.apk`.
+#
+# ── Sebelum dijalankan pertama kali ──────────────────────────────────
+#
+# 1. Buat kunci penanda tangan **sekali saja**, di komputer sendiri:
+#
+#      keytool -genkeypair -v -keystore android.keystore \
+#        -alias ezura -keyalg RSA -keysize 2048 -validity 10000
+#
+#    Simpan berkas dan sandinya baik-baik. Kunci yang hilang berarti
+#    aplikasi yang tidak bisa diperbarui lagi selamanya — pengguna harus
+#    mencopot dan memasang ulang, dan itu berarti kehilangan datanya.
+#
+# 2. Ubah jadi teks lalu simpan sebagai secret repo:
+#
+#      base64 -w0 android.keystore
+#
+#    Secrets yang dibutuhkan:
+#      ANDROID_KEYSTORE_BASE64   hasil perintah di atas
+#      ANDROID_KEYSTORE_PASSWORD sandi keystore
+#      ANDROID_KEY_PASSWORD      sandi alias (biasanya sama)
+#
+# 3. Jalankan workflow ini. Di akhir ia mencetak **sidik jari SHA-256**.
+#    Pasang di Vercel sebagai env, lalu deploy ulang:
+#
+#      ANDROID_PACKAGE_NAME     = id.ezura.app  (atau apa pun yang dipakai)
+#      ANDROID_CERT_FINGERPRINT = sidik jari yang tercetak
+#
+#    Tanpa langkah ketiga, `.apk`-nya tetap jalan tapi **menampilkan
+#    bilah alamat Chrome di atas layar** — dan seluruh alasan membuatnya
+#    hilang.
+
+name: Bangun APK
+
+on:
+  workflow_dispatch:
+    inputs:
+      host:
+        description: 'Domain PWA-nya, tanpa https:// (mis. ezura.vercel.app)'
+        required: true
+      package_id:
+        description: 'Nama paket Android'
+        required: true
+        default: 'id.ezura.app'
+      version:
+        description: 'Versi yang tampil di HP'
+        required: true
+        default: '1.0.0'
+
+permissions:
+  contents: read
+
+jobs:
+  bangun:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      # Bubblewrap menuntut JDK 17; runner-nya membawa beberapa versi.
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - uses: android-actions/setup-android@v3
+
+      - name: Pasang Bubblewrap
+        run: npm install -g @bubblewrap/cli
+
+      - name: Susun twa-manifest.json
+        working-directory: android
+        env:
+          HOST: ${{ inputs.host }}
+          PACKAGE_ID: ${{ inputs.package_id }}
+          VERSION: ${{ inputs.version }}
+          # Nomor urut jalannya workflow dipakai sebagai versionCode.
+          # Play Store menolak unggahan dengan angka yang sama atau lebih
+          # kecil dari sebelumnya, dan angka yang selalu naik sendiri
+          # menghilangkan satu hal yang harus diingat manusia.
+          VERSION_CODE: ${{ github.run_number }}
+        run: |
+          sed -e "s|__HOST__|$HOST|g" \
+              -e "s|__PACKAGE_ID__|$PACKAGE_ID|g" \
+              -e "s|__VERSION__|$VERSION|g" \
+              -e "s|__VERSION_CODE__|$VERSION_CODE|g" \
+              twa-manifest.template.json > twa-manifest.json
+          cat twa-manifest.json
+
+      - name: Kembalikan kunci penanda tangan
+        working-directory: android
+        env:
+          KEYSTORE: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
+        run: |
+          if [ -z "$KEYSTORE" ]; then
+            echo "::error::Secret ANDROID_KEYSTORE_BASE64 belum diisi. Lihat catatan di atas berkas ini."
+            exit 1
+          fi
+          echo "$KEYSTORE" | base64 -d > android.keystore
+
+      - name: Bangun
+        working-directory: android
+        env:
+          BUBBLEWRAP_KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+          BUBBLEWRAP_KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
+        run: |
+          bubblewrap build --skipPwaValidation
+
+      - name: Cetak sidik jari SHA-256
+        working-directory: android
+        env:
+          SANDI: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+        run: |
+          echo "──────────────────────────────────────────────────────"
+          echo "Pasang nilai SHA256 di bawah ini sebagai env di Vercel,"
+          echo "dengan nama ANDROID_CERT_FINGERPRINT, lalu deploy ulang."
+          echo "Tanpa itu, bilah alamat Chrome tetap muncul di aplikasi."
+          echo "──────────────────────────────────────────────────────"
+          keytool -list -v -keystore android.keystore -alias ezura \
+                  -storepass "$SANDI" | grep -A1 'SHA256:' || true
+
+      - name: Simpan hasilnya
+        uses: actions/upload-artifact@v4
+        with:
+          name: ezura-apk
+          if-no-files-found: error
+          path: |
+            android/app-release-signed.apk
+            android/app-release-bundle.aab
+
+      # Kunci tidak ikut tersimpan ke mana pun. Runner memang dibuang
+      # sesudah selesai, tapi menghapusnya di sini membuat aturannya
+      # terbaca dari kodenya sendiri, bukan diandaikan dari sifat runner.
+      - name: Hapus kunci
+        if: always()
+        working-directory: android
+        run: rm -f android.keystore

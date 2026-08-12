@@ -19,3 +19,12 @@ supabase/.branches/
 # Tangkapan layar hasil `npm run shots` — dibuat ulang kapan saja, dan
 # berkas PNG di riwayat git membuat repo membengkak tanpa alasan.
 /shots
+
+# Kunci penanda tangan Android dan turunannya. Kunci yang bocor berarti
+# orang lain bisa menerbitkan pembaruan atas nama aplikasi ini; kunci
+# yang hilang berarti aplikasinya tidak bisa diperbarui lagi selamanya.
+android/android.keystore
+android/twa-manifest.json
+android/app/
+android/*.apk
+android/*.aab

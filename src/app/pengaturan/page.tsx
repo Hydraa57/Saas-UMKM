@@ -15,6 +15,7 @@ import { pesanGalat } from '@/lib/galat'
 import { periksaQris } from '@/lib/qris/payload'
 import { gantiAkun, periksaSebelumGanti } from '@/lib/akun'
 import { bacaUkuran, pakaiUkuran, LABEL_UKURAN, UKURAN, type Ukuran } from '@/lib/tampilan'
+import { usePasang } from '@/lib/pasang'
 
 /**
  * Pengaturan.
@@ -71,6 +72,7 @@ export default function Pengaturan() {
   const { tenantId, businessName, businessPhone, ready } = useApp()
   const { status, email } = useSesi()
   const { gagal } = useSync()
+  const { keadaan: keadaanPasang, pasang } = usePasang()
 
   const qris = useLiveQuery(() => getMeta<string>(db(), QRIS_KEY), [], undefined)
 
@@ -256,6 +258,44 @@ export default function Pengaturan() {
           cuma memuat separuh isinya bagi semua yang lain. */}
       <section className="flex flex-col gap-2">
         <h2 className="label px-1">Tampilan</h2>
+
+        {/* Jalan kedua ke pemasangan, dan itu memang gunanya: kartu
+            ajakan di beranda bisa ditutup, dan yang menutupnya sekali
+            tidak boleh kehilangan caranya selamanya. Barisnya juga
+            menyebutkan kalau sudah terpasang — supaya yang ragu bisa
+            memastikan tanpa mencoba memasang dua kali. */}
+        {keadaanPasang !== 'memuat' && keadaanPasang !== 'tidak-bisa' && (
+          <div className="kartu">
+            <span className="label">Aplikasi di layar depan</span>
+            {keadaanPasang === 'terpasang' ? (
+              <p className="mt-1 flex items-center gap-2 font-semibold text-masuk">
+                <Ikon nama="cek" ukuran={20} tebal={2.4} />
+                Sudah terpasang
+              </p>
+            ) : (
+              <>
+                <p className="mt-1 text-sm text-slate-600">
+                  Supaya bisa dibuka langsung dari ikonnya, tanpa mengetik
+                  alamat dan tanpa bilah peramban di atas layar.
+                </p>
+                {keadaanPasang === 'bisa' ? (
+                  <button
+                    type="button"
+                    onClick={() => void pasang()}
+                    className="btn-primer mt-3 w-full"
+                  >
+                    Pasang sekarang
+                  </button>
+                ) : (
+                  <p className="mt-3 rounded-kartu-kecil bg-slate-50 px-3.5 py-2.5 text-sm text-slate-600">
+                    Di iPhone: ketuk tombol Bagikan di Safari, lalu pilih
+                    “Tambah ke Layar Utama”.
+                  </p>
+                )}
+              </>
+            )}
+          </div>
+        )}
 
         <div className="kartu">
           <span className="label">Ukuran huruf</span>

@@ -15,6 +15,7 @@ import * as M from '@/lib/money'
 import { Uang } from '@/components/Uang'
 import { Ikon, type NamaIkon } from '@/components/Ikon'
 import { StatusCadangan } from '@/components/StatusCadangan'
+import { AjakanPasang } from '@/components/AjakanPasang'
 import {
   isBarang,
   type CashEntry,
@@ -86,12 +87,6 @@ function Pintasan({
 
 export default function Beranda() {
   const { tenantId, businessName, ready } = useApp()
-
-  useEffect(() => {
-    if ('serviceWorker' in navigator) {
-      navigator.serviceWorker.register('/sw.js').catch(() => undefined)
-    }
-  }, [])
 
   const hariIni = today()
   const bulanIni = monthOf(new Date())
@@ -235,6 +230,7 @@ export default function Beranda() {
           aman — penanda hijau yang selalu ada akan berhenti dibaca dalam
           dua hari, dan bersamanya peringatan yang sesungguhnya. */}
       <StatusCadangan />
+      <AjakanPasang />
 
       {/* Dua pintasan, bukan tiga: piutang sudah punya tempat tetap di
           bilah bawah, dan menaruhnya di dua tempat sekaligus membuat

@@ -1,0 +1,44 @@
+{
+  "packageId": "__PACKAGE_ID__",
+  "host": "__HOST__",
+  "name": "Ezura",
+  "launcherName": "Ezura",
+  "display": "standalone",
+  "themeColor": "#0f172a",
+  "themeColorDark": "#0f172a",
+  "navigationColor": "#0f172a",
+  "navigationColorDark": "#0f172a",
+  "navigationDividerColor": "#0f172a",
+  "navigationDividerColorDark": "#0f172a",
+  "backgroundColor": "#f8fafc",
+  "enableNotifications": false,
+  "startUrl": "/",
+  "iconUrl": "https://__HOST__/icon-512.png",
+  "maskableIconUrl": "https://__HOST__/icon-maskable-512.png",
+  "splashScreenFadeOutDuration": 300,
+  "signingKey": {
+    "path": "./android.keystore",
+    "alias": "ezura"
+  },
+  "appVersionName": "__VERSION__",
+  "appVersionCode": __VERSION_CODE__,
+  "shortcuts": [
+    {
+      "name": "Kasir",
+      "short_name": "Kasir",
+      "url": "/kasir",
+      "icons": [{ "sizes": "192x192", "src": "https://__HOST__/icon-192.png" }]
+    }
+  ],
+  "generatorApp": "bubblewrap-cli",
+  "webManifestUrl": "https://__HOST__/manifest.webmanifest",
+  "fallbackType": "customtabs",
+  "features": {},
+  "alphaDependencies": { "enabled": false },
+  "enableSiteSettingsShortcut": true,
+  "isChromeOSOnly": false,
+  "isMetaQuest": false,
+  "fullScopeUrl": "https://__HOST__/",
+  "minSdkVersion": 23,
+  "orientation": "portrait"
+}

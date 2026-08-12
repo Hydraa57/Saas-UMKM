@@ -17,7 +17,8 @@
     "smoke": "node scripts/smoke.mjs",
     "shots": "node scripts/shots.mjs",
     "uji:galat": "node scripts/galat.mjs",
-    "audit": "node scripts/audit.mjs"
+    "audit": "node scripts/audit.mjs",
+    "uji:pasang": "node scripts/pasang.mjs"
   },
   "dependencies": {
     "@supabase/ssr": "^0.7.0",

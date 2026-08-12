@@ -3,6 +3,8 @@ import './globals.css'
 import { TabBar } from '@/components/TabBar'
 import { Gerbang } from '@/components/Gerbang'
 import { SKRIP_HURUF } from '@/lib/tampilan'
+import { SKRIP_PASANG } from '@/lib/pasang'
+import { DaftarSW } from '@/components/DaftarSW'
 
 export const metadata: Metadata = {
   title: 'Ezura',
@@ -33,6 +35,10 @@ export default function RootLayout({
             dengan ukuran bawaan lalu melompat — dan lompatan itu paling
             mengganggu justru bagi yang memilih huruf besar. */}
         <script dangerouslySetInnerHTML={{ __html: SKRIP_HURUF }} />
+        {/* `beforeinstallprompt` dipicu peramban **sekali**, sangat awal,
+            dan hilang begitu saja kalau tidak ada yang mendengarkan saat
+            itu — React belum hidup pada detik itu. */}
+        <script dangerouslySetInnerHTML={{ __html: SKRIP_PASANG }} />
       </head>
       {/* Lebar dibatasi karena ini aplikasi HP. Di layar lebar ia tetap
           selebar HP dan berada di tengah, bukan melar jadi tata letak
@@ -42,6 +48,7 @@ export default function RootLayout({
             kalau di luar, ia tetap tergambar di atas layar ajakan
             mendaftar — dan menu yang terlihat tapi mengantar ke layar
             "belum selesai" lebih buruk daripada menu yang belum ada. */}
+        <DaftarSW />
         <Gerbang>
           {children}
           <TabBar />
