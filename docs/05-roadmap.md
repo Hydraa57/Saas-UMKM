@@ -105,7 +105,7 @@ Penyandi ESC/POS menerima **string**, bukan `Sale`. Kalau ia menyusun sendiri ba
 - [x] **Audit tata letak yang diukur, bukan dinilai.** `npm run audit` memeriksa 21 layar di peramban: tumpang tindih antar yang bisa disentuh, isi yang tertutup bilah, gulir mendatar, target sentuh, teks meluber, dan kelas yang terpasang tapi tidak berlaku. Delapan cacat nyata ditemukan, akarnya satu — token `bilah` meleset 9px dari bilah yang sebenarnya, dan tidak ada angka di kode yang tahu tombol Kasir menonjol 11px lagi di atasnya
 
 - [x] **Layar lebar dapat tata letaknya sendiri.** `max-w-md` dipaku di `<body>`, jadi laptop menampilkan pita selebar HP di tengah layar kosong. Bilah navigasi pindah ke samping dan tidak lagi menghilang di layar dalam; kasir jadi dua kolom sungguhan — grid empat kolom di kiri, keranjang menetap di kanan. Auditnya sekarang dijalankan pada 390, 820, dan 1440px
-- [ ] Daftar-plus-rincian di katalog, riwayat, dan utang untuk layar lebar — menuntut keadaan "yang sedang dipilih" yang belum ada
+- [x] **Daftar-plus-rincian di layar lebar** untuk riwayat dan tab Stok. Alamatnya tidak berubah — barisnya tetap `<Link>`, jadi tab baru dan tombol kembali peramban tetap bekerja; di layar lebar ketukannya ditahan dan rinciannya digambar di sebelah dengan komponen yang sama persis, bukan salinan
 
 ---
 

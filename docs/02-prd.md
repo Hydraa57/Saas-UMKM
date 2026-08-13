@@ -283,7 +283,11 @@ Yang berubah, dan alasannya masing-masing:
 
 Auditnya sekarang menerima lebar layar sebagai argumen, dan dijalankan pada 390, 820, dan 1440 — cacat tata letak dua kolom tidak mungkin muncul pada lebar HP, jadi memeriksa satu lebar saja tidak membuktikan apa-apa.
 
-**Yang belum:** daftar-plus-rincian di katalog, riwayat, dan utang. Ketiganya masih satu kolom yang melebar. Itu pekerjaan berikutnya, dan bentuknya berbeda — ia menuntut keadaan "yang sedang dipilih" yang sekarang belum ada sama sekali.
+**Daftar-plus-rincian.** Riwayat dan tab Stok sekarang menampilkan daftarnya di kiri dan rinciannya di kanan. Di HP, membuka satu struk berarti meninggalkan daftarnya lalu menekan "kembali" untuk melihat yang berikutnya — itu benar di layar selebar telapak tangan, dan membuang ruang di laptop.
+
+Yang **tidak** berubah: alamatnya. Baris daftar tetap `<Link>` ke halaman rinciannya, jadi menyalin tautan, membuka di tab baru, dan tombol kembali peramban tetap bekerja. Di layar lebar ketukannya ditahan dan rinciannya digambar di sebelah — percepatan, bukan penggantian. Isinya komponen yang sama persis, bukan salinan.
+
+Tab "Daftar" di katalog sengaja **tidak** dua kolom: ia mengantar ke formulir ubah, dan formulir bukan rincian yang enak berdampingan dengan daftarnya sendiri.
 
 ### 5.2 Aturan timbal balik
 

@@ -371,8 +371,11 @@ await periksa('utang · terima bayar')
 await page.goto(BASE + '/riwayat', { waitUntil: 'networkidle' })
 await jeda(700)
 await page.locator('a[href^="/struk/"]').first().click()
-await page.waitForURL('**/struk/**', { timeout: 15000 })
-await periksa('struk')
+// Di layar lebar ketukannya sengaja **tidak** pindah halaman: struknya
+// digambar di panel kanan. Menunggu perpindahan di sana berarti
+// menunggu sesuatu yang memang dirancang tidak terjadi.
+if (LEBAR < 1024) await page.waitForURL('**/struk/**', { timeout: 15000 })
+await periksa(LEBAR < 1024 ? 'struk' : 'riwayat · struk di panel kanan')
 
 // ── Laporan ────────────────────────────────────────────────────────────
 

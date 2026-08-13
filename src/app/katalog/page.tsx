@@ -7,6 +7,9 @@ import { useApp, useCatalog } from '@/lib/useApp'
 import { ItemThumb } from '@/components/ItemThumb'
 import { AppBar } from '@/components/AppBar'
 import { Ikon } from '@/components/Ikon'
+import { DuaKolom } from '@/components/DuaKolom'
+import { useLayarLebar } from '@/lib/lebar'
+import { IsiStok } from '@/app/stok/[id]/page'
 import * as M from '@/lib/money'
 import { ITEM_KIND_LABELS, isBarang, type Barang, type Item } from '@/lib/domain/types'
 import {
@@ -59,6 +62,9 @@ function stokKritis(item: Item): boolean {
 function Isi() {
   const params = useSearchParams()
   const { ready, tenantId } = useApp()
+
+  const lebar = useLayarLebar()
+  const [dipilih, setDipilih] = useState<string | null>(null)
   const katalog = useCatalog()
 
   // Tab disimpan di URL, bukan di state: peringatan "barang menipis" di
@@ -93,7 +99,7 @@ function Isi() {
   }
 
   return (
-    <main className="layar ruang-bilah-aksi flex flex-1 flex-col gap-3 px-4">
+    <main className="layar-penuh ruang-bilah-aksi flex flex-1 flex-col gap-3 px-4">
       <AppBar judul="Barang & Jasa" kembali="/" />
 
       <div role="tablist" className="tab-grup">
@@ -124,6 +130,12 @@ function Isi() {
         </p>
       )}
 
+      <DuaKolom
+        aktif={tab === 'stok'}
+        ajakan="Pilih satu barang untuk melihat dan mengoreksi stoknya"
+        rincian={dipilih ? <IsiStok id={dipilih} sisipan /> : null}
+        daftar={
+          <>
       {katalog.length === 0 ? (
         <div className="kartu text-center">
           <span
@@ -181,7 +193,7 @@ function Isi() {
           <ul className="flex flex-col gap-2">
             {terlihat.map((item) => (
               <li key={item.id}>
-                <a href={`/katalog/baru?id=${item.id}`} className="baris">
+                <Link href={`/katalog/baru?id=${item.id}`} className="baris">
                   <span className="w-14 shrink-0">
                     <ItemThumb item={item} />
                   </span>
@@ -212,7 +224,7 @@ function Isi() {
                     )}
                   </span>
                   <Ikon nama="lanjut" ukuran={20} className="shrink-0 text-slate-300" />
-                </a>
+                </Link>
               </li>
             ))}
           </ul>
@@ -271,7 +283,18 @@ function Isi() {
               const status = statusStok(item)
               return (
                 <li key={item.id}>
-                  <a href={`/stok/${item.id}`} className="baris">
+                  <Link
+                    href={`/stok/${item.id}`}
+                    onClick={(e) => {
+                      if (!lebar) return
+                      e.preventDefault()
+                      setDipilih(item.id)
+                    }}
+                    aria-current={dipilih === item.id ? 'true' : undefined}
+                    className={`baris ${
+                      dipilih === item.id ? 'ring-2 ring-merek-500' : ''
+                    }`}
+                  >
                     <span className="w-12 shrink-0">
                       <ItemThumb item={item} />
                     </span>
@@ -293,13 +316,16 @@ function Isi() {
                         : `${item.stockQty} ${item.unit}`}
                     </span>
                     <Ikon nama="lanjut" ukuran={18} className="shrink-0 text-slate-300" />
-                  </a>
+                  </Link>
                 </li>
               )
             })}
           </ul>
         </>
       )}
+          </>
+        }
+      />
 
       {/* Aksinya mengikuti tab, bukan berdiri sendiri di bilah navigasi.
           Kulakan ada di sini karena inilah tempat pemiliknya baru saja

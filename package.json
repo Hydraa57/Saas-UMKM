@@ -20,7 +20,8 @@
     "audit": "node scripts/audit.mjs",
     "audit:lebar": "node scripts/audit.mjs 1440",
     "uji:pasang": "node scripts/pasang.mjs",
-    "uji:stok": "node scripts/stok.mjs"
+    "uji:stok": "node scripts/stok.mjs",
+    "uji:duakolom": "node scripts/duakolom.mjs"
   },
   "dependencies": {
     "@supabase/ssr": "^0.7.0",

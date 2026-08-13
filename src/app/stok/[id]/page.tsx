@@ -32,7 +32,24 @@ export default function DetailStok({
   readonly params: Promise<{ readonly id: string }>
 }) {
   const { id } = use(params)
+  return <IsiStok id={id} />
+}
+
+/**
+ * Isi layar stok, terpisah dari halamannya — supaya tab Stok di katalog
+ * bisa menggambarnya di panel kanan pada layar lebar tanpa menyalin satu
+ * baris pun. `sisipan` mematikan kepala halaman, yang di panel samping
+ * cuma mengulangi nama yang sudah disorot di daftar sebelah kiri.
+ */
+export function IsiStok({
+  id,
+  sisipan = false,
+}: {
+  readonly id: string
+  readonly sisipan?: boolean
+}) {
   const { tenantId, ready } = useApp()
+  const Bungkus = sisipan ? 'div' : 'main'
 
   const [hitung, setHitung] = useState('')
   const [catatan, setCatatan] = useState('')
@@ -75,12 +92,12 @@ export default function DetailStok({
   }
 
   if (!ready || data === undefined) {
-    return <main className="layar flex-1 p-4" aria-busy="true" />
+    return <Bungkus className="layar flex-1 p-4" aria-busy="true" />
   }
 
   if (data === null || data.jasa || !data.item) {
     return (
-      <main className="layar flex flex-1 flex-col gap-4 p-4">
+      <Bungkus className="layar flex flex-1 flex-col gap-4 p-4">
         <p className="kartu">
           {data?.jasa
             ? 'Jasa tidak punya stok — "Potong celana" tidak pernah habis.'
@@ -89,7 +106,7 @@ export default function DetailStok({
         <Link href="/katalog?tab=stok" className="btn-sekunder btn-besar">
           Kembali
         </Link>
-      </main>
+      </Bungkus>
     )
   }
 
@@ -99,8 +116,12 @@ export default function DetailStok({
   const selisih = hitung === '' ? null : selisihHitung(item, Number(hitung))
 
   return (
-    <main className="layar flex flex-1 flex-col gap-4 px-4 pb-8">
-      <AppBar judul={item.name} kembali="/katalog?tab=stok" />
+    <Bungkus
+      className={
+        sisipan ? 'flex flex-col gap-4' : 'layar flex flex-1 flex-col gap-4 px-4 pb-8'
+      }
+    >
+      {!sisipan && <AppBar judul={item.name} kembali="/katalog?tab=stok" />}
 
       <div className="kartu-gelap animate-naik">
         <p className="text-sm font-medium text-slate-400">Sisa menurut aplikasi</p>
@@ -229,6 +250,6 @@ export default function DetailStok({
           </ul>
         )}
       </section>
-    </main>
+    </Bungkus>
   )
 }

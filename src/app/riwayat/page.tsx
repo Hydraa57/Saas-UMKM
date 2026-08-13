@@ -1,12 +1,16 @@
 'use client'
 
 import Link from 'next/link'
+import { useState } from 'react'
 import { useLiveQuery } from 'dexie-react-hooks'
 import { db } from '@/lib/db/local'
 import { useApp } from '@/lib/useApp'
 import { fromDb, ZERO } from '@/lib/money'
 import * as M from '@/lib/money'
 import { Uang } from '@/components/Uang'
+import { DuaKolom } from '@/components/DuaKolom'
+import { useLayarLebar } from '@/lib/lebar'
+import { IsiStruk } from '@/app/struk/[id]/page'
 import { AppBar } from '@/components/AppBar'
 import { Ikon } from '@/components/Ikon'
 import { formatLocalDate, toLocalDate, today } from '@/lib/domain/dates'
@@ -39,6 +43,9 @@ interface BarisStruk {
 
 export default function Riwayat() {
   const { ready, tenantId } = useApp()
+
+  const lebar = useLayarLebar()
+  const [dipilih, setDipilih] = useState<string | null>(null)
   const hariIni = today()
 
   const data = useLiveQuery(async () => {
@@ -90,9 +97,14 @@ export default function Riwayat() {
   }
 
   return (
-    <main className="layar ruang-bilah flex flex-1 flex-col gap-4 px-4">
+    <main className="layar-penuh ruang-bilah flex flex-1 flex-col gap-4 px-4">
       <AppBar judul="Riwayat struk" kembali="/" />
 
+      <DuaKolom
+        ajakan="Pilih satu struk untuk melihat isinya"
+        rincian={dipilih ? <IsiStruk id={dipilih} sisipan /> : null}
+        daftar={
+          <>
       {data.length === 0 ? (
         <div className="kartu text-center">
           <span
@@ -134,7 +146,18 @@ export default function Riwayat() {
                   )
                   return (
                     <li key={s.id}>
-                      <a href={`/struk/${s.id}`} className="baris">
+                      <Link
+                        href={`/struk/${s.id}`}
+                        onClick={(e) => {
+                          if (!lebar) return
+                          e.preventDefault()
+                          setDipilih(s.id)
+                        }}
+                        aria-current={dipilih === s.id ? 'true' : undefined}
+                        className={`baris ${
+                          dipilih === s.id ? 'ring-2 ring-merek-500' : ''
+                        }`}
+                      >
                         <span
                           className={`flex h-11 w-11 shrink-0 items-center justify-center
                                       rounded-kartu ${
@@ -177,7 +200,7 @@ export default function Riwayat() {
                           <Uang nilai={M.rupiah(s.total) ?? ZERO} />
                         </span>
                         <Ikon nama="lanjut" ukuran={18} className="shrink-0 text-slate-300" />
-                      </a>
+                      </Link>
                     </li>
                   )
                 })}
@@ -186,6 +209,9 @@ export default function Riwayat() {
           )
         })
       )}
+          </>
+        }
+      />
     </main>
   )
 }

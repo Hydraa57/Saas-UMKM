@@ -39,12 +39,34 @@ export default function LayarStruk({
   readonly params: Promise<{ readonly id: string }>
 }) {
   const { id } = use(params)
+  return <IsiStruk id={id} />
+}
+
+/**
+ * Isi struknya, terpisah dari halamannya.
+ *
+ * Supaya layar riwayat di layar lebar bisa menggambarnya di panel kanan
+ * tanpa menyalin satu baris pun. `ringkas` mematikan bagian yang cuma
+ * masuk akal sebagai halaman penuh: kepala halaman dengan tombol
+ * kembali, dan tautan "Transaksi baru / Riwayat" di dasarnya — di panel
+ * samping, daftarnya sudah ada di sebelah kiri.
+ */
+export function IsiStruk({
+  id,
+  sisipan = false,
+}: {
+  readonly id: string
+  /** Digambar di panel samping, bukan sebagai halaman sendiri. */
+  readonly sisipan?: boolean
+}) {
   const { businessName, businessPhone, tenantId, ready } = useApp()
 
   const [mencetak, setMencetak] = useState(false)
   const [pesanCetak, setPesanCetak] = useState<string | null>(null)
   const [konfirmasiBatal, setKonfirmasiBatal] = useState(false)
   const [membatalkan, setMembatalkan] = useState(false)
+
+  const Bungkus = sisipan ? 'div' : 'main'
 
   const sale = useLiveQuery(async () => {
     const row = await db().sales.get(id)
@@ -83,17 +105,17 @@ export default function LayarStruk({
   }, [id])
 
   if (!ready || sale === undefined) {
-    return <main className="layar flex-1 p-4" aria-busy="true" />
+    return <Bungkus className="layar flex-1 p-4" aria-busy="true" />
   }
 
   if (sale === null) {
     return (
-      <main className="layar flex flex-1 flex-col gap-4 p-4">
+      <Bungkus className="layar flex flex-1 flex-col gap-4 p-4">
         <p className="kartu">Struk tidak ditemukan.</p>
         <Link href="/riwayat" className="btn-sekunder btn-besar">
           Kembali
         </Link>
-      </main>
+      </Bungkus>
     )
   }
 
@@ -135,8 +157,8 @@ export default function LayarStruk({
   const dibatalkan = Boolean(sale.voidedAt)
 
   return (
-    <main className="layar flex flex-1 flex-col gap-3 px-4 pb-8">
-      <AppBar judul={`Struk ${sale.invoiceNo}`} kembali="/riwayat" />
+    <Bungkus className={sisipan ? 'flex flex-col gap-3' : 'layar flex flex-1 flex-col gap-3 px-4 pb-8'}>
+      {!sisipan && <AppBar judul={`Struk ${sale.invoiceNo}`} kembali="/riwayat" />}
 
       <div className="kartu-gelap animate-naik text-center">
         <span
@@ -251,15 +273,17 @@ export default function LayarStruk({
           </button>
         ))}
 
-      <div className="flex gap-3">
-        <Link href="/kasir" className="btn-primer flex-1">
-          Transaksi baru
-        </Link>
-        <Link href="/riwayat" className="btn-sekunder flex-1">
-          Riwayat
-        </Link>
-      </div>
+      {!sisipan && (
+        <div className="flex gap-3">
+          <Link href="/kasir" className="btn-primer flex-1">
+            Transaksi baru
+          </Link>
+          <Link href="/riwayat" className="btn-sekunder flex-1">
+            Riwayat
+          </Link>
+        </div>
+      )}
 
-    </main>
+    </Bungkus>
   )
 }
